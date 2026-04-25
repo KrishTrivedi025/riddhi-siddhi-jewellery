@@ -20,7 +20,7 @@ const config: CapacitorConfig = {
   // ── Hybrid: load from live Vercel deployment ──────────────────────────────
   // Replace this URL with your actual Vercel deployment URL
   server: {
-    url: "https://riddhi-siddhi-jewellery.vercel.app", // ← UPDATE THIS after Vercel deploy
+    url: "https://riddhi-siddhi-jewellery-dlbp.vercel.app", // ← UPDATE THIS after Vercel deploy
     cleartext: false, // HTTPS only — no HTTP allowed
     allowNavigation: [
       "*.vercel.app",        // Allow your Vercel domain
