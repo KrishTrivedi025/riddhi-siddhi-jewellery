@@ -15,9 +15,8 @@ import { ExpenseReport }                from "@/components/reports/expense-repor
 import { DayBookReport }                from "@/components/reports/daybook-report"
 import { CashBankBookReport }           from "@/components/reports/cashbank-book-report"
 import { ItemProfitReport }             from "@/components/reports/item-profit-report"
-import { itemVariants, ease } from "@/lib/animations"
 
-const reportTransition = { duration: 0.18, ease: ease.ease as number[] }
+const reportTransition = { duration: 0.18, ease: [0.25, 0.46, 0.45, 0.94] as const }
 
 function ActiveReport({ id }: { id: ReportId }) {
     switch (id) {
