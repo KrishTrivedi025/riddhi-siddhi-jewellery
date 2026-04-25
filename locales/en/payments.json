@@ -1,0 +1,1 @@
+{ "title": "Payments", "subtitle": "Track money in and out", "paymentsIn": "Payments In", "paymentsOut": "Payments Out", "newPaymentIn": "Record Payment In", "newPaymentOut": "Record Payment Out", "paymentMode": "Payment Mode", "cash": "Cash", "bank": "Bank Transfer", "upi": "UPI", "cheque": "Cheque", "card": "Card" }

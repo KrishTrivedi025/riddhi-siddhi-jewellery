@@ -39,3 +39,12 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+/lib/generated/prisma
+
+# scratch / debug files
+/scratch/
+db-output.json
+db-status.json
+replace-colors.js
+replace-colors-2.js

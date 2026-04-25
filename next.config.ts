@@ -1,7 +1,20 @@
-import type { NextConfig } from "next";
+import type { NextConfig } from "next"
 
 const nextConfig: NextConfig = {
-  /* config options here */
-};
+  // Remove console.log in production builds
+  compiler: {
+    removeConsole: process.env.NODE_ENV === "production"
+      ? { exclude: ["error", "warn"] }
+      : false,
+  },
 
-export default nextConfig;
+  // Image optimisation
+  images: {
+    formats: ["image/avif", "image/webp"],
+  },
+
+  // Reduce bundle size — externalize heavy packages from server bundles
+  serverExternalPackages: ["@prisma/client", "bcryptjs"],
+}
+
+export default nextConfig

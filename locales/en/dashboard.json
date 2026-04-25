@@ -1,0 +1,17 @@
+{
+  "title": "Dashboard",
+  "subtitle": "Real-time business performance overview",
+  "totalSales": "Total Sales",
+  "totalPurchases": "Total Purchases",
+  "netProfit": "Net Profit",
+  "inventoryValue": "Inventory Value",
+  "receivable": "Outstanding Receivable",
+  "payable": "Outstanding Payable",
+  "cashInHand": "Cash in Hand",
+  "bankBalance": "Bank Balance",
+  "recentTransactions": "Recent Transactions",
+  "quickActions": "Quick Actions",
+  "newInvoice": "New Invoice",
+  "newPurchase": "New Purchase",
+  "addPayment": "Add Payment"
+}

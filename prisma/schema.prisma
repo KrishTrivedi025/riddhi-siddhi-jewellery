@@ -1,0 +1,423 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model BusinessProfile {
+  id                String   @id @default(cuid())
+  businessName      String
+  ownerName         String
+  businessType      String   @default("Jewellery Manufacturer")
+  gstin             String?
+  pan               String?
+  address           String?
+  city              String?
+  state             String?
+  pincode           String?
+  mobile            String?
+  email             String?
+  logoUrl           String?
+  signatureUrl      String?
+  financialYear     String   @default("April-March")
+  currency          String   @default("INR")
+  defaultTaxRate    Float    @default(3)
+  invoicePrefix     String   @default("INV")
+  invoiceCounter    Int      @default(1)
+  termsConditions   String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  creditNoteCounter Int      @default(1)
+  creditNotePrefix  String   @default("CN")
+  accountName       String?
+  accountNumber     String?
+  bankName          String?
+  branchName        String?
+  ifscCode          String?
+}
+
+model Party {
+  id               String            @id @default(cuid())
+  partyType        String
+  name             String
+  contactPerson    String?
+  phone            String?
+  email            String?
+  gstin            String?
+  pan              String?
+  billingAddress   String?
+  shippingAddress  String?
+  city             String?
+  state            String?
+  pincode          String?
+  openingBalance   Float             @default(0)
+  balanceType      String            @default("debit")
+  creditLimit      Float?
+  paymentTerms     String?
+  notes            String?
+  deletedAt        DateTime?
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  payments         Payment[]
+  purchaseInvoices PurchaseInvoice[]
+  purchaseReturns  PurchaseReturn[]
+  saleInvoices     SaleInvoice[]
+  saleReturns      SaleReturn[]
+}
+
+model BankAccount {
+  id             String            @id @default(cuid())
+  accountName    String
+  bankName       String?
+  accountNumber  String?
+  ifscCode       String?
+  branchName     String?
+  upiId          String?
+  openingBalance Float             @default(0)
+  currentBalance Float             @default(0)
+  isDefault      Boolean           @default(false)
+  isCash         Boolean           @default(false)
+  deletedAt      DateTime?
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+  transfersFrom  AccountTransfer[] @relation("FromAccount")
+  transfersTo    AccountTransfer[] @relation("ToAccount")
+  expenseRecords Expense[]
+  paymentModes   PaymentMode[]
+}
+
+model ItemCategory {
+  id        String    @id @default(cuid())
+  name      String
+  deletedAt DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  items     Item[]
+}
+
+model Item {
+  id                  String                @id @default(cuid())
+  itemCode            String?               @unique
+  name                String
+  description         String?
+  categoryId          String?
+  unit                String                @default("pcs")
+  hsnCode             String?
+  gstRate             Float                 @default(3)
+  purchasePrice       Float                 @default(0)
+  salePrice           Float                 @default(0)
+  makingCharges       Float                 @default(0)
+  makingChargeType    String                @default("flat")
+  purity              String?
+  openingStock        Float                 @default(0)
+  currentStock        Float                 @default(0)
+  lowStockAlert       Float                 @default(0)
+  imageUrl            String?
+  deletedAt           DateTime?
+  createdAt           DateTime              @default(now())
+  updatedAt           DateTime              @updatedAt
+  category            ItemCategory?         @relation(fields: [categoryId], references: [id])
+  purchaseItems       PurchaseInvoiceItem[]
+  purchaseReturnItems PurchaseReturnItem[]
+  saleInvoiceItems    SaleInvoiceItem[]
+  saleReturnItems     SaleReturnItem[]
+  stockMovements      StockMovement[]
+}
+
+model SaleInvoice {
+  id              String            @id @default(cuid())
+  invoiceNumber   String            @unique
+  invoiceDate     DateTime
+  dueDate         DateTime?
+  partyId         String
+  placeOfSupply   String?
+  shipToAddress   String?
+  subtotal        Float             @default(0)
+  totalDiscount   Float             @default(0)
+  taxableAmount   Float             @default(0)
+  cgst            Float             @default(0)
+  sgst            Float             @default(0)
+  igst            Float             @default(0)
+  cess            Float             @default(0)
+  roundOff        Float             @default(0)
+  grandTotal      Float             @default(0)
+  amountPaid      Float             @default(0)
+  balanceDue      Float             @default(0)
+  paymentStatus   String            @default("unpaid")
+  notes           String?
+  termsConditions String?
+  status          String            @default("active")
+  deletedAt       DateTime?
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  payments        Payment[]
+  party           Party             @relation(fields: [partyId], references: [id])
+  items           SaleInvoiceItem[]
+  saleReturns     SaleReturn[]
+}
+
+model SaleInvoiceItem {
+  id             String      @id @default(cuid())
+  invoiceId      String
+  itemId         String?
+  itemName       String
+  hsnCode        String?
+  description    String?
+  quantity       Float
+  unit           String      @default("pcs")
+  unitPrice      Float
+  discount       Float       @default(0)
+  discountType   String      @default("percent")
+  gstRate        Float       @default(3)
+  cgst           Float       @default(0)
+  sgst           Float       @default(0)
+  igst           Float       @default(0)
+  amount         Float
+  purity         String?
+  netWeight      Float?
+  grossWeight    Float?
+  makingCharges  Float?
+  wastagePercent Float?
+  hallmarkNumber String?
+  stoneDetails   String?
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+  invoice        SaleInvoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  item           Item?       @relation(fields: [itemId], references: [id])
+}
+
+model PurchaseInvoice {
+  id                  String                @id @default(cuid())
+  invoiceNumber       String                @unique
+  vendorInvoiceNumber String?
+  invoiceDate         DateTime
+  dueDate             DateTime?
+  partyId             String
+  placeOfSupply       String?
+  subtotal            Float                 @default(0)
+  totalDiscount       Float                 @default(0)
+  taxableAmount       Float                 @default(0)
+  cgst                Float                 @default(0)
+  sgst                Float                 @default(0)
+  igst                Float                 @default(0)
+  cess                Float                 @default(0)
+  roundOff            Float                 @default(0)
+  grandTotal          Float                 @default(0)
+  amountPaid          Float                 @default(0)
+  balanceDue          Float                 @default(0)
+  paymentStatus       String                @default("unpaid")
+  notes               String?
+  status              String                @default("active")
+  deletedAt           DateTime?
+  createdAt           DateTime              @default(now())
+  updatedAt           DateTime              @updatedAt
+  payments            Payment[]
+  party               Party                 @relation(fields: [partyId], references: [id])
+  items               PurchaseInvoiceItem[]
+  purchaseReturns     PurchaseReturn[]
+}
+
+model PurchaseInvoiceItem {
+  id             String          @id @default(cuid())
+  invoiceId      String
+  itemId         String?
+  itemName       String
+  hsnCode        String?
+  description    String?
+  quantity       Float
+  unit           String          @default("pcs")
+  unitPrice      Float
+  discount       Float           @default(0)
+  discountType   String          @default("percent")
+  gstRate        Float           @default(3)
+  cgst           Float           @default(0)
+  sgst           Float           @default(0)
+  igst           Float           @default(0)
+  amount         Float
+  purity         String?
+  netWeight      Float?
+  grossWeight    Float?
+  makingCharges  Float?
+  wastagePercent Float?
+  hallmarkNumber String?
+  stoneDetails   String?
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  invoice        PurchaseInvoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  item           Item?           @relation(fields: [itemId], references: [id])
+}
+
+model Payment {
+  id                String           @id @default(cuid())
+  paymentType       String
+  partyId           String
+  saleInvoiceId     String?
+  purchaseInvoiceId String?
+  paymentDate       DateTime
+  totalAmount       Float
+  notes             String?
+  deletedAt         DateTime?
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+  party             Party            @relation(fields: [partyId], references: [id])
+  purchaseInvoice   PurchaseInvoice? @relation(fields: [purchaseInvoiceId], references: [id])
+  saleInvoice       SaleInvoice?     @relation(fields: [saleInvoiceId], references: [id])
+  paymentModes      PaymentMode[]
+}
+
+model PaymentMode {
+  id            String       @id @default(cuid())
+  paymentId     String
+  mode          String
+  amount        Float
+  reference     String?
+  bankAccountId String?
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  bankAccount   BankAccount? @relation(fields: [bankAccountId], references: [id])
+  payment       Payment      @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+}
+
+model Expense {
+  id            String       @id @default(cuid())
+  expenseDate   DateTime
+  category      String
+  description   String?
+  amount        Float
+  gstAmount     Float        @default(0)
+  gstRate       Float        @default(0)
+  bankAccountId String?
+  receiptUrl    String?
+  deletedAt     DateTime?
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  bankAccount   BankAccount? @relation(fields: [bankAccountId], references: [id])
+}
+
+model StockMovement {
+  id            String   @id @default(cuid())
+  itemId        String
+  movementType  String
+  quantity      Float
+  reason        String?
+  referenceId   String?
+  referenceType String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  item          Item     @relation(fields: [itemId], references: [id])
+}
+
+model AccountTransfer {
+  id            String      @id @default(cuid())
+  fromAccountId String
+  toAccountId   String
+  amount        Float
+  transferDate  DateTime
+  notes         String?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  fromAccount   BankAccount @relation("FromAccount", fields: [fromAccountId], references: [id])
+  toAccount     BankAccount @relation("ToAccount", fields: [toAccountId], references: [id])
+}
+
+model SaleReturn {
+  id               String           @id @default(cuid())
+  creditNoteNumber String           @unique
+  creditNoteDate   DateTime
+  saleInvoiceId    String
+  partyId          String
+  reason           String?
+  subtotal         Float            @default(0)
+  totalDiscount    Float            @default(0)
+  taxableAmount    Float            @default(0)
+  cgst             Float            @default(0)
+  sgst             Float            @default(0)
+  igst             Float            @default(0)
+  grandTotal       Float            @default(0)
+  status           String           @default("active")
+  deletedAt        DateTime?
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+  party            Party            @relation(fields: [partyId], references: [id])
+  saleInvoice      SaleInvoice      @relation(fields: [saleInvoiceId], references: [id])
+  items            SaleReturnItem[]
+}
+
+model SaleReturnItem {
+  id           String     @id @default(cuid())
+  saleReturnId String
+  itemId       String?
+  itemName     String
+  hsnCode      String?
+  quantity     Float
+  unit         String     @default("pcs")
+  unitPrice    Float
+  discount     Float      @default(0)
+  discountType String     @default("percent")
+  gstRate      Float      @default(3)
+  cgst         Float      @default(0)
+  sgst         Float      @default(0)
+  igst         Float      @default(0)
+  amount       Float
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  item         Item?      @relation(fields: [itemId], references: [id])
+  saleReturn   SaleReturn @relation(fields: [saleReturnId], references: [id], onDelete: Cascade)
+}
+
+model PurchaseReturn {
+  id                String               @id @default(cuid())
+  debitNoteNumber   String               @unique
+  debitNoteDate     DateTime
+  purchaseInvoiceId String
+  partyId           String
+  reason            String?
+  subtotal          Float                @default(0)
+  totalDiscount     Float                @default(0)
+  taxableAmount     Float                @default(0)
+  cgst              Float                @default(0)
+  sgst              Float                @default(0)
+  igst              Float                @default(0)
+  grandTotal        Float                @default(0)
+  status            String               @default("active")
+  deletedAt         DateTime?
+  createdAt         DateTime             @default(now())
+  updatedAt         DateTime             @updatedAt
+  party             Party                @relation(fields: [partyId], references: [id])
+  purchaseInvoice   PurchaseInvoice      @relation(fields: [purchaseInvoiceId], references: [id])
+  items             PurchaseReturnItem[]
+}
+
+model PurchaseReturnItem {
+  id               String         @id @default(cuid())
+  purchaseReturnId String
+  itemId           String?
+  itemName         String
+  hsnCode          String?
+  quantity         Float
+  unit             String         @default("pcs")
+  unitPrice        Float
+  discount         Float          @default(0)
+  discountType     String         @default("percent")
+  gstRate          Float          @default(3)
+  cgst             Float          @default(0)
+  sgst             Float          @default(0)
+  igst             Float          @default(0)
+  amount           Float
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+  item             Item?          @relation(fields: [itemId], references: [id])
+  purchaseReturn   PurchaseReturn @relation(fields: [purchaseReturnId], references: [id], onDelete: Cascade)
+}

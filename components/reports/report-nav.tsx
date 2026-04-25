@@ -1,0 +1,105 @@
+"use client"
+
+import { cn } from "@/lib/utils"
+
+export type ReportId =
+    | "profit_loss"
+    | "sales"
+    | "purchase"
+    | "receivable"
+    | "payable"
+    | "stock_summary"
+    | "stock_movement"
+    | "expense"
+    | "day_book"
+    | "cash_bank_book"
+    | "item_profit"
+
+interface NavGroup {
+    label: string
+    items: { id: ReportId; label: string; icon: string }[]
+}
+
+const NAV_GROUPS: NavGroup[] = [
+    {
+        label: "Financial",
+        items: [
+            { id: "profit_loss", label: "Profit & Loss", icon: "📊" },
+        ],
+    },
+    {
+        label: "Sales & Purchase",
+        items: [
+            { id: "sales",      label: "Sales Report",          icon: "🧾" },
+            { id: "purchase",   label: "Purchase Report",        icon: "🛒" },
+            { id: "receivable", label: "Outstanding Receivable", icon: "📥" },
+            { id: "payable",    label: "Outstanding Payable",    icon: "📤" },
+        ],
+    },
+    {
+        label: "Inventory",
+        items: [
+            { id: "stock_summary",  label: "Stock Summary",  icon: "📦" },
+            { id: "stock_movement", label: "Stock Movement", icon: "🔄" },
+        ],
+    },
+    {
+        label: "Expenses",
+        items: [
+            { id: "expense", label: "Expense Report", icon: "💸" },
+        ],
+    },
+    {
+        label: "Ledgers",
+        items: [
+            { id: "day_book",      label: "Day Book",       icon: "📖" },
+            { id: "cash_bank_book", label: "Cash/Bank Book", icon: "🏦" },
+        ],
+    },
+    {
+        label: "Profitability",
+        items: [
+            { id: "item_profit", label: "Item-wise Profit", icon: "📈" },
+        ],
+    },
+]
+
+interface ReportNavProps {
+    active: ReportId
+    onChange: (id: ReportId) => void
+}
+
+export function ReportNav({ active, onChange }: ReportNavProps) {
+    return (
+        <aside className="w-56 shrink-0 flex flex-col gap-1 pr-4 border-r border-border">
+            <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-3 px-2">
+                Reports
+            </p>
+            {NAV_GROUPS.map(group => (
+                <div key={group.label} className="mb-3">
+                    <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest px-2 mb-1">
+                        {group.label}
+                    </p>
+                    {group.items.map(item => {
+                        const isActive = item.id === active
+                        return (
+                            <button
+                                key={item.id}
+                                onClick={() => onChange(item.id)}
+                                className={cn(
+                                    "w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm transition-all duration-150 text-left",
+                                    isActive
+                                        ? "bg-primary/10 text-primary border border-primary/20 font-semibold"
+                                        : "text-muted-foreground hover:text-foreground hover:bg-border border border-transparent"
+                                )}
+                            >
+                                <span className="text-base leading-none">{item.icon}</span>
+                                <span className="text-xs">{item.label}</span>
+                            </button>
+                        )
+                    })}
+                </div>
+            ))}
+        </aside>
+    )
+}

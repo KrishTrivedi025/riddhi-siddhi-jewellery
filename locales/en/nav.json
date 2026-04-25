@@ -1,0 +1,12 @@
+{
+  "dashboard": "Dashboard",
+  "sales": "Sales",
+  "purchases": "Purchases",
+  "inventory": "Inventory",
+  "parties": "Parties",
+  "payments": "Payments",
+  "cashBank": "Cash & Bank",
+  "expenses": "Expenses",
+  "reports": "Reports",
+  "settings": "Settings"
+}

@@ -1,0 +1,17 @@
+{
+  "title": "डैशबोर्ड",
+  "subtitle": "व्यापार का वास्तविक समय अवलोकन",
+  "totalSales": "कुल बिक्री",
+  "totalPurchases": "कुल खरीद",
+  "netProfit": "शुद्ध लाभ",
+  "inventoryValue": "भंडार मूल्य",
+  "receivable": "बकाया प्राप्य",
+  "payable": "बकाया देय",
+  "cashInHand": "हाथ में नकद",
+  "bankBalance": "बैंक बैलेंस",
+  "recentTransactions": "हालिया लेनदेन",
+  "quickActions": "त्वरित कार्रवाई",
+  "newInvoice": "नया बिल",
+  "newPurchase": "नई खरीद",
+  "addPayment": "भुगतान जोड़ें"
+}

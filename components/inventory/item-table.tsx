@@ -1,0 +1,188 @@
+"use client"
+
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from "@/components/ui/table"
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { MoreHorizontal, Edit, Trash2, AlertTriangle, ArrowUpDown, History } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { deleteItem } from "@/lib/actions/items"
+import { ItemDialog } from "./item-dialog"
+import { StockAdjustDialog } from "./stock-adjust-dialog"
+import { StockHistoryDialog } from "./stock-history-dialog"
+import { Image as ImageIcon } from "lucide-react"
+
+interface ItemTableProps {
+    data: any[]
+    categories: any[]
+}
+
+export function ItemTable({ data, categories }: ItemTableProps) {
+    const handleDelete = async (id: string) => {
+        if (confirm("Are you sure you want to delete this item?")) {
+            await deleteItem(id)
+        }
+    }
+
+    return (
+        <div className="space-y-4">
+            <div className="rounded-xl border border-border bg-card overflow-hidden">
+                <Table>
+                    <TableHeader className="bg-muted/50">
+                        <TableRow className="hover:bg-transparent border-border">
+                            <TableHead className="w-[60px] text-center">Photo</TableHead>
+                            <TableHead className="text-muted-foreground w-[20%]">Item Code</TableHead>
+                            <TableHead className="text-muted-foreground w-[15%]">Category</TableHead>
+                            <TableHead className="text-muted-foreground w-[15%] text-right">Stock</TableHead>
+                            <TableHead className="text-muted-foreground w-[20%] text-right">Production ₹</TableHead>
+                            <TableHead className="text-muted-foreground w-[20%] text-right">Sale ₹</TableHead>
+                            <TableHead className="w-[5%]"></TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {data.length === 0 ? (
+                            <TableRow>
+                                <TableCell
+                                    colSpan={8}
+                                    className="h-32 text-center text-muted-foreground italic"
+                                >
+                                    No items found
+                                </TableCell>
+                            </TableRow>
+                        ) : (
+                            data.map((item) => {
+                                const isLowStock =
+                                    item.lowStockAlert > 0 && item.currentStock <= item.lowStockAlert
+                                const isOutOfStock = item.currentStock <= 0
+
+                                return (
+                                    <TableRow
+                                        key={item.id}
+                                        className="border-border hover:bg-muted transition-colors"
+                                    >
+                                        <TableCell align="center">
+                                            {item.imageUrl ? (
+                                                <div className="w-10 h-10 rounded-md overflow-hidden bg-background border border-border">
+                                                    <img src={item.imageUrl} alt="Item" className="w-full h-full object-cover" />
+                                                </div>
+                                            ) : (
+                                                <div className="w-10 h-10 rounded-md bg-background border border-border flex items-center justify-center text-muted-foreground">
+                                                    <ImageIcon size={16} />
+                                                </div>
+                                            )}
+                                        </TableCell>
+                                        <TableCell className="font-medium text-foreground font-mono">
+                                            {item.itemCode}
+                                        </TableCell>
+                                        <TableCell className="text-xs text-muted-foreground">
+                                            {item.category?.name || "—"}
+                                        </TableCell>
+                                        <TableCell className="text-right font-semibold">
+                                            <div className="flex items-center justify-end gap-1.5">
+                                                {(isLowStock || isOutOfStock) && (
+                                                    <AlertTriangle
+                                                        size={12}
+                                                        className={isOutOfStock ? "text-rose-500" : "text-amber-500"}
+                                                    />
+                                                )}
+                                                <span
+                                                    className={
+                                                        isOutOfStock
+                                                            ? "text-rose-500"
+                                                            : isLowStock
+                                                              ? "text-amber-500"
+                                                              : "text-foreground"
+                                                    }
+                                                >
+                                                    {item.currentStock.toLocaleString("en-IN")}
+                                                </span>
+                                                <span className="text-[10px] text-muted-foreground">
+                                                    {item.unit}
+                                                </span>
+                                            </div>
+                                        </TableCell>
+                                        <TableCell className="text-right text-muted-foreground text-sm">
+                                            ₹{item.purchasePrice.toLocaleString("en-IN")}
+                                        </TableCell>
+                                        <TableCell className="text-right text-emerald-500 text-sm font-medium">
+                                            ₹{item.salePrice.toLocaleString("en-IN")}
+                                        </TableCell>
+                                        <TableCell>
+                                            <DropdownMenu>
+                                                <DropdownMenuTrigger asChild>
+                                                    <Button
+                                                        variant="ghost"
+                                                        className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground"
+                                                    >
+                                                        <MoreHorizontal className="h-4 w-4" />
+                                                    </Button>
+                                                </DropdownMenuTrigger>
+                                                <DropdownMenuContent
+                                                    align="end"
+                                                    className="bg-card border-border text-foreground"
+                                                >
+                                                    <StockAdjustDialog
+                                                        item={item}
+                                                        trigger={
+                                                            <DropdownMenuItem
+                                                                onSelect={(e) => e.preventDefault()}
+                                                                className="flex items-center gap-2 cursor-pointer hover:bg-border"
+                                                            >
+                                                                <ArrowUpDown size={14} className="text-primary" /> Adjust Stock
+                                                            </DropdownMenuItem>
+                                                        }
+                                                    />
+                                                    <StockHistoryDialog
+                                                        item={item}
+                                                        trigger={
+                                                            <DropdownMenuItem
+                                                                onSelect={(e) => e.preventDefault()}
+                                                                className="flex items-center gap-2 cursor-pointer hover:bg-border"
+                                                            >
+                                                                <History size={14} className="text-[#3B82F6]" /> View History
+                                                            </DropdownMenuItem>
+                                                        }
+                                                    />
+                                                    <DropdownMenuSeparator className="bg-border" />
+                                                    <ItemDialog
+                                                        initialData={item}
+                                                        categories={categories}
+                                                        trigger={
+                                                            <DropdownMenuItem
+                                                                onSelect={(e) => e.preventDefault()}
+                                                                className="flex items-center gap-2 cursor-pointer hover:bg-border"
+                                                            >
+                                                                <Edit size={14} /> Edit
+                                                            </DropdownMenuItem>
+                                                        }
+                                                    />
+                                                    <DropdownMenuItem
+                                                        onClick={() => handleDelete(item.id)}
+                                                        className="flex items-center gap-2 text-rose-500 cursor-pointer hover:bg-rose-500/10"
+                                                    >
+                                                        <Trash2 size={14} /> Delete
+                                                    </DropdownMenuItem>
+                                                </DropdownMenuContent>
+                                            </DropdownMenu>
+                                        </TableCell>
+                                    </TableRow>
+                                )
+                            })
+                        )}
+                    </TableBody>
+                </Table>
+            </div>
+        </div>
+    )
+}
