@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Riddhi Siddhi Jewellery</string>
+    <string name="title_activity_main">Riddhi Siddhi Jewellery</string>
+    <string name="package_name">com.riddhisiddhi.jewellery</string>
+    <string name="custom_url_scheme">com.riddhisiddhi.jewellery</string>
+</resources>
