@@ -47,8 +47,8 @@ export function TopCustomersChart({ data }: TopCustomersChartProps) {
                                 const { x, y, payload } = props;
                                 return (
                                     <text
-                                        x={x - 10}
-                                        y={y + 4}
+                                        x={(x as number) - 10}
+                                        y={(y as number) + 4}
                                         fill="#F5F5F5"
                                         textAnchor="end"
                                         className="text-[10px] font-bold dark:fill-[#F5F5F5] fill-[#2C2620]"
