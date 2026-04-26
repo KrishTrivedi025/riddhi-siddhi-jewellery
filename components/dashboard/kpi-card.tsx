@@ -60,7 +60,7 @@ export function KPICard({ label, value, iconName, color, prefix = "₹" }: KPICa
         <motion.div
             whileHover={reduce ? {} : hoverLift}
             whileTap={reduce ? {} : tapScale}
-            className="bg-card border border-border rounded-2xl p-6 relative overflow-hidden group
+            className="bg-card border border-border rounded-2xl p-4 md:p-6 relative overflow-hidden group
                        cursor-default select-none"
             style={{ willChange: "transform" }}
         >
@@ -80,7 +80,7 @@ export function KPICard({ label, value, iconName, color, prefix = "₹" }: KPICa
                 <p className="text-muted-foreground text-xs font-semibold uppercase tracking-wide">
                     {label}
                 </p>
-                <motion.h3 className="text-2xl font-bold text-foreground tabular-nums">
+                <motion.h3 className="text-lg md:text-2xl font-bold text-foreground tabular-nums truncate">
                     {display}
                 </motion.h3>
             </div>

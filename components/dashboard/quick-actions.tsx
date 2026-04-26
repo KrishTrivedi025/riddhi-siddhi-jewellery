@@ -25,7 +25,7 @@ export function QuickActions() {
             variants={reduce ? {} : containerVariants}
             initial="initial"
             animate="animate"
-            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
+            className="grid grid-cols-3 gap-3"
         >
             {actions.map((action, index) => (
                 <motion.div
@@ -38,13 +38,14 @@ export function QuickActions() {
                 >
                     <Link href={action.href} className="block">
                         <div className={`
-                            w-full h-16 rounded-xl border ${action.border} ${action.bg}
-                            flex items-center px-6 gap-4 group transition-colors duration-200
+                            w-full rounded-xl border ${action.border} ${action.bg}
+                            flex flex-col items-center justify-center px-2 py-3 gap-2 group transition-colors duration-200
+                            min-h-[72px]
                         `}>
                             <div className={`p-2 rounded-lg ${action.bg} group-hover:scale-110 transition-transform duration-200`}>
                                 <action.icon size={18} className={action.color} />
                             </div>
-                            <span className="text-foreground font-medium text-sm">{action.label}</span>
+                            <span className="text-foreground font-medium text-[11px] text-center leading-tight">{action.label}</span>
                         </div>
                     </Link>
                 </motion.div>

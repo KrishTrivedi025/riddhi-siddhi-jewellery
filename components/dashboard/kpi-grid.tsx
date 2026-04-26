@@ -40,7 +40,7 @@ export function KPIGrid({ stats }: KPIGridProps) {
             variants={reduce ? {} : containerVariants}
             initial="initial"
             animate="animate"
-            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"
+            className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6"
         >
             {data.map((card, index) => (
                 <motion.div key={index} variants={reduce ? {} : itemVariants}>
