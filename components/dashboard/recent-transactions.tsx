@@ -111,13 +111,6 @@ export function RecentTransactions({ transactions = [] }: RecentTransactionsProp
                         </motion.div>
                     </AnimatePresence>
                 )}
-            </div>
-            
-            <div className="p-4 bg-muted/50 border-t border-border text-center z-10">
-                <button className="text-primary text-xs font-semibold hover:underline">
-                    View All Activity
-                </button>
-            </div>
         </div>
     )
 }

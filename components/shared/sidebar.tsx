@@ -167,6 +167,10 @@ export default function Sidebar() {
               transition={{ type: "spring", damping: 28, stiffness: 300 }}
               className="fixed top-0 left-0 z-50 h-full w-72 bg-card border-r border-border
                          flex flex-col md:hidden shadow-2xl"
+              style={{
+                // Push content below the Android status bar / notch
+                paddingTop: "env(safe-area-inset-top)",
+              }}
             >
               <SidebarContent onNavClick={close} />
             </motion.aside>

@@ -14,7 +14,7 @@ import {
     type LucideIcon,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { hoverLift, tapScale, countUpSpring } from "@/lib/animations"
+import { tapScale, countUpSpring } from "@/lib/animations"
 import { useReducedMotion } from "@/lib/hooks/use-reduced-motion"
 
 const ICON_MAP: Record<string, LucideIcon> = {
@@ -51,44 +51,43 @@ export function KPICard({ label, value, iconName, color, prefix = "₹" }: KPICa
         if (reduce) {
             mv.set(value)
         } else {
-            const controls = animate(mv, value, { duration: 1.4, ease: "easeOut" })
+            const controls = animate(mv, value, { duration: 1.2, ease: "easeOut" })
             return controls.stop
         }
     }, [mv, value, reduce])
 
     return (
         <motion.div
-            whileHover={reduce ? {} : hoverLift}
             whileTap={reduce ? {} : tapScale}
-            className="bg-card border border-border rounded-2xl p-4 md:p-6 relative overflow-hidden group
-                       cursor-default select-none"
+            className="bg-card border border-border rounded-2xl relative overflow-hidden group cursor-default select-none"
             style={{ willChange: "transform" }}
         >
-            {/* Icon badge */}
-            <div className="flex items-center justify-between mb-4">
+            {/* Compact card — same feel as quick action cards */}
+            <div className="flex items-center gap-3 p-3">
+                {/* Small icon badge */}
                 <div className={cn(
-                    "w-11 h-11 rounded-xl flex items-center justify-center",
-                    "border transition-all duration-300 group-hover:scale-110",
+                    "w-9 h-9 rounded-xl flex items-center justify-center shrink-0",
+                    "border transition-all duration-300",
                     color
                 )}>
-                    <Icon size={20} className="text-foreground/80" />
+                    <Icon size={16} className="text-foreground/80" />
+                </div>
+
+                {/* Values — stacked right of icon */}
+                <div className="flex-1 min-w-0">
+                    <p className="text-muted-foreground text-[10px] font-semibold uppercase tracking-wide leading-none mb-1 truncate">
+                        {label}
+                    </p>
+                    <motion.p className="text-foreground font-bold text-sm tabular-nums truncate">
+                        {display}
+                    </motion.p>
                 </div>
             </div>
 
-            {/* Values */}
-            <div className="space-y-1">
-                <p className="text-muted-foreground text-xs font-semibold uppercase tracking-wide">
-                    {label}
-                </p>
-                <motion.h3 className="text-lg md:text-2xl font-bold text-foreground tabular-nums truncate">
-                    {display}
-                </motion.h3>
-            </div>
-
-            {/* Ambient glow */}
+            {/* Subtle ambient glow */}
             <div className={cn(
-                "absolute -right-4 -bottom-4 w-24 h-24 rounded-full blur-3xl",
-                "opacity-10 group-hover:opacity-25 transition-opacity duration-500",
+                "absolute -right-3 -bottom-3 w-14 h-14 rounded-full blur-2xl",
+                "opacity-15 group-hover:opacity-30 transition-opacity duration-500",
                 color,
             )} />
         </motion.div>
