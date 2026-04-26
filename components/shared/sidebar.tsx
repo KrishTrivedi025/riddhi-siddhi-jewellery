@@ -2,10 +2,10 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { motion } from "framer-motion"
+import { motion, AnimatePresence } from "framer-motion"
 import {
   LayoutDashboard, ShoppingCart, Package, Users,
-  CreditCard, Receipt, BarChart2, Settings, Landmark,
+  CreditCard, Receipt, BarChart2, Settings, Landmark, X,
 } from "lucide-react"
 import {
   containerFastVariants,
@@ -15,6 +15,7 @@ import {
   springSmooth,
 } from "@/lib/animations"
 import { useT } from "@/lib/i18n/client"
+import { useSidebar } from "@/lib/sidebar-context"
 
 const navItems = [
   { translationKey: "dashboard", href: "/dashboard",           icon: LayoutDashboard },
@@ -29,14 +30,15 @@ const navItems = [
   { translationKey: "settings",  href: "/dashboard/settings",   icon: Settings        },
 ]
 
-export default function Sidebar() {
+// ── Shared sidebar content ────────────────────────────────────────────────────
+function SidebarContent({ onNavClick }: { onNavClick?: () => void }) {
   const pathname = usePathname()
   const { t } = useT("nav")
 
   return (
-    <aside className="w-60 bg-card border-r border-border flex flex-col h-full shrink-0">
+    <>
       {/* Logo */}
-      <div className="px-6 py-5 border-b border-border">
+      <div className="px-6 py-5 border-b border-border flex items-center justify-between">
         <div className="flex items-center gap-3">
           <motion.div
             whileHover={{ rotate: [0, -8, 8, 0], scale: 1.08 }}
@@ -53,6 +55,17 @@ export default function Sidebar() {
             <p className="text-muted-foreground text-xs">Jewellery</p>
           </div>
         </div>
+
+        {/* Close button — only shown on mobile */}
+        {onNavClick && (
+          <button
+            onClick={onNavClick}
+            className="md:hidden p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+            aria-label="Close menu"
+          >
+            <X size={18} />
+          </button>
+        )}
       </div>
 
       {/* Nav */}
@@ -77,6 +90,7 @@ export default function Sidebar() {
             >
               <Link
                 href={href}
+                onClick={onNavClick}
                 className={`
                   relative flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm
                   transition-colors duration-150 overflow-hidden
@@ -86,7 +100,6 @@ export default function Sidebar() {
                   }
                 `}
               >
-                {/* Animated active background — shared layout morphs between items */}
                 {active && (
                   <motion.span
                     layoutId="sidebar-active-bg"
@@ -94,8 +107,6 @@ export default function Sidebar() {
                     transition={springSmooth}
                   />
                 )}
-
-                {/* Hover background for inactive items */}
                 {!active && (
                   <motion.span
                     className="absolute inset-0 rounded-xl bg-transparent"
@@ -103,10 +114,7 @@ export default function Sidebar() {
                     transition={{ duration: 0.15 }}
                   />
                 )}
-
-                <span className="relative z-10">
-                  <Icon size={16} />
-                </span>
+                <span className="relative z-10"><Icon size={16} /></span>
                 <span className="relative z-10">{t(translationKey)}</span>
               </Link>
             </motion.div>
@@ -120,6 +128,51 @@ export default function Sidebar() {
           Riddhi Siddhi Jewellery © 2025
         </p>
       </div>
-    </aside>
+    </>
+  )
+}
+
+// ── Main Sidebar export ───────────────────────────────────────────────────────
+export default function Sidebar() {
+  const { isOpen, close } = useSidebar()
+
+  return (
+    <>
+      {/* ── Desktop sidebar — always visible on md+ ── */}
+      <aside className="hidden md:flex w-60 bg-card border-r border-border flex-col h-full shrink-0">
+        <SidebarContent />
+      </aside>
+
+      {/* ── Mobile drawer — slides in from left ── */}
+      <AnimatePresence>
+        {isOpen && (
+          <>
+            {/* Backdrop */}
+            <motion.div
+              key="backdrop"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="fixed inset-0 z-40 bg-black/60 md:hidden"
+              onClick={close}
+            />
+
+            {/* Drawer */}
+            <motion.aside
+              key="drawer"
+              initial={{ x: "-100%" }}
+              animate={{ x: 0 }}
+              exit={{ x: "-100%" }}
+              transition={{ type: "spring", damping: 28, stiffness: 300 }}
+              className="fixed top-0 left-0 z-50 h-full w-72 bg-card border-r border-border
+                         flex flex-col md:hidden shadow-2xl"
+            >
+              <SidebarContent onNavClick={close} />
+            </motion.aside>
+          </>
+        )}
+      </AnimatePresence>
+    </>
   )
 }
