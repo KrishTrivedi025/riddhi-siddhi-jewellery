@@ -33,7 +33,7 @@ export default async function DashboardLayout({
             <Header />
           </div>
 
-          <main className="flex-1 overflow-y-auto hw-scroll p-4 pb-28 md:p-6 md:pb-6 print:p-0 print:overflow-visible print:block">
+          <main className="flex-1 overflow-y-auto hw-scroll p-4 pb-36 md:p-6 md:pb-6 print:p-0 print:overflow-visible print:block">
             <AnimatePresenceWrapper>
               {children}
             </AnimatePresenceWrapper>
