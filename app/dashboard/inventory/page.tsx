@@ -6,7 +6,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 
 export default async function InventoryPage() {
     return (
-        <PageWrapper className="space-y-8">
+        <PageWrapper className="space-y-4">
             <Suspense fallback={<InventorySkeleton />}>
                 <InventoryData />
             </Suspense>
