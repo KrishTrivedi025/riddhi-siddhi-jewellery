@@ -2,6 +2,8 @@ import { Suspense } from "react"
 import { PageWrapper } from "@/components/shared/page-wrapper"
 import { KPIGrid } from "@/components/dashboard/kpi-grid"
 import { KPISkeleton } from "@/components/dashboard/kpi-skeleton"
+import { ChartsGrid } from "@/components/dashboard/charts-grid"
+import { Skeleton } from "@/components/ui/skeleton"
 import { QuickActions } from "@/components/dashboard/quick-actions"
 import { RecentTransactions } from "@/components/dashboard/recent-transactions"
 import { RecentTransactionsSkeleton } from "@/components/dashboard/recent-transactions-skeleton"
@@ -16,10 +18,10 @@ export default function DashboardPage() {
                 <p className="text-muted-foreground mt-0.5 text-xs">Real-time business overview</p>
             </div>
 
-            {/* Quick action shortcuts */}
+            {/* Quick shortcuts */}
             <QuickActions />
 
-            {/* Async data section */}
+            {/* Async data */}
             <Suspense fallback={<DashboardLoading />}>
                 <DashboardContent />
             </Suspense>
@@ -41,10 +43,13 @@ async function DashboardContent() {
 
     return (
         <div className="space-y-5">
-            {/* KPI stats grid — compact, 2-col on mobile */}
+            {/* KPI stats — compact 2-col on mobile */}
             <KPIGrid stats={data.stats} />
 
-            {/* Recent transactions — full width on mobile */}
+            {/* Charts — full width stacked on mobile (no top customers chart) */}
+            <ChartsGrid data={data.charts} />
+
+            {/* Recent transactions — full width */}
             <RecentTransactions transactions={data.transactions} />
         </div>
     )
@@ -54,6 +59,11 @@ function DashboardLoading() {
     return (
         <div className="space-y-5">
             <KPISkeleton />
+            <div className="space-y-4">
+                {[...Array(3)].map((_, i) => (
+                    <Skeleton key={i} className="h-[280px] w-full rounded-2xl" />
+                ))}
+            </div>
             <RecentTransactionsSkeleton />
         </div>
     )
