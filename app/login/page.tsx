@@ -30,10 +30,13 @@ export default function LoginPage() {
             password: data.password,
             redirect: false,
         })
-        setLoading(false)
         if (res?.error) {
+            setLoading(false)
             setError("Invalid email or password")
         } else {
+            // Refresh the router first so the session cookie is available
+            // to the middleware before navigating — fixes double-click bug
+            router.refresh()
             router.push("/dashboard")
         }
     }

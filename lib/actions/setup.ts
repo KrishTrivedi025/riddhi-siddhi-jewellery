@@ -1,6 +1,7 @@
 "use server"
 
 import { prisma } from "@/lib/db"
+import { auth } from "@/auth"
 import { revalidatePath } from "next/cache"
 
 export interface SetupFormData {
@@ -33,16 +34,25 @@ export interface SetupFormData {
     termsConditions?: string
 }
 
+/** Get the current logged-in userId — throws if unauthenticated */
+async function requireUserId(): Promise<string> {
+    const session = await auth()
+    if (!session?.user?.id) throw new Error("Unauthenticated")
+    return session.user.id
+}
+
 export async function createBusinessSetup(data: SetupFormData) {
     try {
-        // Check if profile already exists
-        const existing = await prisma.businessProfile.findFirst()
+        const userId = await requireUserId()
+
+        // Check if THIS user already has a profile
+        const existing = await prisma.businessProfile.findUnique({ where: { userId } })
         if (existing) return { success: false, error: "Business profile already exists" }
 
         await prisma.$transaction(async (tx) => {
-            // Create business profile with bank details
             await tx.businessProfile.create({
                 data: {
+                    userId,                                      // ← scoped to user
                     businessName: data.businessName,
                     ownerName: data.ownerName,
                     businessType: data.businessType,
@@ -59,7 +69,6 @@ export async function createBusinessSetup(data: SetupFormData) {
                     invoicePrefix: data.invoicePrefix || "INV",
                     invoiceCounter: 1,
                     termsConditions: data.termsConditions || null,
-                    // New bank fields
                     bankName: data.bankName,
                     accountName: data.accountName,
                     accountNumber: data.accountNumber,
@@ -68,7 +77,6 @@ export async function createBusinessSetup(data: SetupFormData) {
                 },
             })
 
-            // Also create a default Cash account for liquidity tracking (this is separate from invoice details)
             const cashExists = await tx.bankAccount.findFirst({ where: { isCash: true } })
             if (!cashExists) {
                 await tx.bankAccount.create({
@@ -93,9 +101,15 @@ export async function createBusinessSetup(data: SetupFormData) {
 
 export async function updateBusinessProfile(data: Partial<SetupFormData> & { id: string }) {
     try {
-        console.log("Updating business profile for ID:", data.id)
-        
-        const updateData: any = {
+        const userId = await requireUserId()
+
+        // Security: verify the profile belongs to the logged-in user
+        const profile = await prisma.businessProfile.findUnique({ where: { id: data.id } })
+        if (!profile || profile.userId !== userId) {
+            return { success: false, error: "Not authorised" }
+        }
+
+        const updateData: Record<string, unknown> = {
             businessName: data.businessName,
             ownerName: data.ownerName,
             businessType: data.businessType,
@@ -109,7 +123,6 @@ export async function updateBusinessProfile(data: Partial<SetupFormData> & { id:
             email: data.email || null,
             invoicePrefix: data.invoicePrefix,
             termsConditions: data.termsConditions || null,
-            // Explicitly map bank fields
             bankName: data.bankName || null,
             accountName: data.accountName || null,
             accountNumber: data.accountNumber || null,
@@ -117,8 +130,6 @@ export async function updateBusinessProfile(data: Partial<SetupFormData> & { id:
             branchName: data.branchName || null,
         }
 
-        // Only update URLs if they are provided as non-empty strings, 
-        // or set to null if explicitly cleared (depending on how the form sends them)
         if (data.logoUrl !== undefined) updateData.logoUrl = data.logoUrl || null
         if (data.signatureUrl !== undefined) updateData.signatureUrl = data.signatureUrl || null
 
@@ -127,22 +138,37 @@ export async function updateBusinessProfile(data: Partial<SetupFormData> & { id:
             data: updateData,
         })
 
-        console.log("Profile updated successfully")
         revalidatePath("/dashboard")
         revalidatePath("/dashboard/settings")
         revalidatePath("/dashboard/sales")
         return { success: true }
     } catch (err) {
-        console.error("Update profile error details:", err)
+        console.error("Update profile error:", err)
         return { success: false, error: err instanceof Error ? err.message : "Update failed" }
     }
 }
 
+/** Returns true if the currently logged-in user has a business profile */
 export async function checkProfileExists(): Promise<boolean> {
     try {
-        const profile = await prisma.businessProfile.findFirst({ select: { id: true } })
+        const session = await auth()
+        if (!session?.user?.id) return false
+        const profile = await prisma.businessProfile.findUnique({
+            where: { userId: session.user.id },
+            select: { id: true },
+        })
         return !!profile
     } catch {
         return false
+    }
+}
+
+/** Get the business profile for the currently logged-in user */
+export async function getBusinessProfile() {
+    try {
+        const userId = await requireUserId()
+        return await prisma.businessProfile.findUnique({ where: { userId } })
+    } catch {
+        return null
     }
 }

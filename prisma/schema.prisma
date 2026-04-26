@@ -9,15 +9,18 @@ datasource db {
 }
 
 model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  password  String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id              String           @id @default(cuid())
+  email           String           @unique
+  password        String
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  businessProfile BusinessProfile?
 }
 
 model BusinessProfile {
   id                String   @id @default(cuid())
+  userId            String   @unique  // Each user has exactly one business profile
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   businessName      String
   ownerName         String
   businessType      String   @default("Jewellery Manufacturer")
