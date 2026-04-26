@@ -111,6 +111,7 @@ export function RecentTransactions({ transactions = [] }: RecentTransactionsProp
                         </motion.div>
                     </AnimatePresence>
                 )}
-        </div>
+            </div>  {/* closes: relative overflow-hidden div */}
+        </div>    {/* closes: bg-card outer card div */}
     )
 }
