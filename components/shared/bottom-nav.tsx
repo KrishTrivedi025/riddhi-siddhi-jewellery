@@ -122,7 +122,7 @@ function MoreSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
                   >
                     <div className={`
                       w-9 h-9 rounded-xl flex items-center justify-center
-                      ${active ? "bg-primary/15" : "bg-background"}
+                      ${active ? "bg-primary/20" : "bg-background"}
                     `}>
                       <Icon size={18} />
                     </div>
@@ -183,7 +183,7 @@ export function BottomNav() {
                   {active && (
                     <motion.div
                       layoutId="bottom-active-pill"
-                      className="absolute inset-x-1.5 top-1 h-9 rounded-2xl bg-primary/12"
+                      className="absolute inset-x-1.5 top-1 h-9 rounded-2xl bg-primary/10"
                       transition={springSmooth}
                     />
                   )}
@@ -224,7 +224,7 @@ export function BottomNav() {
             {secondaryActive && (
               <motion.div
                 layoutId="bottom-active-pill"
-                className="absolute inset-x-1.5 top-1 h-9 rounded-2xl bg-primary/12"
+                className="absolute inset-x-1.5 top-1 h-9 rounded-2xl bg-primary/10"
                 transition={springSmooth}
               />
             )}
