@@ -155,13 +155,10 @@ export function BottomNav() {
       <nav
         className="
           md:hidden fixed bottom-0 left-0 right-0 z-30
-          bg-card/95 backdrop-blur-xl
-          border-t border-border
-          shadow-[0_-1px_0_rgba(0,0,0,0.06),0_-8px_24px_rgba(0,0,0,0.12)]
+          bg-card border-t border-border
         "
         style={{
           paddingBottom: "env(safe-area-inset-bottom)",
-          // Minimal height above the inset
           paddingLeft:  "env(safe-area-inset-left)",
           paddingRight: "env(safe-area-inset-right)",
         }}

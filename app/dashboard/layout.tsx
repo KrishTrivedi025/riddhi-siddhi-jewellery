@@ -45,11 +45,7 @@ export default async function DashboardLayout({
           </div>
 
           <main
-            className="flex-1 overflow-y-auto hw-scroll p-4 md:p-6 print:p-0 print:overflow-visible print:block"
-            style={{
-              // 58px nav height + 16px gap + safe area — fixes overlap on all Android devices
-              paddingBottom: "calc(74px + env(safe-area-inset-bottom))",
-            }}
+            className="flex-1 overflow-y-auto hw-scroll p-4 pb-28 md:p-6 md:pb-6 print:p-0 print:overflow-visible print:block"
           >
             <AnimatePresenceWrapper>
               {children}
