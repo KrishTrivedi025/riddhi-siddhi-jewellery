@@ -175,3 +175,82 @@ header,
     transition-duration: 0.01ms !important;
   }
 }
+
+/* ─────────────────────────────────────────────────────────
+   Mobile / PWA / Capacitor Native App Styles
+   Applied when running inside the APK WebView
+───────────────────────────────────────────────────────── */
+
+/* Safe area padding — handles iPhone notch + Android nav bars */
+:root {
+  --sat: env(safe-area-inset-top,    0px);
+  --sar: env(safe-area-inset-right,  0px);
+  --sab: env(safe-area-inset-bottom, 0px);
+  --sal: env(safe-area-inset-left,   0px);
+}
+
+/* Prevent overscroll / pull-to-refresh in WebView */
+html, body {
+  overscroll-behavior: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Disable tap highlight (makes touch feel native) */
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Prevent text selection on UI elements (feels native) */
+button, a, [role="button"] {
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* Allow text selection in inputs and content areas */
+input, textarea, [contenteditable] {
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+/* Dashboard layout respects bottom navigation bar on Android */
+.dashboard-safe-bottom {
+  padding-bottom: max(1.5rem, var(--sab));
+}
+
+/* Status bar area padding (top) for Capacitor */
+.status-bar-padding {
+  padding-top: var(--sat);
+}
+
+/* Touch-optimized tap targets — minimum 44px per Apple HIG */
+@media (pointer: coarse) {
+  button,
+  [role="button"],
+  a {
+    min-height: 44px;
+  }
+}
+
+/* Smooth momentum scrolling on iOS WebView */
+.overflow-y-auto,
+.overflow-y-scroll {
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Capacitor: hide scrollbar in WebView for cleaner native feel */
+@media (display-mode: standalone) {
+  ::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Add bottom safe-area padding to main content */
+  main {
+    padding-bottom: max(1.5rem, var(--sab));
+  }
+}
+/* ─────────────────────────────────────────────────────────
+   Utilities — Mobile helpers
+───────────────────────────────────────────────────────── */
+.hide-scrollbar::-webkit-scrollbar { display: none; }
+.hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+.pb-safe { padding-bottom: env(safe-area-inset-bottom, 0px); }

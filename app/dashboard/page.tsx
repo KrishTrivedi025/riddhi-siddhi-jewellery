@@ -1,30 +1,14 @@
 import { Suspense } from "react"
-import { PageWrapper } from "@/components/shared/page-wrapper"
-import { KPIGrid } from "@/components/dashboard/kpi-grid"
-import { KPISkeleton } from "@/components/dashboard/kpi-skeleton"
-import { ChartsGrid } from "@/components/dashboard/charts-grid"
-import { Skeleton } from "@/components/ui/skeleton"
-import { QuickActions } from "@/components/dashboard/quick-actions"
-import { RecentTransactions } from "@/components/dashboard/recent-transactions"
-import { RecentTransactionsSkeleton } from "@/components/dashboard/recent-transactions-skeleton"
 import { getDashboardOverview } from "@/lib/actions/dashboard"
+import { MobileDashboard } from "@/components/dashboard/mobile-dashboard"
+import { DesktopDashboard } from "@/components/dashboard/desktop-dashboard"
+import { DashboardSkeleton } from "@/components/dashboard/dashboard-skeleton"
 
 export default function DashboardPage() {
     return (
-        <PageWrapper className="space-y-8">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <div>
-                    <h1 className="text-2xl font-semibold text-foreground">Dashboard</h1>
-                    <p className="text-muted-foreground mt-1 text-sm">Real-time business performance overview</p>
-                </div>
-            </div>
-
-            <QuickActions />
-
-            <Suspense fallback={<DashboardLoading />}>
-                <DashboardContent />
-            </Suspense>
-        </PageWrapper>
+        <Suspense fallback={<DashboardSkeleton />}>
+            <DashboardContent />
+        </Suspense>
     )
 }
 
@@ -33,52 +17,23 @@ async function DashboardContent() {
 
     if (!data.success) {
         return (
-            <div className="p-8 bg-rose-500/10 border border-rose-500/20 rounded-2xl text-center">
+            <div className="p-8 bg-rose-500/10 border border-rose-500/20 rounded-2xl text-center m-4">
                 <h3 className="text-rose-500 font-semibold mb-2">Error Loading Dashboard</h3>
-                <p className="text-muted-foreground text-sm">Please refresh the page to try again. The database connection may be busy.</p>
+                <p className="text-muted-foreground text-sm">Please refresh the page to try again.</p>
             </div>
         )
     }
 
     return (
         <>
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                <div className="lg:col-span-2 space-y-8">
-                    <ChartsGrid data={data.charts} />
-                </div>
-                
-                <div className="lg:col-span-1">
-                    <RecentTransactions transactions={data.transactions} />
-                </div>
+            {/* Mobile layout */}
+            <div className="md:hidden">
+                <MobileDashboard data={data} />
             </div>
-
-            <KPIGrid stats={data.stats} />
+            {/* Desktop layout */}
+            <div className="hidden md:block">
+                <DesktopDashboard data={data} />
+            </div>
         </>
-    )
-}
-
-function DashboardLoading() {
-    return (
-        <div className="space-y-8">
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                <div className="lg:col-span-2">
-                    <ChartsSkeleton />
-                </div>
-                <div className="lg:col-span-1">
-                    <RecentTransactionsSkeleton />
-                </div>
-            </div>
-            <KPISkeleton />
-        </div>
-    )
-}
-
-function ChartsSkeleton() {
-    return (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {[...Array(4)].map((_, i) => (
-                <Skeleton key={i} className="h-[350px] w-full rounded-2xl bg-card border border-border" />
-            ))}
-        </div>
     )
 }

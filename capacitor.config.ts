@@ -20,11 +20,11 @@ const config: CapacitorConfig = {
   // ── Hybrid: load from live Vercel deployment ──────────────────────────────
   // Replace this URL with your actual Vercel deployment URL
   server: {
-    url: "https://riddhi-siddhi-jewellery-dlbp.vercel.app", // ← UPDATE THIS after Vercel deploy
-    cleartext: false, // HTTPS only — no HTTP allowed
+    url: "https://riddhi-siddhi-jewellery-dlbp.vercel.app", // ✅ Live Vercel URL
+    cleartext: false,
     allowNavigation: [
-      "*.vercel.app",        // Allow your Vercel domain
-      "*.supabase.co",       // Allow Supabase connections
+      "riddhi-siddhi-jewellery-dlbp.vercel.app",
+      "*.supabase.co",
     ],
   },
 
@@ -45,9 +45,9 @@ const config: CapacitorConfig = {
   // ── Plugin Configuration ──────────────────────────────────────────────────
   plugins: {
     SplashScreen: {
-      launchShowDuration: 2500,        // ms to show splash screen
-      launchAutoHide: false,           // We hide it manually after app loads
-      backgroundColor: "#0F0F0F",      // Dark Obsidian background
+      launchShowDuration: 2000,        // Show for 2 seconds then auto-hide
+      launchAutoHide: true,            // Auto-hide — no manual call needed
+      backgroundColor: "#0F0F0F",
       androidSplashResourceName: "splash",
       showSpinner: false,
       splashFullScreen: true,
