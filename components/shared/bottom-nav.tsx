@@ -28,24 +28,26 @@ import {
   Landmark,
   MoreHorizontal,
   X,
+  ShoppingBag,
 } from "lucide-react"
 import { springSmooth, tapScale } from "@/lib/animations"
 
 // ── Primary tabs (shown in the bar) ──────────────────────────────────────────
 const PRIMARY = [
-  { href: "/dashboard",           icon: LayoutDashboard, label: "Home"     },
-  { href: "/dashboard/sales",      icon: ShoppingCart,    label: "Sales"    },
-  { href: "/dashboard/purchases",  icon: Package,         label: "Purchases"},
-  { href: "/dashboard/parties",    icon: Users,           label: "Parties"  },
-  { href: "/dashboard/payments",   icon: CreditCard,      label: "Payments" },
+  { href: "/dashboard",           icon: LayoutDashboard, label: "Home"      },
+  { href: "/dashboard/sales",      icon: ShoppingCart,    label: "Sales"     },
+  { href: "/dashboard/inventory",  icon: Package,         label: "Inventory" },
+  { href: "/dashboard/parties",    icon: Users,           label: "Parties"   },
 ]
 
 // ── Secondary links (inside the More sheet) ───────────────────────────────────
 const SECONDARY = [
-  { href: "/dashboard/banks",    icon: Landmark,  label: "Cash & Bank" },
-  { href: "/dashboard/expenses", icon: Receipt,   label: "Expenses"    },
-  { href: "/dashboard/reports",  icon: BarChart2, label: "Reports"     },
-  { href: "/dashboard/settings", icon: Settings,  label: "Settings"    },
+  { href: "/dashboard/purchases",  icon: ShoppingBag,  label: "Purchases"   },
+  { href: "/dashboard/payments",   icon: CreditCard,   label: "Payments"    },
+  { href: "/dashboard/banks",      icon: Landmark,     label: "Cash & Bank" },
+  { href: "/dashboard/expenses",   icon: Receipt,      label: "Expenses"    },
+  { href: "/dashboard/reports",    icon: BarChart2,    label: "Reports"     },
+  { href: "/dashboard/settings",   icon: Settings,     label: "Settings"    },
 ]
 
 function isActive(href: string, pathname: string) {
@@ -104,7 +106,7 @@ function MoreSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
             </div>
 
             {/* Grid of links */}
-            <div className="grid grid-cols-2 gap-3 px-4">
+            <div className="grid grid-cols-3 gap-2 px-4">
               {SECONDARY.map(({ href, icon: Icon, label }) => {
                 const active = isActive(href, pathname)
                 return (
@@ -113,7 +115,7 @@ function MoreSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
                     href={href}
                     onClick={onClose}
                     className={`
-                      flex items-center gap-3 px-4 py-3.5 rounded-2xl border transition-all duration-200
+                      flex flex-col items-center justify-center gap-1.5 p-3 rounded-2xl border transition-all duration-200 text-center
                       ${active
                         ? "bg-primary/10 border-primary/25 text-primary"
                         : "bg-muted/50 border-border text-muted-foreground hover:text-foreground hover:bg-muted"
@@ -126,7 +128,7 @@ function MoreSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
                     `}>
                       <Icon size={18} />
                     </div>
-                    <span className="text-sm font-medium">{label}</span>
+                    <span className="text-[10px] font-medium leading-tight">{label}</span>
                   </Link>
                 )
               })}
