@@ -525,7 +525,7 @@ export default function SettingsForm({ profile, signOutAction }: SettingsFormPro
             </div>
 
             {/* Danger Zone: Sign Out */}
-            <div className="pt-8 pb-4 mt-8 border-t border-border/50">
+            <div className="pt-6 pb-4 mb-8 border-t border-border/50">
                 <div className="bg-red-500/5 border border-red-500/20 rounded-2xl p-6 flex items-center justify-between">
                     <div>
                         <h3 className="text-red-500 font-semibold mb-1">Sign out of Dashboard</h3>
