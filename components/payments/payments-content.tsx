@@ -51,6 +51,7 @@ export function PaymentsContent({ paymentsIn, paymentsOut }: PaymentsContentProp
 
             {/* Tabs */}
             <AnimatedTabs
+                layoutIdPrefix="payments"
                 tabs={tabs.map(t => ({ ...t, count: t.id === "in" ? paymentsIn.length : paymentsOut.length }))}
                 activeTab={activeTab}
                 onChange={setActiveTab}
