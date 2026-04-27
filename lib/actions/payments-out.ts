@@ -3,13 +3,15 @@
 import { prisma } from "@/lib/db"
 import { revalidatePath } from "next/cache"
 import { PaymentOutFormValues } from "../schemas/payment-out-schema"
+import { requireUserId } from "./auth-helper"
 
 // ─── List Payments Out ───────────────────────────────────────────────────────
 
 export async function getPaymentsOut() {
     try {
+        const userId = await requireUserId()
         const payments = await prisma.payment.findMany({
-            where: { paymentType: "OUT", deletedAt: null },
+            where: { userId, paymentType: "OUT", deletedAt: null },
             include: {
                 party: { select: { name: true } },
                 purchaseInvoice: { select: { invoiceNumber: true } },
@@ -28,9 +30,10 @@ export async function getPaymentsOut() {
 
 export async function getSuppliersWithBalances() {
     try {
-        // Find suppliers with non-zero purchase invoice balances or non-zero opening balance
+        const userId = await requireUserId()
         const parties = await prisma.party.findMany({
             where: {
+                userId,
                 partyType: "SUPPLIER",
                 deletedAt: null,
                 OR: [
@@ -69,8 +72,10 @@ export async function getSuppliersWithBalances() {
 
 export async function getSupplierOutstandingInvoices(partyId: string) {
     try {
+        const userId = await requireUserId()
         return await prisma.purchaseInvoice.findMany({
             where: {
+                userId,
                 partyId,
                 balanceDue: { gt: 0 },
                 status: "active",
@@ -88,6 +93,7 @@ export async function getSupplierOutstandingInvoices(partyId: string) {
 
 export async function createPaymentOut(data: PaymentOutFormValues) {
     try {
+        const userId = await requireUserId()
         const result = await prisma.$transaction(async (tx) => {
             const totalRecieved = data.totalAmount
 
@@ -104,6 +110,7 @@ export async function createPaymentOut(data: PaymentOutFormValues) {
                 // 1. Create the Payment Voucher link for this specific invoice
                 const payment = await tx.payment.create({
                     data: {
+                        userId,
                         paymentType: "OUT",
                         partyId: data.partyId,
                         purchaseInvoiceId: invoice.id,

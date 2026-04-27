@@ -5,13 +5,15 @@ import { revalidatePath } from "next/cache"
 import { PurchaseReturnFormValues } from "../schemas/purchase-return-schema"
 import { calculateLineItemGST } from "../gst-utils"
 import { isInterState } from "../indian-states"
+import { requireUserId } from "./auth-helper"
 
 // ─── List Purchase Returns ───────────────────────────────────────────────────
 
 export async function getPurchaseReturns() {
     try {
+        const userId = await requireUserId()
         const returns = await prisma.purchaseReturn.findMany({
-            where: { deletedAt: null },
+            where: { userId, deletedAt: null },
             include: {
                 party: { select: { id: true, name: true } },
                 purchaseInvoice: { select: { id: true, invoiceNumber: true } },
@@ -49,8 +51,10 @@ export async function getPurchaseReturnById(id: string) {
 
 export async function getPurchaseInvoicesForReturn() {
     try {
+        const userId = await requireUserId()
         const invoices = await prisma.purchaseInvoice.findMany({
             where: {
+                userId,
                 deletedAt: null,
                 status: "active",
             },
@@ -75,12 +79,12 @@ export async function getPurchaseInvoicesForReturn() {
 
 export async function createPurchaseReturn(data: PurchaseReturnFormValues) {
     try {
+        const userId = await requireUserId()
         const result = await prisma.$transaction(async (tx) => {
-            // 1. Get business profile for debit note generated number (Reusing debit note/credit note format or random. Let's use DN prefix)
-            const count = await tx.purchaseReturn.count()
+            const count = await tx.purchaseReturn.count({ where: { userId } })
             const debitNoteNumber = `DN-${String(count + 1).padStart(3, "0")}`
 
-            const profile = await tx.businessProfile.findFirst()
+            const profile = await tx.businessProfile.findFirst({ where: { userId } })
             if (!profile) throw new Error("Business profile not found")
 
             // 2. Get original invoice
@@ -151,6 +155,7 @@ export async function createPurchaseReturn(data: PurchaseReturnFormValues) {
             // 4. Create debit note
             const purchaseReturn = await tx.purchaseReturn.create({
                 data: {
+                    userId,
                     debitNoteNumber,
                     debitNoteDate: data.debitNoteDate,
                     purchaseInvoiceId: data.purchaseInvoiceId,

@@ -37,7 +37,8 @@ export function ItemTable({ data, categories }: ItemTableProps) {
 
     return (
         <div className="space-y-4">
-            <div className="rounded-xl border border-border bg-card overflow-hidden">
+            {/* Desktop Table */}
+            <div className="hidden md:block rounded-xl border border-border bg-card overflow-hidden">
                 <Table>
                     <TableHeader className="bg-muted/50">
                         <TableRow className="hover:bg-transparent border-border">
@@ -53,24 +54,17 @@ export function ItemTable({ data, categories }: ItemTableProps) {
                     <TableBody>
                         {data.length === 0 ? (
                             <TableRow>
-                                <TableCell
-                                    colSpan={8}
-                                    className="h-32 text-center text-muted-foreground italic"
-                                >
+                                <TableCell colSpan={8} className="h-32 text-center text-muted-foreground italic">
                                     No items found
                                 </TableCell>
                             </TableRow>
                         ) : (
                             data.map((item) => {
-                                const isLowStock =
-                                    item.lowStockAlert > 0 && item.currentStock <= item.lowStockAlert
+                                const isLowStock = item.lowStockAlert > 0 && item.currentStock <= item.lowStockAlert
                                 const isOutOfStock = item.currentStock <= 0
 
                                 return (
-                                    <TableRow
-                                        key={item.id}
-                                        className="border-border hover:bg-muted transition-colors"
-                                    >
+                                    <TableRow key={item.id} className="border-border hover:bg-muted transition-colors">
                                         <TableCell align="center">
                                             {item.imageUrl ? (
                                                 <div className="w-10 h-10 rounded-md overflow-hidden bg-background border border-border">
@@ -91,25 +85,12 @@ export function ItemTable({ data, categories }: ItemTableProps) {
                                         <TableCell className="text-right font-semibold">
                                             <div className="flex items-center justify-end gap-1.5">
                                                 {(isLowStock || isOutOfStock) && (
-                                                    <AlertTriangle
-                                                        size={12}
-                                                        className={isOutOfStock ? "text-rose-500" : "text-amber-500"}
-                                                    />
+                                                    <AlertTriangle size={12} className={isOutOfStock ? "text-rose-500" : "text-amber-500"} />
                                                 )}
-                                                <span
-                                                    className={
-                                                        isOutOfStock
-                                                            ? "text-rose-500"
-                                                            : isLowStock
-                                                              ? "text-amber-500"
-                                                              : "text-foreground"
-                                                    }
-                                                >
+                                                <span className={isOutOfStock ? "text-rose-500" : isLowStock ? "text-amber-500" : "text-foreground"}>
                                                     {item.currentStock.toLocaleString("en-IN")}
                                                 </span>
-                                                <span className="text-[10px] text-muted-foreground">
-                                                    {item.unit}
-                                                </span>
+                                                <span className="text-[10px] text-muted-foreground">{item.unit}</span>
                                             </div>
                                         </TableCell>
                                         <TableCell className="text-right text-muted-foreground text-sm">
@@ -121,58 +102,16 @@ export function ItemTable({ data, categories }: ItemTableProps) {
                                         <TableCell>
                                             <DropdownMenu>
                                                 <DropdownMenuTrigger asChild>
-                                                    <Button
-                                                        variant="ghost"
-                                                        className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground"
-                                                    >
+                                                    <Button variant="ghost" className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground">
                                                         <MoreHorizontal className="h-4 w-4" />
                                                     </Button>
                                                 </DropdownMenuTrigger>
-                                                <DropdownMenuContent
-                                                    align="end"
-                                                    className="bg-card border-border text-foreground"
-                                                >
-                                                    <StockAdjustDialog
-                                                        item={item}
-                                                        trigger={
-                                                            <DropdownMenuItem
-                                                                onSelect={(e) => e.preventDefault()}
-                                                                className="flex items-center gap-2 cursor-pointer hover:bg-border"
-                                                            >
-                                                                <ArrowUpDown size={14} className="text-primary" /> Adjust Stock
-                                                            </DropdownMenuItem>
-                                                        }
-                                                    />
-                                                    <StockHistoryDialog
-                                                        item={item}
-                                                        trigger={
-                                                            <DropdownMenuItem
-                                                                onSelect={(e) => e.preventDefault()}
-                                                                className="flex items-center gap-2 cursor-pointer hover:bg-border"
-                                                            >
-                                                                <History size={14} className="text-[#3B82F6]" /> View History
-                                                            </DropdownMenuItem>
-                                                        }
-                                                    />
+                                                <DropdownMenuContent align="end" className="bg-card border-border text-foreground">
+                                                    <StockAdjustDialog item={item} trigger={<DropdownMenuItem onSelect={(e) => e.preventDefault()} className="flex items-center gap-2 cursor-pointer hover:bg-border"><ArrowUpDown size={14} className="text-primary" /> Adjust Stock</DropdownMenuItem>} />
+                                                    <StockHistoryDialog item={item} trigger={<DropdownMenuItem onSelect={(e) => e.preventDefault()} className="flex items-center gap-2 cursor-pointer hover:bg-border"><History size={14} className="text-[#3B82F6]" /> View History</DropdownMenuItem>} />
                                                     <DropdownMenuSeparator className="bg-border" />
-                                                    <ItemDialog
-                                                        initialData={item}
-                                                        categories={categories}
-                                                        trigger={
-                                                            <DropdownMenuItem
-                                                                onSelect={(e) => e.preventDefault()}
-                                                                className="flex items-center gap-2 cursor-pointer hover:bg-border"
-                                                            >
-                                                                <Edit size={14} /> Edit
-                                                            </DropdownMenuItem>
-                                                        }
-                                                    />
-                                                    <DropdownMenuItem
-                                                        onClick={() => handleDelete(item.id)}
-                                                        className="flex items-center gap-2 text-rose-500 cursor-pointer hover:bg-rose-500/10"
-                                                    >
-                                                        <Trash2 size={14} /> Delete
-                                                    </DropdownMenuItem>
+                                                    <ItemDialog initialData={item} categories={categories} trigger={<DropdownMenuItem onSelect={(e) => e.preventDefault()} className="flex items-center gap-2 cursor-pointer hover:bg-border"><Edit size={14} /> Edit</DropdownMenuItem>} />
+                                                    <DropdownMenuItem onClick={() => handleDelete(item.id)} className="flex items-center gap-2 text-rose-500 cursor-pointer hover:bg-rose-500/10"><Trash2 size={14} /> Delete</DropdownMenuItem>
                                                 </DropdownMenuContent>
                                             </DropdownMenu>
                                         </TableCell>
@@ -182,6 +121,84 @@ export function ItemTable({ data, categories }: ItemTableProps) {
                         )}
                     </TableBody>
                 </Table>
+            </div>
+
+            {/* Mobile Cards */}
+            <div className="md:hidden space-y-3">
+                {data.length === 0 ? (
+                    <div className="rounded-xl border border-border bg-card p-8 text-center text-muted-foreground italic">
+                        No items found
+                    </div>
+                ) : (
+                    data.map((item) => {
+                        const isLowStock = item.lowStockAlert > 0 && item.currentStock <= item.lowStockAlert
+                        const isOutOfStock = item.currentStock <= 0
+
+                        return (
+                            <div key={item.id} className="rounded-xl border border-border bg-card p-4 flex gap-4 relative">
+                                {/* Photo */}
+                                <div className="shrink-0">
+                                    {item.imageUrl ? (
+                                        <div className="w-16 h-16 rounded-lg overflow-hidden bg-background border border-border">
+                                            <img src={item.imageUrl} alt="Item" className="w-full h-full object-cover" />
+                                        </div>
+                                    ) : (
+                                        <div className="w-16 h-16 rounded-lg bg-background border border-border flex items-center justify-center text-muted-foreground">
+                                            <ImageIcon size={24} />
+                                        </div>
+                                    )}
+                                </div>
+                                
+                                {/* Info */}
+                                <div className="flex-1 min-w-0 flex flex-col justify-between">
+                                    <div className="flex justify-between items-start">
+                                        <div>
+                                            <p className="font-mono font-medium text-foreground truncate">{item.itemCode}</p>
+                                            <p className="text-xs text-muted-foreground truncate">{item.category?.name || "Uncategorized"}</p>
+                                        </div>
+                                        {/* Actions Menu */}
+                                        <div className="-mt-1 -mr-2">
+                                            <DropdownMenu>
+                                                <DropdownMenuTrigger asChild>
+                                                    <Button variant="ghost" className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground">
+                                                        <MoreHorizontal className="h-4 w-4" />
+                                                    </Button>
+                                                </DropdownMenuTrigger>
+                                                <DropdownMenuContent align="end" className="bg-card border-border text-foreground">
+                                                    <StockAdjustDialog item={item} trigger={<DropdownMenuItem onSelect={(e) => e.preventDefault()} className="flex items-center gap-2 cursor-pointer hover:bg-border"><ArrowUpDown size={14} className="text-primary" /> Adjust Stock</DropdownMenuItem>} />
+                                                    <StockHistoryDialog item={item} trigger={<DropdownMenuItem onSelect={(e) => e.preventDefault()} className="flex items-center gap-2 cursor-pointer hover:bg-border"><History size={14} className="text-[#3B82F6]" /> View History</DropdownMenuItem>} />
+                                                    <DropdownMenuSeparator className="bg-border" />
+                                                    <ItemDialog initialData={item} categories={categories} trigger={<DropdownMenuItem onSelect={(e) => e.preventDefault()} className="flex items-center gap-2 cursor-pointer hover:bg-border"><Edit size={14} /> Edit</DropdownMenuItem>} />
+                                                    <DropdownMenuItem onClick={() => handleDelete(item.id)} className="flex items-center gap-2 text-rose-500 cursor-pointer hover:bg-rose-500/10"><Trash2 size={14} /> Delete</DropdownMenuItem>
+                                                </DropdownMenuContent>
+                                            </DropdownMenu>
+                                        </div>
+                                    </div>
+
+                                    {/* Pricing & Stock */}
+                                    <div className="flex justify-between items-end mt-2">
+                                        <div>
+                                            <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Sale Price</p>
+                                            <p className="text-sm font-semibold text-emerald-500">₹{item.salePrice.toLocaleString("en-IN")}</p>
+                                        </div>
+                                        <div className="text-right">
+                                            <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Stock</p>
+                                            <div className="flex items-center justify-end gap-1">
+                                                {(isLowStock || isOutOfStock) && (
+                                                    <AlertTriangle size={12} className={isOutOfStock ? "text-rose-500" : "text-amber-500"} />
+                                                )}
+                                                <span className={`text-sm font-bold ${isOutOfStock ? "text-rose-500" : isLowStock ? "text-amber-500" : "text-foreground"}`}>
+                                                    {item.currentStock.toLocaleString("en-IN")}
+                                                </span>
+                                                <span className="text-[10px] text-muted-foreground">{item.unit}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        )
+                    })
+                )}
             </div>
         </div>
     )

@@ -6,12 +6,14 @@ import { SaleInvoiceFormValues } from "../schemas/sale-invoice-schema"
 import { SaleReturnFormValues } from "../schemas/sale-return-schema"
 import { calculateLineItemGST } from "../gst-utils"
 import { isInterState } from "../indian-states"
+import { requireUserId } from "./auth-helper"
 
 // ─── Business Profile ────────────────────────────────────────────────────────
 
 export async function getBusinessProfile() {
     try {
-        const profile = await prisma.businessProfile.findFirst()
+        const userId = await requireUserId()
+        const profile = await prisma.businessProfile.findFirst({ where: { userId } })
         if (!profile) return null
 
         // Map the fields stored directly on the profile to the defaultBank structure
@@ -34,14 +36,16 @@ export async function getBusinessProfile() {
 // ─── Invoice Number Generation ───────────────────────────────────────────────
 
 export async function getNextInvoiceNumber(): Promise<string> {
-    const profile = await prisma.businessProfile.findFirst()
+    const userId = await requireUserId()
+    const profile = await prisma.businessProfile.findFirst({ where: { userId } })
     const prefix = profile?.invoicePrefix || "INV"
     const counter = profile?.invoiceCounter || 1
     return `${prefix}-${String(counter).padStart(3, "0")}`
 }
 
 export async function getNextCreditNoteNumber(): Promise<string> {
-    const profile = await prisma.businessProfile.findFirst()
+    const userId = await requireUserId()
+    const profile = await prisma.businessProfile.findFirst({ where: { userId } })
     const p = profile as unknown as { creditNotePrefix?: string; creditNoteCounter?: number }
     const prefix = p?.creditNotePrefix || "CN"
     const counter = p?.creditNoteCounter || 1
@@ -58,7 +62,9 @@ export async function getSaleInvoices(filters?: {
     dateTo?: Date
 }) {
     try {
+        const userId = await requireUserId()
         const where: Record<string, unknown> = {
+            userId,
             deletedAt: null,
             ...(filters?.status && filters.status !== "all" && { status: filters.status }),
             ...(filters?.paymentStatus && filters.paymentStatus !== "all" && { paymentStatus: filters.paymentStatus }),
@@ -98,8 +104,9 @@ export async function getSaleInvoices(filters?: {
 
 export async function getSaleInvoiceById(id: string) {
     try {
-        const invoice = await prisma.saleInvoice.findUnique({
-            where: { id },
+        const userId = await requireUserId()
+        const invoice = await prisma.saleInvoice.findFirst({
+            where: { id, userId },
             include: {
                 party: true,
                 items: {
@@ -125,13 +132,14 @@ export async function getSaleInvoiceById(id: string) {
 
 export async function createSaleInvoice(data: SaleInvoiceFormValues) {
     try {
+        const userId = await requireUserId()
         const result = await prisma.$transaction(async (tx) => {
             // 1. Get business profile for state + invoice number
-            const profile = await tx.businessProfile.findFirst()
+            const profile = await tx.businessProfile.findFirst({ where: { userId } })
             if (!profile) throw new Error("Business profile not found. Please set up your business profile first.")
 
             const businessState = profile.state || ""
-            const party = await tx.party.findUnique({ where: { id: data.partyId } })
+            const party = await tx.party.findFirst({ where: { id: data.partyId, userId } })
             if (!party) throw new Error("Customer not found")
 
             const interState = isInterState(businessState, data.placeOfSupply)
@@ -212,6 +220,7 @@ export async function createSaleInvoice(data: SaleInvoiceFormValues) {
             // 4. Create the invoice
             const invoice = await tx.saleInvoice.create({
                 data: {
+                    userId,
                     invoiceNumber,
                     invoiceDate: data.invoiceDate,
                     dueDate: data.dueDate || null,
@@ -402,8 +411,9 @@ export async function deleteSaleInvoice(id: string) {
 
 export async function getSaleReturns() {
     try {
+        const userId = await requireUserId()
         const returns = await prisma.saleReturn.findMany({
-            where: { deletedAt: null },
+            where: { userId, deletedAt: null },
             include: {
                 party: { select: { id: true, name: true } },
                 saleInvoice: { select: { id: true, invoiceNumber: true } },
@@ -441,8 +451,10 @@ export async function getSaleReturnById(id: string) {
 
 export async function getInvoicesForReturn() {
     try {
+        const userId = await requireUserId()
         const invoices = await prisma.saleInvoice.findMany({
             where: {
+                userId,
                 deletedAt: null,
                 status: "active",
             },
@@ -467,9 +479,10 @@ export async function getInvoicesForReturn() {
 
 export async function createSaleReturn(data: SaleReturnFormValues) {
     try {
+        const userId = await requireUserId()
         const result = await prisma.$transaction(async (tx) => {
             // 1. Get business profile for credit note number
-            const profile = await tx.businessProfile.findFirst()
+            const profile = await tx.businessProfile.findFirst({ where: { userId } })
             if (!profile) throw new Error("Business profile not found")
 
             // 2. Get original invoice
@@ -543,6 +556,7 @@ export async function createSaleReturn(data: SaleReturnFormValues) {
             // 5. Create credit note
             const saleReturn = await tx.saleReturn.create({
                 data: {
+                    userId,
                     creditNoteNumber,
                     creditNoteDate: data.creditNoteDate,
                     saleInvoiceId: data.saleInvoiceId,

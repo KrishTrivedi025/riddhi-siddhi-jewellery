@@ -15,11 +15,22 @@ model User {
   createdAt       DateTime         @default(now())
   updatedAt       DateTime         @updatedAt
   businessProfile BusinessProfile?
+  parties         Party[]
+  bankAccounts    BankAccount[]
+  categories      ItemCategory[]
+  items           Item[]
+  saleInvoices    SaleInvoice[]
+  purchaseInvoices PurchaseInvoice[]
+  expenses        Expense[]
+  payments        Payment[]
+  saleReturns     SaleReturn[]
+  purchaseReturns PurchaseReturn[]
+  accountTransfers AccountTransfer[]
 }
 
 model BusinessProfile {
   id                String   @id @default(cuid())
-  userId            String   @unique  // Each user has exactly one business profile
+  userId            String   @unique
   user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   businessName      String
   ownerName         String
@@ -53,6 +64,8 @@ model BusinessProfile {
 
 model Party {
   id               String            @id @default(cuid())
+  userId           String
+  user             User              @relation(fields: [userId], references: [id], onDelete: Cascade)
   partyType        String
   name             String
   contactPerson    String?
@@ -82,6 +95,8 @@ model Party {
 
 model BankAccount {
   id             String            @id @default(cuid())
+  userId         String
+  user           User              @relation(fields: [userId], references: [id], onDelete: Cascade)
   accountName    String
   bankName       String?
   accountNumber  String?
@@ -103,6 +118,8 @@ model BankAccount {
 
 model ItemCategory {
   id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   name      String
   deletedAt DateTime?
   createdAt DateTime  @default(now())
@@ -112,6 +129,8 @@ model ItemCategory {
 
 model Item {
   id                  String                @id @default(cuid())
+  userId              String
+  user                User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
   itemCode            String?               @unique
   name                String
   description         String?
@@ -141,6 +160,8 @@ model Item {
 
 model SaleInvoice {
   id              String            @id @default(cuid())
+  userId          String
+  user            User              @relation(fields: [userId], references: [id], onDelete: Cascade)
   invoiceNumber   String            @unique
   invoiceDate     DateTime
   dueDate         DateTime?
@@ -203,6 +224,8 @@ model SaleInvoiceItem {
 
 model PurchaseInvoice {
   id                  String                @id @default(cuid())
+  userId              String
+  user                User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
   invoiceNumber       String                @unique
   vendorInvoiceNumber String?
   invoiceDate         DateTime
@@ -264,6 +287,8 @@ model PurchaseInvoiceItem {
 
 model Payment {
   id                String           @id @default(cuid())
+  userId            String
+  user              User             @relation(fields: [userId], references: [id], onDelete: Cascade)
   paymentType       String
   partyId           String
   saleInvoiceId     String?
@@ -295,6 +320,8 @@ model PaymentMode {
 
 model Expense {
   id            String       @id @default(cuid())
+  userId        String
+  user          User         @relation(fields: [userId], references: [id], onDelete: Cascade)
   expenseDate   DateTime
   category      String
   description   String?
@@ -324,6 +351,8 @@ model StockMovement {
 
 model AccountTransfer {
   id            String      @id @default(cuid())
+  userId        String
+  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
   fromAccountId String
   toAccountId   String
   amount        Float
@@ -337,6 +366,8 @@ model AccountTransfer {
 
 model SaleReturn {
   id               String           @id @default(cuid())
+  userId           String
+  user             User             @relation(fields: [userId], references: [id], onDelete: Cascade)
   creditNoteNumber String           @unique
   creditNoteDate   DateTime
   saleInvoiceId    String
@@ -382,6 +413,8 @@ model SaleReturnItem {
 
 model PurchaseReturn {
   id                String               @id @default(cuid())
+  userId            String
+  user              User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
   debitNoteNumber   String               @unique
   debitNoteDate     DateTime
   purchaseInvoiceId String
@@ -413,7 +446,7 @@ model PurchaseReturnItem {
   unit             String         @default("pcs")
   unitPrice        Float
   discount         Float          @default(0)
-  discountType     String         @default("percent")
+  discountType     String          @default("percent")
   gstRate          Float          @default(3)
   cgst             Float          @default(0)
   sgst             Float          @default(0)

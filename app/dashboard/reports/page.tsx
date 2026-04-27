@@ -39,29 +39,28 @@ export default function ReportsPage() {
     const [activeReport, setActiveReport] = useState<ReportId>("profit_loss")
 
     return (
-        <PageWrapper className="flex flex-col gap-6 h-full print:h-auto print:block">
+        <PageWrapper className="flex flex-col gap-4 h-full print:h-auto print:block">
             {/* Page header */}
             <div className="flex items-center gap-3 print:hidden">
                 <div className="w-10 h-10 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center text-xl">
                     📊
                 </div>
                 <div>
-                    <h1 className="text-2xl font-bold text-foreground">Reports</h1>
-                    <p className="text-sm text-muted-foreground mt-0.5">
-                        Business analytics · Financial statements · Ledgers
-                    </p>
+                    <h1 className="text-xl font-bold text-foreground">Reports</h1>
+                    <p className="text-xs text-muted-foreground mt-0.5">Business analytics · Financial statements · Ledgers</p>
                 </div>
             </div>
 
-            {/* Main layout: sidebar + content */}
-            <div className="flex gap-6 flex-1 min-h-0 print:block print:min-h-0">
-                {/* Left nav */}
-                <div className="print:hidden shrink-0">
+            {/* Mobile: ReportNav is a dropdown (handled inside ReportNav) */}
+            {/* Desktop: sidebar + content side by side */}
+            <div className="flex flex-col md:flex-row gap-4 flex-1 min-h-0 print:block">
+                {/* Nav — on mobile becomes dropdown, on desktop becomes sidebar */}
+                <div className="print:hidden md:shrink-0">
                     <ReportNav active={activeReport} onChange={setActiveReport} />
                 </div>
 
-                {/* Report content — animate on report switch */}
-                <main className="flex-1 min-w-0 print:w-full print:m-0 print:p-0">
+                {/* Report content */}
+                <main className="flex-1 min-w-0 print:w-full">
                     <AnimatePresence mode="wait" initial={false}>
                         <motion.div
                             key={activeReport}

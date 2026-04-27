@@ -2,6 +2,7 @@
 
 import { prisma } from "@/lib/db"
 import { revalidatePath } from "next/cache"
+import { requireUserId } from "./auth-helper"
 
 export interface TransferData {
     fromAccountId: string
@@ -13,14 +14,15 @@ export interface TransferData {
 
 export async function createTransfer(data: TransferData) {
     try {
+        const userId = await requireUserId()
         if (data.fromAccountId === data.toAccountId) {
             throw new Error("Cannot transfer money to the same account.")
         }
 
         const result = await prisma.$transaction(async (tx) => {
-            // 1. Create Transfer Record
             const transfer = await tx.accountTransfer.create({
                 data: {
+                    userId,
                     fromAccountId: data.fromAccountId,
                     toAccountId: data.toAccountId,
                     amount: data.amount,

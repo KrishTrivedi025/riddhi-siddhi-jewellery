@@ -77,10 +77,11 @@ export async function createBusinessSetup(data: SetupFormData) {
                 },
             })
 
-            const cashExists = await tx.bankAccount.findFirst({ where: { isCash: true } })
+            const cashExists = await tx.bankAccount.findFirst({ where: { userId, isCash: true } })
             if (!cashExists) {
                 await tx.bankAccount.create({
                     data: {
+                        userId,
                         accountName: "Cash",
                         isCash: true,
                         isDefault: false,

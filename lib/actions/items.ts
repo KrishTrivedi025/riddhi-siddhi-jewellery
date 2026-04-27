@@ -3,19 +3,20 @@
 import { prisma } from "@/lib/db"
 import { revalidatePath } from "next/cache"
 import { ItemFormValues } from "../schemas/item-schema"
+import { requireUserId } from "./auth-helper"
 
 // ─── Items ───────────────────────────────────────────────────────────────────
 
 export async function getItems(categoryId?: string) {
     try {
+        const userId = await requireUserId()
         const items = await prisma.item.findMany({
             where: {
+                userId,
                 deletedAt: null,
                 ...(categoryId && { categoryId }),
             },
-            include: {
-                category: true,
-            },
+            include: { category: true },
             orderBy: { name: "asc" },
         })
         return items
@@ -27,8 +28,9 @@ export async function getItems(categoryId?: string) {
 
 export async function getItemById(id: string) {
     try {
-        const item = await prisma.item.findUnique({
-            where: { id },
+        const userId = await requireUserId()
+        const item = await prisma.item.findFirst({
+            where: { id, userId },
             include: { category: true },
         })
         return item
@@ -40,10 +42,12 @@ export async function getItemById(id: string) {
 
 export async function createItem(data: ItemFormValues) {
     try {
+        const userId = await requireUserId()
         const item = await prisma.item.create({
             data: {
+                userId,
                 itemCode: data.itemCode,
-                name: data.itemCode, // Auto-mapping name to itemCode
+                name: data.itemCode,
                 description: data.description,
                 categoryId: data.categoryId,
                 unit: data.unit,
@@ -70,9 +74,10 @@ export async function createItem(data: ItemFormValues) {
 
 export async function updateItem(id: string, data: Partial<ItemFormValues>) {
     try {
+        const userId = await requireUserId()
         const item = await prisma.item.update({
-            where: { id },
-            data: { ...data, name: data.itemCode }, // Keep name in sync with itemCode
+            where: { id, userId },
+            data: { ...data, name: data.itemCode },
         })
         revalidatePath("/dashboard/inventory")
         return { success: true, data: item }
@@ -87,14 +92,15 @@ export async function updateItem(id: string, data: Partial<ItemFormValues>) {
 
 export async function deleteItem(id: string) {
     try {
-        const item = await prisma.item.findUnique({ where: { id } })
+        const userId = await requireUserId()
+        const item = await prisma.item.findFirst({ where: { id, userId } })
         if (!item || item.deletedAt) return { success: true }
-        
+
         await prisma.item.update({
             where: { id },
-            data: { 
+            data: {
                 deletedAt: new Date(),
-                itemCode: item.itemCode ? `${item.itemCode}-deleted-${Date.now()}` : null 
+                itemCode: item.itemCode ? `${item.itemCode}-deleted-${Date.now()}` : null
             },
         })
         revalidatePath("/dashboard/inventory")
@@ -109,8 +115,9 @@ export async function deleteItem(id: string) {
 
 export async function getCategories() {
     try {
+        const userId = await requireUserId()
         const categories = await prisma.itemCategory.findMany({
-            where: { deletedAt: null },
+            where: { userId, deletedAt: null },
             orderBy: { name: "asc" },
             include: {
                 _count: { select: { items: { where: { deletedAt: null } } } },
@@ -125,8 +132,9 @@ export async function getCategories() {
 
 export async function createCategory(name: string) {
     try {
+        const userId = await requireUserId()
         const category = await prisma.itemCategory.create({
-            data: { name },
+            data: { name, userId },
         })
         revalidatePath("/dashboard/inventory")
         return { success: true, data: category }
@@ -138,8 +146,9 @@ export async function createCategory(name: string) {
 
 export async function deleteCategory(id: string) {
     try {
+        const userId = await requireUserId()
         await prisma.itemCategory.update({
-            where: { id },
+            where: { id, userId },
             data: { deletedAt: new Date() },
         })
         revalidatePath("/dashboard/inventory")
@@ -154,8 +163,9 @@ export async function deleteCategory(id: string) {
 
 export async function getStockSummary() {
     try {
+        const userId = await requireUserId()
         const items = await prisma.item.findMany({
-            where: { deletedAt: null },
+            where: { userId, deletedAt: null },
             select: {
                 currentStock: true,
                 purchasePrice: true,
@@ -165,26 +175,12 @@ export async function getStockSummary() {
         })
 
         const totalItems = items.length
-        const totalStockValueCost = items.reduce(
-            (sum, item) => sum + item.currentStock * item.purchasePrice,
-            0
-        )
-        const totalStockValueSale = items.reduce(
-            (sum, item) => sum + item.currentStock * item.salePrice,
-            0
-        )
-        const lowStockCount = items.filter(
-            (item) => item.lowStockAlert > 0 && item.currentStock <= item.lowStockAlert && item.currentStock > 0
-        ).length
+        const totalStockValueCost = items.reduce((sum, item) => sum + item.currentStock * item.purchasePrice, 0)
+        const totalStockValueSale = items.reduce((sum, item) => sum + item.currentStock * item.salePrice, 0)
+        const lowStockCount = items.filter((item) => item.lowStockAlert > 0 && item.currentStock <= item.lowStockAlert && item.currentStock > 0).length
         const outOfStockCount = items.filter((item) => item.currentStock <= 0).length
 
-        return {
-            totalItems,
-            totalStockValueCost,
-            totalStockValueSale,
-            lowStockCount,
-            outOfStockCount,
-        }
+        return { totalItems, totalStockValueCost, totalStockValueSale, lowStockCount, outOfStockCount }
     } catch (error) {
         console.error("Error fetching stock summary:", error)
         throw new Error("Failed to fetch stock summary")
@@ -193,45 +189,20 @@ export async function getStockSummary() {
 
 // ─── Stock Adjustments ───────────────────────────────────────────────────────
 
-export async function adjustStock(
-    itemId: string,
-    movementType: "in" | "out",
-    quantity: number,
-    reason: string
-) {
+export async function adjustStock(itemId: string, movementType: "in" | "out", quantity: number, reason: string) {
     try {
+        const userId = await requireUserId()
         const result = await prisma.$transaction(async (tx) => {
-            // Get current item
-            const item = await tx.item.findUnique({ where: { id: itemId } })
+            const item = await tx.item.findFirst({ where: { id: itemId, userId } })
             if (!item) throw new Error("Item not found")
 
-            // Calculate new stock
-            const newStock =
-                movementType === "in"
-                    ? item.currentStock + quantity
-                    : item.currentStock - quantity
+            const newStock = movementType === "in" ? item.currentStock + quantity : item.currentStock - quantity
+            if (newStock < 0) throw new Error("Stock cannot go below zero")
 
-            if (newStock < 0) {
-                throw new Error("Stock cannot go below zero")
-            }
-
-            // Update item stock
-            await tx.item.update({
-                where: { id: itemId },
-                data: { currentStock: newStock },
-            })
-
-            // Create stock movement record
+            await tx.item.update({ where: { id: itemId }, data: { currentStock: newStock } })
             const movement = await tx.stockMovement.create({
-                data: {
-                    itemId,
-                    movementType,
-                    quantity,
-                    reason,
-                    referenceType: "manual",
-                },
+                data: { itemId, movementType, quantity, reason, referenceType: "manual" },
             })
-
             return { newStock, movement }
         })
 
@@ -248,9 +219,7 @@ export async function getStockMovements(itemId: string) {
         const movements = await prisma.stockMovement.findMany({
             where: { itemId },
             orderBy: { createdAt: "desc" },
-            include: {
-                item: { select: { name: true, unit: true } },
-            },
+            include: { item: { select: { name: true, unit: true } } },
         })
         return movements
     } catch (error) {

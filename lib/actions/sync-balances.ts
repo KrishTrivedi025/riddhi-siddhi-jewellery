@@ -2,6 +2,7 @@
 
 import { prisma } from "@/lib/db"
 import { revalidatePath } from "next/cache"
+import { requireUserId } from "./auth-helper"
 
 /**
  * Migration Utility:
@@ -10,14 +11,14 @@ import { revalidatePath } from "next/cache"
  */
 export async function syncAndRecalculateBalances() {
     try {
+        const userId = await requireUserId()
         console.log("Starting balance sync...")
 
-        // 1. Get Accounts
         const cashAccount = await prisma.bankAccount.findFirst({
-            where: { isCash: true, deletedAt: null }
+            where: { userId, isCash: true, deletedAt: null }
         })
         const firstBankAccount = await prisma.bankAccount.findFirst({
-            where: { isCash: false, deletedAt: null }
+            where: { userId, isCash: false, deletedAt: null }
         })
 
         if (!cashAccount) throw new Error("Cash account not found")
@@ -47,7 +48,7 @@ export async function syncAndRecalculateBalances() {
 
         // 3. Recalculate everything for each account
         const allAccounts = await prisma.bankAccount.findMany({
-            where: { deletedAt: null }
+            where: { userId, deletedAt: null }
         })
 
         for (const acc of allAccounts) {

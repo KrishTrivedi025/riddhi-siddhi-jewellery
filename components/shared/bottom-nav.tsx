@@ -182,25 +182,25 @@ export function BottomNav() {
                   {active && (
                     <motion.div
                       layoutId="bottom-active-pill"
-                      className="absolute inset-x-1.5 top-1 h-9 rounded-2xl bg-primary/10"
+                      className="absolute inset-1 rounded-xl bg-primary/10"
                       transition={springSmooth}
                     />
                   )}
 
                   {/* Icon */}
-                  <div className="relative z-10">
+                  <div className="relative z-10 mt-1">
                     <Icon
-                      size={20}
+                      size={22}
                       className={`transition-colors duration-200 ${
                         active ? "text-primary" : "text-muted-foreground"
                       }`}
-                      strokeWidth={active ? 2.2 : 1.8}
+                      strokeWidth={active ? 2.5 : 2}
                     />
                   </div>
 
                   {/* Label */}
                   <span
-                    className={`relative z-10 text-[9.5px] font-semibold tracking-wide transition-colors duration-200 ${
+                    className={`relative z-10 text-[10px] font-semibold tracking-wide transition-colors duration-200 ${
                       active ? "text-primary" : "text-muted-foreground"
                     }`}
                   >
@@ -220,25 +220,25 @@ export function BottomNav() {
             aria-label="More options"
           >
             {/* Active pill when a secondary route is selected */}
-            {secondaryActive && (
+            {(secondaryActive || moreOpen) && (
               <motion.div
                 layoutId="bottom-active-pill"
-                className="absolute inset-x-1.5 top-1 h-9 rounded-2xl bg-primary/10"
+                className="absolute inset-1 rounded-xl bg-primary/10"
                 transition={springSmooth}
               />
             )}
 
-            <div className="relative z-10">
+            <div className="relative z-10 mt-1">
               <MoreHorizontal
-                size={20}
+                size={22}
                 className={`transition-colors duration-200 ${
                   secondaryActive || moreOpen ? "text-primary" : "text-muted-foreground"
                 }`}
-                strokeWidth={secondaryActive || moreOpen ? 2.2 : 1.8}
+                strokeWidth={secondaryActive || moreOpen ? 2.5 : 2}
               />
             </div>
             <span
-              className={`relative z-10 text-[9.5px] font-semibold tracking-wide transition-colors duration-200 ${
+              className={`relative z-10 text-[10px] font-semibold tracking-wide transition-colors duration-200 ${
                 secondaryActive || moreOpen ? "text-primary" : "text-muted-foreground"
               }`}
             >

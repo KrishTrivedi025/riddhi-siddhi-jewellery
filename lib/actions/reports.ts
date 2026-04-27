@@ -1,6 +1,7 @@
 "use server"
 
 import { prisma } from "@/lib/db"
+import { requireUserId } from "./auth-helper"
 import {
     startOfDay, endOfDay, startOfMonth, endOfMonth,
     subMonths, eachMonthOfInterval, format, isWithinInterval,
@@ -17,16 +18,17 @@ function dateWhere(field: string, range: DateRange) {
 // ─── 1. Profit & Loss Report ──────────────────────────────────────────────────
 
 export async function getProfitLossReport(range: DateRange) {
+    const userId = await requireUserId()
     const sales = await prisma.saleInvoice.findMany({
-        where: { deletedAt: null, status: "active", ...dateWhere("invoiceDate", range) },
+        where: { userId, deletedAt: null, status: "active", ...dateWhere("invoiceDate", range) },
         select: { grandTotal: true, totalDiscount: true, cgst: true, sgst: true, igst: true, invoiceDate: true },
     })
     const purchases = await prisma.purchaseInvoice.findMany({
-        where: { deletedAt: null, status: "active", ...dateWhere("invoiceDate", range) },
+        where: { userId, deletedAt: null, status: "active", ...dateWhere("invoiceDate", range) },
         select: { grandTotal: true, cgst: true, sgst: true, igst: true, invoiceDate: true },
     })
     const expenses = await prisma.expense.findMany({
-        where: { deletedAt: null, ...dateWhere("expenseDate", range) },
+        where: { userId, deletedAt: null, ...dateWhere("expenseDate", range) },
         select: { amount: true, gstAmount: true, category: true, expenseDate: true },
     })
 
@@ -67,8 +69,9 @@ export async function getProfitLossReport(range: DateRange) {
 // ─── 2. Sales Report ──────────────────────────────────────────────────────────
 
 export async function getSalesReport(range: DateRange) {
+    const userId = await requireUserId()
     const invoices = await prisma.saleInvoice.findMany({
-        where: { deletedAt: null, status: "active", ...dateWhere("invoiceDate", range) },
+        where: { userId, deletedAt: null, status: "active", ...dateWhere("invoiceDate", range) },
         include: { party: { select: { id: true, name: true } }, items: { select: { itemName: true, quantity: true, amount: true } } },
         orderBy: { invoiceDate: "desc" },
     })
@@ -91,8 +94,9 @@ export async function getSalesReport(range: DateRange) {
 // ─── 3. Purchase Report ───────────────────────────────────────────────────────
 
 export async function getPurchaseReport(range: DateRange) {
+    const userId = await requireUserId()
     const invoices = await prisma.purchaseInvoice.findMany({
-        where: { deletedAt: null, status: "active", ...dateWhere("invoiceDate", range) },
+        where: { userId, deletedAt: null, status: "active", ...dateWhere("invoiceDate", range) },
         include: { party: { select: { id: true, name: true } }, items: { select: { itemName: true, quantity: true, amount: true } } },
         orderBy: { invoiceDate: "desc" },
     })
@@ -115,8 +119,9 @@ export async function getPurchaseReport(range: DateRange) {
 // ─── 4. Outstanding Receivable Report ────────────────────────────────────────
 
 export async function getOutstandingReceivableReport() {
+    const userId = await requireUserId()
     const invoices = await prisma.saleInvoice.findMany({
-        where: { deletedAt: null, status: "active", paymentStatus: { in: ["unpaid", "partial"] }, balanceDue: { gt: 0 } },
+        where: { userId, deletedAt: null, status: "active", paymentStatus: { in: ["unpaid", "partial"] }, balanceDue: { gt: 0 } },
         include: { party: { select: { id: true, name: true } } },
         orderBy: { invoiceDate: "asc" },
     })
@@ -144,8 +149,9 @@ export async function getOutstandingReceivableReport() {
 // ─── 5. Outstanding Payable Report ────────────────────────────────────────────
 
 export async function getOutstandingPayableReport() {
+    const userId = await requireUserId()
     const invoices = await prisma.purchaseInvoice.findMany({
-        where: { deletedAt: null, status: "active", paymentStatus: { in: ["unpaid", "partial"] }, balanceDue: { gt: 0 } },
+        where: { userId, deletedAt: null, status: "active", paymentStatus: { in: ["unpaid", "partial"] }, balanceDue: { gt: 0 } },
         include: { party: { select: { id: true, name: true } } },
         orderBy: { invoiceDate: "asc" },
     })
@@ -173,8 +179,9 @@ export async function getOutstandingPayableReport() {
 // ─── 6. Stock Summary Report ──────────────────────────────────────────────────
 
 export async function getStockSummaryReport() {
+    const userId = await requireUserId()
     const items = await prisma.item.findMany({
-        where: { deletedAt: null },
+        where: { userId, deletedAt: null },
         include: { category: { select: { name: true } } },
         orderBy: { name: "asc" },
     })
@@ -205,8 +212,9 @@ export async function getStockMovementReport(range: DateRange, itemId?: string) 
 // ─── 8. Expense Report ────────────────────────────────────────────────────────
 
 export async function getExpenseReport(range: DateRange) {
+    const userId = await requireUserId()
     const expenses = await prisma.expense.findMany({
-        where: { deletedAt: null, ...dateWhere("expenseDate", range) },
+        where: { userId, deletedAt: null, ...dateWhere("expenseDate", range) },
         include: { bankAccount: { select: { accountName: true, isCash: true } } },
         orderBy: { expenseDate: "desc" },
     })
@@ -227,26 +235,27 @@ export async function getExpenseReport(range: DateRange) {
 // ─── 9. Day Book Report ───────────────────────────────────────────────────────
 
 export async function getDayBookReport(date: Date) {
+    const userId = await requireUserId()
     const from = startOfDay(date)
     const to   = endOfDay(date)
 
     const sales     = await prisma.saleInvoice.findMany({
-        where: { deletedAt: null, ...dateWhere("invoiceDate", { from, to }) },
+        where: { userId, deletedAt: null, ...dateWhere("invoiceDate", { from, to }) },
         include: { party: { select: { name: true } } },
         orderBy: { invoiceDate: "asc" },
     })
     const purchases = await prisma.purchaseInvoice.findMany({
-        where: { deletedAt: null, ...dateWhere("invoiceDate", { from, to }) },
+        where: { userId, deletedAt: null, ...dateWhere("invoiceDate", { from, to }) },
         include: { party: { select: { name: true } } },
         orderBy: { invoiceDate: "asc" },
     })
     const payments  = await prisma.payment.findMany({
-        where: { deletedAt: null, ...dateWhere("paymentDate", { from, to }) },
+        where: { userId, deletedAt: null, ...dateWhere("paymentDate", { from, to }) },
         include: { party: { select: { name: true } }, paymentModes: true },
         orderBy: { paymentDate: "asc" },
     })
     const expenses  = await prisma.expense.findMany({
-        where: { deletedAt: null, ...dateWhere("expenseDate", { from, to }) },
+        where: { userId, deletedAt: null, ...dateWhere("expenseDate", { from, to }) },
         orderBy: { expenseDate: "asc" },
     })
 
@@ -346,11 +355,13 @@ export async function getItemProfitReport(range: DateRange) {
 // ─── Utility: Fetch items list for stock movement filter ──────────────────────
 
 export async function getItemsForFilter() {
-    return prisma.item.findMany({ where: { deletedAt: null }, select: { id: true, name: true }, orderBy: { name: "asc" } })
+    const userId = await requireUserId()
+    return prisma.item.findMany({ where: { userId, deletedAt: null }, select: { id: true, name: true }, orderBy: { name: "asc" } })
 }
 
 // ─── Utility: Fetch bank accounts for cash/bank book ─────────────────────────
 
 export async function getBankAccountsForReports() {
-    return prisma.bankAccount.findMany({ where: { deletedAt: null }, select: { id: true, accountName: true, isCash: true, currentBalance: true }, orderBy: { isCash: "desc" } })
+    const userId = await requireUserId()
+    return prisma.bankAccount.findMany({ where: { userId, deletedAt: null }, select: { id: true, accountName: true, isCash: true, currentBalance: true }, orderBy: { isCash: "desc" } })
 }

@@ -3,6 +3,7 @@
 import { prisma } from "@/lib/db"
 import { revalidatePath } from "next/cache"
 import { ExpenseFormValues } from "@/lib/schemas/expense-schema"
+import { requireUserId } from "./auth-helper"
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -16,7 +17,8 @@ export interface ExpenseFilters {
 
 export async function getExpenses(filters?: ExpenseFilters) {
     try {
-        const where: any = { deletedAt: null }
+        const userId = await requireUserId()
+        const where: any = { userId, deletedAt: null }
 
         if (filters?.startDate || filters?.endDate) {
             where.expenseDate = {}
@@ -47,8 +49,9 @@ export async function getExpenses(filters?: ExpenseFilters) {
 
 export async function getExpenseById(id: string) {
     try {
-        return await prisma.expense.findUnique({
-            where: { id, deletedAt: null },
+        const userId = await requireUserId()
+        return await prisma.expense.findFirst({
+            where: { id, userId, deletedAt: null },
             include: {
                 bankAccount: { select: { id: true, accountName: true, isCash: true } },
             },
@@ -63,6 +66,7 @@ export async function getExpenseById(id: string) {
 
 export async function upsertExpense(data: ExpenseFormValues, id?: string) {
     try {
+        const userId = await requireUserId()
         const totalDebit = data.amount // amount entered is the base amount; GST tracked separately
 
         if (id) {
@@ -108,6 +112,7 @@ export async function upsertExpense(data: ExpenseFormValues, id?: string) {
                 // 1. Create expense
                 await tx.expense.create({
                     data: {
+                        userId,
                         expenseDate:   data.expenseDate,
                         category:      data.category,
                         description:   data.description,
@@ -176,7 +181,8 @@ export async function deleteExpense(id: string) {
 
 export async function getExpenseSummary(filters?: ExpenseFilters) {
     try {
-        const where: any = { deletedAt: null }
+        const userId = await requireUserId()
+        const where: any = { userId, deletedAt: null }
 
         if (filters?.startDate || filters?.endDate) {
             where.expenseDate = {}
@@ -211,11 +217,13 @@ export async function getExpenseSummary(filters?: ExpenseFilters) {
 
 export async function getMonthlyExpenseTrend() {
     try {
+        const userId = await requireUserId()
         const now = new Date()
         const sixMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 5, 1)
 
         const expenses = await prisma.expense.findMany({
             where: {
+                userId,
                 deletedAt:   null,
                 expenseDate: { gte: sixMonthsAgo },
             },

@@ -158,7 +158,7 @@ export function PurchaseInvoiceForm({ nextInvoiceNumber, parties, items, busines
     return (
         <div className="space-y-6 max-w-6xl mx-auto">
             {/* Header */}
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div className="flex items-center gap-4">
                     <Button
                         variant="ghost"
@@ -192,7 +192,7 @@ export function PurchaseInvoiceForm({ nextInvoiceNumber, parties, items, busines
                 </div>
             )}
 
-            <div className="grid grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* Left Column — Main Form (2 cols) */}
                 <div className="col-span-2 space-y-6">
                     {/* Invoice Details Card */}

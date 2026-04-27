@@ -3,11 +3,14 @@
 import { prisma } from "@/lib/db"
 import { revalidatePath } from "next/cache"
 import { PartyFormValues } from "../schemas/party-schema"
+import { requireUserId } from "./auth-helper"
 
 export async function getParties(type?: "CUSTOMER" | "SUPPLIER") {
     try {
+        const userId = await requireUserId()
         const parties = await prisma.party.findMany({
             where: {
+                userId,
                 deletedAt: null,
                 ...(type && { partyType: type })
             },
@@ -22,9 +25,11 @@ export async function getParties(type?: "CUSTOMER" | "SUPPLIER") {
 
 export async function createParty(data: PartyFormValues) {
     try {
+        const userId = await requireUserId()
         const party = await prisma.party.create({
             data: {
                 ...data,
+                userId,
                 openingBalance: data.openingBalance || 0,
             }
         })
@@ -38,8 +43,9 @@ export async function createParty(data: PartyFormValues) {
 
 export async function updateParty(id: string, data: Partial<PartyFormValues>) {
     try {
+        const userId = await requireUserId()
         const party = await prisma.party.update({
-            where: { id },
+            where: { id, userId },
             data
         })
         revalidatePath("/dashboard/parties")
@@ -52,8 +58,9 @@ export async function updateParty(id: string, data: Partial<PartyFormValues>) {
 
 export async function deleteParty(id: string) {
     try {
+        const userId = await requireUserId()
         await prisma.party.update({
-            where: { id },
+            where: { id, userId },
             data: { deletedAt: new Date() }
         })
         revalidatePath("/dashboard/parties")

@@ -1,6 +1,7 @@
 "use server"
 
 import { prisma } from "@/lib/db"
+import { requireUserId } from "./auth-helper"
 
 export interface LedgerEntry {
     id: string
@@ -33,8 +34,9 @@ export interface PartyLedgerSummary {
 
 export async function getPartyById(id: string) {
     try {
+        const userId = await requireUserId()
         const party = await prisma.party.findFirst({
-            where: { id, deletedAt: null },
+            where: { id, userId, deletedAt: null },
         })
         return party
     } catch (error) {

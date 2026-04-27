@@ -3,13 +3,16 @@
 import { prisma } from "@/lib/db"
 import { revalidatePath } from "next/cache"
 import { PaymentInFormValues } from "../schemas/payment-in-schema"
+import { requireUserId } from "./auth-helper"
 
 // ─── Get Customers With Active Balances ──────────────────────────────────────
 
 export async function getCustomersWithBalances() {
     try {
+        const userId = await requireUserId()
         const customers = await prisma.party.findMany({
             where: {
+                userId,
                 partyType: "CUSTOMER",
                 deletedAt: null,
                 saleInvoices: {
@@ -38,8 +41,10 @@ export async function getCustomersWithBalances() {
 
 export async function getCustomerOutstandingInvoices(partyId: string) {
     try {
+        const userId = await requireUserId()
         const invoices = await prisma.saleInvoice.findMany({
             where: {
+                userId,
                 partyId,
                 balanceDue: { gt: 0 },
                 status: "active",
@@ -66,8 +71,10 @@ export async function getCustomerOutstandingInvoices(partyId: string) {
 
 export async function getPaymentsIn() {
     try {
+        const userId = await requireUserId()
         const payments = await prisma.payment.findMany({
             where: {
+                userId,
                 paymentType: "IN",
                 deletedAt: null,
             },
@@ -89,6 +96,7 @@ export async function getPaymentsIn() {
 
 export async function createPaymentIn(data: PaymentInFormValues) {
     try {
+        const userId = await requireUserId()
         const result = await prisma.$transaction(async (tx) => {
             // Validate that the math checks out perfectly to guarantee stability.
             const totalAllocated = data.allocations.reduce((sum, alloc) => sum + alloc.amountApplied, 0)
@@ -107,6 +115,7 @@ export async function createPaymentIn(data: PaymentInFormValues) {
                 // 1. Create the Payment Voucher link for this specific invoice
                 const payment = await tx.payment.create({
                     data: {
+                        userId,
                         paymentType: "IN",
                         partyId: data.partyId,
                         saleInvoiceId: invoice.id,

@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache"
 import { PurchaseInvoiceFormValues } from "../schemas/purchase-schema"
 import { calculateLineItemGST } from "../gst-utils"
 import { isInterState } from "../indian-states"
+import { requireUserId } from "./auth-helper"
 
 // ─── Number Generation ───────────────────────────────────────────────────────
 
@@ -23,7 +24,9 @@ export async function getPurchaseInvoices(filters?: {
     dateTo?: Date
 }) {
     try {
+        const userId = await requireUserId()
         const where: Record<string, unknown> = {
+            userId,
             deletedAt: null,
             ...(filters?.status && filters.status !== "all" && { status: filters.status }),
             ...(filters?.paymentStatus && filters.paymentStatus !== "all" && { paymentStatus: filters.paymentStatus }),
@@ -63,8 +66,9 @@ export async function getPurchaseInvoices(filters?: {
 
 export async function getPurchaseInvoiceById(id: string) {
     try {
-        const invoice = await prisma.purchaseInvoice.findUnique({
-            where: { id },
+        const userId = await requireUserId()
+        const invoice = await prisma.purchaseInvoice.findFirst({
+            where: { id, userId },
             include: {
                 party: true,
                 items: {
@@ -86,17 +90,17 @@ export async function getPurchaseInvoiceById(id: string) {
 
 export async function createPurchaseInvoice(data: PurchaseInvoiceFormValues) {
     try {
+        const userId = await requireUserId()
         const result = await prisma.$transaction(async (tx) => {
             // 1. Generate internal invoice number
-            const count = await tx.purchaseInvoice.count()
+            const count = await tx.purchaseInvoice.count({ where: { userId } })
             const invoiceNumber = `PUR-${String(count + 1).padStart(3, "0")}`
 
             // 2. Get party state for IGST calculation
-            const party = await tx.party.findUnique({ where: { id: data.partyId } })
+            const party = await tx.party.findFirst({ where: { id: data.partyId, userId } })
             if (!party) throw new Error("Supplier not found")
 
-            // Assume business state is from the profile
-            const profile = await tx.businessProfile.findFirst()
+            const profile = await tx.businessProfile.findFirst({ where: { userId } })
             const businessState = profile?.state || ""
             const interState = isInterState(businessState, data.placeOfSupply)
 
@@ -173,6 +177,7 @@ export async function createPurchaseInvoice(data: PurchaseInvoiceFormValues) {
             // 4. Create the invoice
             const invoice = await tx.purchaseInvoice.create({
                 data: {
+                    userId,
                     invoiceNumber,
                     vendorInvoiceNumber: data.vendorInvoiceNumber || null,
                     invoiceDate: data.invoiceDate,
@@ -227,6 +232,7 @@ export async function createPurchaseInvoice(data: PurchaseInvoiceFormValues) {
             if (amountPaid > 0 && data.paymentMode !== "none") {
                 const payment = await tx.payment.create({
                     data: {
+                        userId,
                         paymentType: "OUT", // Money goes out to supplier
                         partyId: data.partyId,
                         purchaseInvoiceId: invoice.id,
@@ -261,7 +267,8 @@ export async function createPurchaseInvoice(data: PurchaseInvoiceFormValues) {
 
 export async function markPurchaseInvoiceAsPaid(id: string) {
     try {
-        const invoice = await prisma.purchaseInvoice.findUnique({ where: { id } })
+        const userId = await requireUserId()
+        const invoice = await prisma.purchaseInvoice.findFirst({ where: { id, userId } })
         if (!invoice) return { success: false, error: "Invoice not found" }
 
         await prisma.$transaction(async (tx) => {
@@ -270,6 +277,7 @@ export async function markPurchaseInvoiceAsPaid(id: string) {
             // Create Payment OUT
             const payment = await tx.payment.create({
                  data: {
+                    userId,
                     paymentType: "OUT",
                     partyId: invoice.partyId,
                     purchaseInvoiceId: invoice.id,
