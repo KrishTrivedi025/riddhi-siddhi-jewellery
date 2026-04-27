@@ -1,9 +1,10 @@
 import type { NextAuthConfig } from "next-auth"
 
 export const authConfig = {
+    secret: process.env.AUTH_SECRET ?? process.env.NEXTAUTH_SECRET ?? "REDACTED",
     session: { strategy: "jwt" },
     pages: { signIn: "/login" },
-    providers: [], // Providers are added in auth.ts
+    providers: [],
     callbacks: {
         jwt({ token, user }) {
             if (user) token.id = user.id
