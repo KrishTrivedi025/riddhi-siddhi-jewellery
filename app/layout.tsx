@@ -1,49 +1,51 @@
-export const dynamic = "force-dynamic"
+import type { Metadata, Viewport } from "next"
+import { Inter } from "next/font/google"
+import "./globals.css"
+import { ThemeProvider } from "@/components/theme-provider"
 
-import { auth } from "@/auth"
-import { redirect } from "next/navigation"
-import Sidebar from "@/components/shared/sidebar"
-import Header from "@/components/shared/header"
-import { checkProfileExists } from "@/lib/actions/setup"
-import { AnimatePresenceWrapper } from "@/components/shared/animate-presence-wrapper"
-import { SidebarProvider } from "@/lib/sidebar-context"
-import { BottomNav } from "@/components/shared/bottom-nav"
+const inter = Inter({ subsets: ["latin"], variable: "--font-sans" })
 
-export default async function DashboardLayout({
-  children,
-}: {
-  children: React.ReactNode
-}) {
-  const session = await auth()
-  if (!session) redirect("/login")
+export const metadata: Metadata = {
+  title: "Riddhi Siddhi Jewellery",
+  description: "Business Management System for Jewellery Manufacturing",
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "RS Jewellery",
+  },
+  icons: {
+    icon: [
+      { url: "/icons/favicon-32x32.png", sizes: "32x32", type: "image/png" },
+      { url: "/icons/icon-192x192.png",  sizes: "192x192", type: "image/png" },
+    ],
+    apple: [
+      { url: "/icons/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
+    ],
+  },
+}
 
-  const hasProfile = await checkProfileExists()
-  if (!hasProfile) redirect("/setup")
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  minimumScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  viewportFit: "cover",
+  themeColor: [
+    { media: "(prefers-color-scheme: dark)",  color: "#0F0F0F" },
+    { media: "(prefers-color-scheme: light)", color: "#D4A017" },
+  ],
+}
 
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <SidebarProvider>
-      <div
-        className="flex bg-background overflow-hidden print:bg-white print:block"
-        style={{ height: "100dvh" }}
-      >
-        <div className="print:hidden">
-          <Sidebar />
-        </div>
-
-        <div className="flex flex-col flex-1 overflow-hidden min-w-0 print:overflow-visible print:block">
-          <div className="print:hidden">
-            <Header />
-          </div>
-
-          <main className="flex-1 overflow-y-auto hw-scroll p-4 pb-[88px] md:p-6 md:pb-6 print:p-0 print:overflow-visible print:block">
-            <AnimatePresenceWrapper>
-              {children}
-            </AnimatePresenceWrapper>
-          </main>
-        </div>
-      </div>
-
-      <BottomNav />
-    </SidebarProvider>
+    <html lang="en" suppressHydrationWarning>
+      <body className={`${inter.variable} font-sans antialiased`}>
+        <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}>
+          {children}
+        </ThemeProvider>
+      </body>
+    </html>
   )
 }

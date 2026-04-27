@@ -6,24 +6,16 @@ const { auth } = NextAuth(authConfig)
 
 export default auth((req) => {
     const isLoggedIn = !!req.auth
-    const { pathname } = req.nextUrl
+    const isAuthPage = req.nextUrl.pathname.startsWith("/login")
 
-    // Public routes — never redirect these
-    if (
-        pathname.startsWith("/login") ||
-        pathname.startsWith("/setup") ||
-        pathname.startsWith("/api") ||
-        pathname === "/"
-    ) {
-        return NextResponse.next()
-    }
-
-    // Only protect /dashboard — if not logged in, send to login
-    if (pathname.startsWith("/dashboard") && !isLoggedIn) {
+    if (!isLoggedIn && !isAuthPage) {
         return NextResponse.redirect(new URL("/login", req.nextUrl))
+    }
+    if (isLoggedIn && isAuthPage) {
+        return NextResponse.redirect(new URL("/dashboard", req.nextUrl))
     }
 })
 
 export const config = {
-    matcher: ["/((?!_next/static|_next/image|favicon.ico|icons|manifest.json|.*\\.png|.*\\.jpg|.*\\.svg|.*\\.webp).*)"],
+    matcher: ["/((?!api|_next/static|_next/image|favicon.ico).*)"],
 }
