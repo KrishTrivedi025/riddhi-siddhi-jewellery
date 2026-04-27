@@ -76,6 +76,8 @@
     scroll-behavior: smooth;
     /* Use full native height — critical for Capacitor APK */
     height: 100%;
+    /* Expose safe-area-inset-bottom as a CSS variable for JS to read */
+    --sat: env(safe-area-inset-bottom, 0px);
   }
 
   body {

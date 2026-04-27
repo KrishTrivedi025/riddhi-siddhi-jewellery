@@ -1,34 +1,44 @@
 "use client"
 
-/**
- * MobileScrollFix
- * 
- * Wraps the main scroll container.
- * - Mobile (< 768px): padding-bottom = 58px nav + safe-area + 24px breathing room
- * - Desktop (≥ 768px): normal padding, no bottom nav
- * 
- * Using inline style for paddingBottom because Tailwind cannot do
- * dynamic calc() with CSS env() variables at build time.
- */
+import { useEffect, useRef } from "react"
 
+/**
+ * MobileScrollFix — sets exact padding-bottom so content
+ * never hides under the bottom nav bar on ANY mobile device.
+ * 
+ * Bottom nav = 58px + env(safe-area-inset-bottom)
+ * We add 20px breathing room = total clearance guaranteed.
+ */
 export function MobileScrollFix({ children }: { children: React.ReactNode }) {
+  const ref = useRef<HTMLElement>(null)
+
+  useEffect(() => {
+    const el = ref.current
+    if (!el) return
+
+    const apply = () => {
+      if (window.innerWidth < 768) {
+        // Get actual safe-area value
+        const safeArea = parseInt(
+          getComputedStyle(document.documentElement)
+            .getPropertyValue("--sat") || "0"
+        ) || 0
+        el.style.paddingBottom = `${58 + safeArea + 20}px`
+      } else {
+        el.style.paddingBottom = "1.5rem"
+      }
+    }
+
+    apply()
+    window.addEventListener("resize", apply)
+    return () => window.removeEventListener("resize", apply)
+  }, [])
+
   return (
     <main
+      ref={ref}
       className="flex-1 overflow-y-auto hw-scroll p-4 md:p-6 print:p-0 print:overflow-visible print:block"
-      style={{
-        // Mobile: exact nav height + device safe area + breathing room
-        paddingBottom: "calc(58px + env(safe-area-inset-bottom, 0px) + 24px)",
-      }}
-      // On md+ screens override via a style tag trick — we use a data attr + CSS
-      data-scroll-container
     >
-      <style>{`
-        @media (min-width: 768px) {
-          [data-scroll-container] {
-            padding-bottom: 1.5rem !important;
-          }
-        }
-      `}</style>
       {children}
     </main>
   )
