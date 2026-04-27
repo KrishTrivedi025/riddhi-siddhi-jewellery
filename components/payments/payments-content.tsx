@@ -58,8 +58,8 @@ export function PaymentsContent({ paymentsIn, paymentsOut }: PaymentsContentProp
             />
 
             {activeTab === "in"
-                ? <PaymentTable payments={paymentsIn} type="in" />
-                : <PaymentTable payments={paymentsOut} type="out" />
+                ? <PaymentTable payments={paymentsIn} type="IN" />
+                : <PaymentTable payments={paymentsOut} type="OUT" />
             }
         </div>
     )
