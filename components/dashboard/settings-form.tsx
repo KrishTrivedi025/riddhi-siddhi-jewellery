@@ -177,7 +177,7 @@ export default function SettingsForm({ profile, signOutAction }: SettingsFormPro
         preview: string|null, uploading: boolean,
         onUpload: (e: React.ChangeEvent<HTMLInputElement>) => void,
         onRemove: () => void,
-        inputRef: React.RefObject<HTMLInputElement>,
+        inputRef: React.RefObject<HTMLInputElement | null>,
         label: string, hint: string
     }) => (
         <div>
