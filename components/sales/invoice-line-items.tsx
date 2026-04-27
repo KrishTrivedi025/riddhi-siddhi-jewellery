@@ -114,143 +114,143 @@ export function InvoiceLineItems({ items, inventoryItems, isInterState, onChange
                 </ProductBrowserModal>
             </div>
 
-            {/* Header Row */}
-            <div className="grid grid-cols-[2fr_1fr_0.8fr_0.8fr_0.8fr_1fr_0.5fr_0.3fr] gap-2 px-2 text-xs text-muted-foreground font-medium">
-                <span>Item</span>
-                <span>HSN</span>
-                <span>Qty</span>
-                <span>Rate (₹)</span>
-                <span>Disc</span>
-                <span>GST %</span>
-                <span className="text-right">Amount</span>
-                <span></span>
-            </div>
-
             {/* Item Rows */}
-            <div className="space-y-2">
+            <div className="space-y-3">
                 {items.map((item, idx) => (
                     <div key={idx} className="space-y-0">
-                        {/* Main Row */}
-                        <div className="grid grid-cols-[2fr_1fr_0.8fr_0.8fr_0.8fr_1fr_0.5fr_0.3fr] gap-2 items-center bg-card p-2 rounded-lg border border-border">
-                            {/* Item Display */}
+                        {/* Mobile Card */}
+                        <div className="bg-card border border-border rounded-xl p-3 space-y-3">
+                            {/* Row 1: Item info + delete */}
                             <div className="flex items-center gap-3">
                                 {(() => {
                                     const inv = inventoryItems.find((i: any) => i.id === item.itemId)
                                     if (!item.itemId) {
-                                        return <span className="text-muted-foreground text-xs italic px-2">No item selected</span>
+                                        return <span className="text-muted-foreground text-xs italic flex-1">No item selected</span>
                                     }
                                     return (
-                                        <>
+                                        <div className="flex items-center gap-2 flex-1 min-w-0">
                                             {inv?.imageUrl ? (
-                                                <img src={inv.imageUrl} alt="img" className="w-8 h-8 rounded-md object-cover border border-border" />
+                                                <img src={inv.imageUrl} alt="img" className="w-10 h-10 rounded-lg object-cover border border-border flex-shrink-0" />
                                             ) : (
-                                                <div className="w-8 h-8 rounded-md bg-background border border-border flex items-center justify-center text-muted-foreground">
-                                                    <ImageIcon size={14} />
+                                                <div className="w-10 h-10 rounded-lg bg-background border border-border flex items-center justify-center text-muted-foreground flex-shrink-0">
+                                                    <ImageIcon size={16} />
                                                 </div>
                                             )}
-                                            <div className="flex flex-col">
-                                                <span className="font-mono text-primary font-bold">{inv?.itemCode || "Unknown"}</span>
-                                                <span className="text-[10px] text-muted-foreground truncate max-w-[100px]">{inv?.category?.name || ""}</span>
+                                            <div className="flex flex-col min-w-0">
+                                                <span className="font-mono text-primary font-bold text-sm">{inv?.itemCode || "Unknown"}</span>
+                                                <span className="text-[11px] text-muted-foreground truncate">{inv?.category?.name || ""}</span>
                                             </div>
-                                        </>
+                                        </div>
                                     )
                                 })()}
+                                <div className="flex items-center gap-1 flex-shrink-0">
+                                    <button
+                                        type="button"
+                                        onClick={() => setExpandedRow(expandedRow === idx ? null : idx)}
+                                        className="p-2 rounded-lg bg-muted text-muted-foreground hover:text-foreground transition-colors"
+                                        title="Jewellery details"
+                                    >
+                                        {expandedRow === idx ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => removeItem(idx)}
+                                        className="p-2 rounded-lg bg-muted text-muted-foreground hover:text-rose-400 transition-colors"
+                                        disabled={items.length <= 1}
+                                    >
+                                        <Trash2 size={14} />
+                                    </button>
+                                </div>
                             </div>
 
-                            {/* HSN */}
-                            <Input
-                                value={item.hsnCode || ""}
-                                onChange={(e) => updateItem(idx, "hsnCode", e.target.value)}
-                                placeholder="7113"
-                                className="bg-background border-border text-foreground h-8 text-xs placeholder:text-muted-foreground"
-                            />
-
-                            {/* Quantity */}
-                             <Input
-                                 type="text"
-                                 value={item.quantity || ""}
-                                 placeholder="01"
-                                 onFocus={(e) => e.target.select()}
-                                 onBlur={(e) => {
-                                     if (e.target.value === "") updateItem(idx, "quantity", 0)
-                                     else updateItem(idx, "quantity", parseFloat(e.target.value) || 0)
-                                 }}
-                                 onChange={(e) => updateItem(idx, "quantity", parseFloat(e.target.value) || 0)}
-                                 className="bg-background border-border text-foreground h-8 text-xs focus:border-primary transition-all"
-                             />
-
-                            {/* Unit Price */}
-                             <Input
-                                 type="text"
-                                 value={item.unitPrice || ""}
-                                 placeholder="00"
-                                 onFocus={(e) => e.target.select()}
-                                 onBlur={(e) => {
-                                     if (e.target.value === "") updateItem(idx, "unitPrice", 0)
-                                     else updateItem(idx, "unitPrice", parseFloat(e.target.value) || 0)
-                                 }}
-                                 onChange={(e) => updateItem(idx, "unitPrice", parseFloat(e.target.value) || 0)}
-                                 className="bg-background border-border text-foreground h-8 text-xs focus:border-primary transition-all"
-                             />
-
-                            {/* Discount */}
-                            <div className="flex gap-1">
-                                 <Input
-                                     type="text"
-                                     value={item.discount || ""}
-                                     placeholder="00"
-                                     onFocus={(e) => e.target.select()}
-                                     onBlur={(e) => {
-                                         if (e.target.value === "") updateItem(idx, "discount", 0)
-                                         else updateItem(idx, "discount", parseFloat(e.target.value) || 0)
-                                     }}
-                                     onChange={(e) => updateItem(idx, "discount", parseFloat(e.target.value) || 0)}
-                                     className="bg-background border-border text-foreground h-8 text-xs flex-1 focus:border-primary transition-all"
-                                 />
+                            {/* Row 2: HSN + Qty + Rate */}
+                            <div className="grid grid-cols-3 gap-2">
+                                <div className="space-y-1">
+                                    <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-wide">HSN</p>
+                                    <Input
+                                        value={item.hsnCode || ""}
+                                        onChange={(e) => updateItem(idx, "hsnCode", e.target.value)}
+                                        placeholder="7113"
+                                        className="bg-background border-border text-foreground h-9 text-xs placeholder:text-muted-foreground"
+                                    />
+                                </div>
+                                <div className="space-y-1">
+                                    <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-wide">Qty</p>
+                                    <Input
+                                        type="text"
+                                        value={item.quantity || ""}
+                                        placeholder="1"
+                                        onFocus={(e) => e.target.select()}
+                                        onBlur={(e) => {
+                                            if (e.target.value === "") updateItem(idx, "quantity", 0)
+                                            else updateItem(idx, "quantity", parseFloat(e.target.value) || 0)
+                                        }}
+                                        onChange={(e) => updateItem(idx, "quantity", parseFloat(e.target.value) || 0)}
+                                        className="bg-background border-border text-foreground h-9 text-xs focus:border-primary transition-all"
+                                    />
+                                </div>
+                                <div className="space-y-1">
+                                    <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-wide">Rate (₹)</p>
+                                    <Input
+                                        type="text"
+                                        value={item.unitPrice || ""}
+                                        placeholder="0"
+                                        onFocus={(e) => e.target.select()}
+                                        onBlur={(e) => {
+                                            if (e.target.value === "") updateItem(idx, "unitPrice", 0)
+                                            else updateItem(idx, "unitPrice", parseFloat(e.target.value) || 0)
+                                        }}
+                                        onChange={(e) => updateItem(idx, "unitPrice", parseFloat(e.target.value) || 0)}
+                                        className="bg-background border-border text-foreground h-9 text-xs focus:border-primary transition-all"
+                                    />
+                                </div>
                             </div>
 
-                            {/* GST Rate */}
-                            <Select
-                                value={String(item.gstRate)}
-                                onValueChange={(val) => updateItem(idx, "gstRate", parseFloat(val))}
-                            >
-                                <SelectTrigger className="bg-background border-border text-foreground h-8 text-xs">
-                                    <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent className="bg-card border-border text-foreground">
-                                    <SelectItem value="0">0%</SelectItem>
-                                    <SelectItem value="0.25">0.25%</SelectItem>
-                                    <SelectItem value="3">3%</SelectItem>
-                                    <SelectItem value="5">5%</SelectItem>
-                                    <SelectItem value="12">12%</SelectItem>
-                                    <SelectItem value="18">18%</SelectItem>
-                                    <SelectItem value="28">28%</SelectItem>
-                                </SelectContent>
-                            </Select>
-
-                            {/* Amount */}
-                            <p className="text-right text-xs font-semibold text-primary">
-                                ₹{getLineTotal(item).toLocaleString("en-IN", { minimumFractionDigits: 2 })}
-                            </p>
-
-                            {/* Actions */}
-                            <div className="flex gap-1">
-                                <button
-                                    type="button"
-                                    onClick={() => setExpandedRow(expandedRow === idx ? null : idx)}
-                                    className="p-1 text-muted-foreground hover:text-foreground transition-colors"
-                                    title="Jewellery details"
-                                >
-                                    {expandedRow === idx ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={() => removeItem(idx)}
-                                    className="p-1 text-muted-foreground hover:text-rose-400 transition-colors"
-                                    disabled={items.length <= 1}
-                                >
-                                    <Trash2 size={14} />
-                                </button>
+                            {/* Row 3: Disc + GST + Amount */}
+                            <div className="grid grid-cols-3 gap-2 items-end">
+                                <div className="space-y-1">
+                                    <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-wide">Disc</p>
+                                    <Input
+                                        type="text"
+                                        value={item.discount || ""}
+                                        placeholder="0"
+                                        onFocus={(e) => e.target.select()}
+                                        onBlur={(e) => {
+                                            if (e.target.value === "") updateItem(idx, "discount", 0)
+                                            else updateItem(idx, "discount", parseFloat(e.target.value) || 0)
+                                        }}
+                                        onChange={(e) => updateItem(idx, "discount", parseFloat(e.target.value) || 0)}
+                                        className="bg-background border-border text-foreground h-9 text-xs focus:border-primary transition-all"
+                                    />
+                                </div>
+                                <div className="space-y-1">
+                                    <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-wide">GST %</p>
+                                    <Select
+                                        value={String(item.gstRate)}
+                                        onValueChange={(val) => updateItem(idx, "gstRate", parseFloat(val))}
+                                    >
+                                        <SelectTrigger className="bg-background border-border text-foreground h-9 text-xs">
+                                            <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent className="bg-card border-border text-foreground">
+                                            <SelectItem value="0">0%</SelectItem>
+                                            <SelectItem value="0.25">0.25%</SelectItem>
+                                            <SelectItem value="3">3%</SelectItem>
+                                            <SelectItem value="5">5%</SelectItem>
+                                            <SelectItem value="12">12%</SelectItem>
+                                            <SelectItem value="18">18%</SelectItem>
+                                            <SelectItem value="28">28%</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                                <div className="space-y-1">
+                                    <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-wide">Amount</p>
+                                    <div className="h-9 flex items-center justify-end px-2 rounded-lg bg-primary/10 border border-primary/20">
+                                        <p className="text-sm font-bold text-primary">
+                                            ₹{getLineTotal(item).toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+                                        </p>
+                                    </div>
+                                </div>
                             </div>
                         </div>
 

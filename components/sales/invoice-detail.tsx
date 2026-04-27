@@ -56,16 +56,16 @@ export function InvoiceDetail({ invoice, businessProfile }: InvoiceDetailProps) 
     return (
         <div className="space-y-6 max-w-4xl mx-auto">
             {/* Header */}
-            <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
+            <div className="flex items-start justify-between gap-3">
+                <div className="flex items-start gap-3 min-w-0">
                     <Button
                         variant="ghost"
                         onClick={() => router.push("/dashboard/sales")}
-                        className="text-muted-foreground hover:text-foreground hover:bg-border h-9 w-9 p-0"
+                        className="text-muted-foreground hover:text-foreground hover:bg-border h-9 w-9 p-0 flex-shrink-0 mt-0.5"
                     >
                         <ArrowLeft size={18} />
                     </Button>
-                    <div>
+                    <div className="min-w-0">
                         <h1 className="text-xl font-bold text-foreground">
                             {(() => {
                                 const currentPrefix = businessProfile?.invoicePrefix || "INV"
@@ -76,46 +76,53 @@ export function InvoiceDetail({ invoice, businessProfile }: InvoiceDetailProps) 
                                 return invoice.invoiceNumber
                             })()}
                         </h1>
-                        <p className="text-sm text-muted-foreground">
+                        <p className="text-xs text-muted-foreground">
                             {format(new Date(invoice.invoiceDate), "dd MMM yyyy")}
                             {invoice.dueDate && ` • Due: ${format(new Date(invoice.dueDate), "dd MMM yyyy")}`}
                         </p>
                     </div>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex gap-1.5 flex-shrink-0">
                     <Button
                         variant="ghost"
+                        size="sm"
                         onClick={handleWhatsAppShare}
-                        className="text-muted-foreground hover:text-emerald-400 hover:bg-emerald-400/10"
+                        className="text-muted-foreground hover:text-emerald-400 hover:bg-emerald-400/10 px-2"
                     >
-                        <Share2 size={16} className="mr-2" />
-                        WhatsApp
+                        <Share2 size={16} className="mr-1.5" />
+                        <span className="hidden sm:inline">WhatsApp</span>
+                        <span className="sm:hidden">WA</span>
                     </Button>
                     <Button
                         variant="ghost"
+                        size="sm"
                         onClick={() => setShowPdf(!showPdf)}
-                        className="text-muted-foreground hover:text-primary hover:bg-primary/10"
+                        className="text-muted-foreground hover:text-primary hover:bg-primary/10 px-2"
                     >
-                        <Download size={16} className="mr-2" />
-                        {showPdf ? "Hide PDF" : "Download PDF"}
+                        <Download size={16} className="mr-1.5" />
+                        <span className="hidden sm:inline">{showPdf ? "Hide PDF" : "Download PDF"}</span>
+                        <span className="sm:hidden">PDF</span>
                     </Button>
                     {invoice.status !== "cancelled" && invoice.paymentStatus !== "paid" && (
                         <Button
+                            size="sm"
                             onClick={handleMarkPaid}
                             disabled={loading === "paid"}
-                            className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                            className="bg-emerald-600 hover:bg-emerald-700 text-white px-2"
                         >
                             {loading === "paid" ? (
-                                <Loader2 size={16} className="mr-2 animate-spin" />
+                                <Loader2 size={16} className="mr-1.5 animate-spin" />
                             ) : (
-                                <CheckCircle2 size={16} className="mr-2" />
+                                <CheckCircle2 size={16} className="mr-1.5" />
                             )}
-                            Mark Paid
+                            <span className="hidden sm:inline">Mark Paid</span>
+                            <span className="sm:hidden">Paid</span>
                         </Button>
                     )}
                     {invoice.status !== "cancelled" && (
                         <Button
                             variant="ghost"
+                            size="sm"
                             onClick={handleVoid}
                             disabled={loading === "void"}
                             className="text-rose-400 hover:bg-rose-400/10"
