@@ -8,6 +8,7 @@ import { checkProfileExists } from "@/lib/actions/setup"
 import { AnimatePresenceWrapper } from "@/components/shared/animate-presence-wrapper"
 import { SidebarProvider } from "@/lib/sidebar-context"
 import { BottomNav } from "@/components/shared/bottom-nav"
+import { MobileScrollFix } from "@/components/shared/mobile-scroll-fix"
 
 export default async function DashboardLayout({
   children,
@@ -35,11 +36,11 @@ export default async function DashboardLayout({
             <Header />
           </div>
 
-          <main className="flex-1 overflow-y-auto hw-scroll p-4 pb-[88px] md:p-6 md:pb-6 print:p-0 print:overflow-visible print:block">
+          <MobileScrollFix>
             <AnimatePresenceWrapper>
               {children}
             </AnimatePresenceWrapper>
-          </main>
+          </MobileScrollFix>
         </div>
       </div>
 

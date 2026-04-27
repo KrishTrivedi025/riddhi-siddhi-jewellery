@@ -54,84 +54,75 @@ export function InvoiceDetail({ invoice, businessProfile }: InvoiceDetailProps) 
     const isInterState = invoice.igst > 0
 
     return (
-        <div className="space-y-6 max-w-4xl mx-auto">
-            {/* Header */}
-            <div className="flex items-start justify-between gap-3">
-                <div className="flex items-start gap-3 min-w-0">
-                    <Button
-                        variant="ghost"
-                        onClick={() => router.push("/dashboard/sales")}
-                        className="text-muted-foreground hover:text-foreground hover:bg-border h-9 w-9 p-0 flex-shrink-0 mt-0.5"
-                    >
-                        <ArrowLeft size={18} />
-                    </Button>
-                    <div className="min-w-0">
-                        <h1 className="text-xl font-bold text-foreground">
-                            {(() => {
-                                const currentPrefix = businessProfile?.invoicePrefix || "INV"
-                                const parts = invoice.invoiceNumber.split("-")
-                                if (parts.length > 1) {
-                                    return `${currentPrefix}-${parts.slice(1).join("-")}`
-                                }
-                                return invoice.invoiceNumber
-                            })()}
-                        </h1>
-                        <p className="text-xs text-muted-foreground">
-                            {format(new Date(invoice.invoiceDate), "dd MMM yyyy")}
-                            {invoice.dueDate && ` • Due: ${format(new Date(invoice.dueDate), "dd MMM yyyy")}`}
-                        </p>
-                    </div>
+        <div className="space-y-4 max-w-4xl mx-auto">
+            {/* Header — row 1: back + title */}
+            <div className="flex items-center gap-3">
+                <Button
+                    variant="ghost"
+                    onClick={() => router.push("/dashboard/sales")}
+                    className="text-muted-foreground hover:text-foreground hover:bg-border h-9 w-9 p-0 flex-shrink-0"
+                >
+                    <ArrowLeft size={18} />
+                </Button>
+                <div className="min-w-0 flex-1">
+                    <h1 className="text-xl font-bold text-foreground leading-tight">
+                        {(() => {
+                            const currentPrefix = businessProfile?.invoicePrefix || "INV"
+                            const parts = invoice.invoiceNumber.split("-")
+                            if (parts.length > 1) return `${currentPrefix}-${parts.slice(1).join("-")}`
+                            return invoice.invoiceNumber
+                        })()}
+                    </h1>
+                    <p className="text-xs text-muted-foreground">
+                        {format(new Date(invoice.invoiceDate), "dd MMM yyyy")}
+                        {invoice.dueDate && ` • Due: ${format(new Date(invoice.dueDate), "dd MMM yyyy")}`}
+                    </p>
                 </div>
-                <div className="flex gap-1.5 flex-shrink-0">
+            </div>
+
+            {/* Header — row 2: action buttons */}
+            <div className="flex gap-2 flex-wrap">
+                <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleWhatsAppShare}
+                    className="text-emerald-400 hover:bg-emerald-400/10 border border-emerald-400/20 h-9 px-3 text-xs font-semibold"
+                >
+                    <Share2 size={14} className="mr-1.5" /> WA
+                </Button>
+                <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setShowPdf(!showPdf)}
+                    className="text-primary hover:bg-primary/10 border border-primary/20 h-9 px-3 text-xs font-semibold"
+                >
+                    <Download size={14} className="mr-1.5" /> PDF
+                </Button>
+                {invoice.status !== "cancelled" && invoice.paymentStatus !== "paid" && (
+                    <Button
+                        size="sm"
+                        onClick={handleMarkPaid}
+                        disabled={loading === "paid"}
+                        className="bg-emerald-600 hover:bg-emerald-700 text-white h-9 px-3 text-xs font-semibold"
+                    >
+                        {loading === "paid"
+                            ? <Loader2 size={14} className="mr-1.5 animate-spin" />
+                            : <CheckCircle2 size={14} className="mr-1.5" />
+                        }
+                        Mark Paid
+                    </Button>
+                )}
+                {invoice.status !== "cancelled" && (
                     <Button
                         variant="ghost"
                         size="sm"
-                        onClick={handleWhatsAppShare}
-                        className="text-muted-foreground hover:text-emerald-400 hover:bg-emerald-400/10 px-2"
+                        onClick={handleVoid}
+                        disabled={loading === "void"}
+                        className="text-rose-400 hover:bg-rose-400/10 border border-rose-400/20 h-9 px-3 text-xs font-semibold"
                     >
-                        <Share2 size={16} className="mr-1.5" />
-                        <span className="hidden sm:inline">WhatsApp</span>
-                        <span className="sm:hidden">WA</span>
+                        <Ban size={14} className="mr-1.5" /> Cancel
                     </Button>
-                    <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setShowPdf(!showPdf)}
-                        className="text-muted-foreground hover:text-primary hover:bg-primary/10 px-2"
-                    >
-                        <Download size={16} className="mr-1.5" />
-                        <span className="hidden sm:inline">{showPdf ? "Hide PDF" : "Download PDF"}</span>
-                        <span className="sm:hidden">PDF</span>
-                    </Button>
-                    {invoice.status !== "cancelled" && invoice.paymentStatus !== "paid" && (
-                        <Button
-                            size="sm"
-                            onClick={handleMarkPaid}
-                            disabled={loading === "paid"}
-                            className="bg-emerald-600 hover:bg-emerald-700 text-white px-2"
-                        >
-                            {loading === "paid" ? (
-                                <Loader2 size={16} className="mr-1.5 animate-spin" />
-                            ) : (
-                                <CheckCircle2 size={16} className="mr-1.5" />
-                            )}
-                            <span className="hidden sm:inline">Mark Paid</span>
-                            <span className="sm:hidden">Paid</span>
-                        </Button>
-                    )}
-                    {invoice.status !== "cancelled" && (
-                        <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={handleVoid}
-                            disabled={loading === "void"}
-                            className="text-rose-400 hover:bg-rose-400/10"
-                        >
-                            <Ban size={16} className="mr-2" />
-                            Cancel
-                        </Button>
-                    )}
-                </div>
+                )}
             </div>
 
             {/* PDF Preview */}
