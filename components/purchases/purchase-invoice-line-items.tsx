@@ -222,6 +222,8 @@ export function PurchaseInvoiceLineItems({ items, inventoryItems, isInterState, 
                             <div className="bg-background border border-border border-t-0 rounded-b-lg p-3 space-y-3">
                                 <p className="text-xs font-medium text-primary mb-2">Jewellery Details</p>
                                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                                    <div className="space-y-1">
+                                        <Label className="text-xs text-muted-foreground">Purity</Label>
                                         <Input
                                             value={item.purity || ""}
                                             onChange={(e) => updateItem(idx, "purity", e.target.value)}
@@ -261,6 +263,8 @@ export function PurchaseInvoiceLineItems({ items, inventoryItems, isInterState, 
                                     </div>
                                 </div>
                                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                                    <div className="space-y-1">
+                                        <Label className="text-xs text-muted-foreground">Wastage %</Label>
                                         <Input
                                             type="number"
                                             step="0.01"

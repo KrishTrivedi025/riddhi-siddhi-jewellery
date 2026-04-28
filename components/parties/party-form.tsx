@@ -109,6 +109,8 @@ export function PartyForm({ initialData, onSuccess, onCancel }: PartyFormProps) 
     return (
         <form onSubmit={handleSubmit(onSubmit as any)} className="space-y-5 px-5 py-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                    <Label className="text-muted-foreground">Party Type</Label>
                     <Select 
                         onValueChange={(val) => setValue("partyType", val as any)}
                         defaultValue={partyType}
@@ -159,6 +161,8 @@ export function PartyForm({ initialData, onSuccess, onCancel }: PartyFormProps) 
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                    <Label className="text-muted-foreground">Phone</Label>
                     <Input 
                         {...register("phone")}
                         placeholder="10 digit number"
@@ -209,6 +213,8 @@ export function PartyForm({ initialData, onSuccess, onCancel }: PartyFormProps) 
             <div>
                 <h4 className="text-sm font-medium text-foreground mb-4">Financials</h4>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                        <Label className="text-muted-foreground">Opening Balance</Label>
                         <Input 
                             type="number"
                             {...register("openingBalance", { valueAsNumber: true })}
