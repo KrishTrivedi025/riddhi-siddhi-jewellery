@@ -107,10 +107,8 @@ export function PartyForm({ initialData, onSuccess, onCancel }: PartyFormProps) 
     }
 
     return (
-        <form onSubmit={handleSubmit(onSubmit as any)} className="space-y-6 max-h-[70vh] overflow-y-auto px-1">
-            <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                    <Label className="text-muted-foreground">Party Type</Label>
+        <form onSubmit={handleSubmit(onSubmit as any)} className="space-y-5 px-5 py-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <Select 
                         onValueChange={(val) => setValue("partyType", val as any)}
                         defaultValue={partyType}
@@ -160,9 +158,7 @@ export function PartyForm({ initialData, onSuccess, onCancel }: PartyFormProps) 
                 />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                    <Label className="text-muted-foreground">Phone Number</Label>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <Input 
                         {...register("phone")}
                         placeholder="10 digit number"
@@ -191,7 +187,7 @@ export function PartyForm({ initialData, onSuccess, onCancel }: PartyFormProps) 
                             className="bg-background border-border text-foreground"
                         />
                     </div>
-                    <div className="grid grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                         <div className="space-y-2">
                             <Label className="text-muted-foreground">City</Label>
                             <Input {...register("city")} className="bg-background border-border text-foreground" />
@@ -212,9 +208,7 @@ export function PartyForm({ initialData, onSuccess, onCancel }: PartyFormProps) 
 
             <div>
                 <h4 className="text-sm font-medium text-foreground mb-4">Financials</h4>
-                <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                        <Label className="text-muted-foreground">Opening Balance</Label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <Input 
                             type="number"
                             {...register("openingBalance", { valueAsNumber: true })}
@@ -239,7 +233,7 @@ export function PartyForm({ initialData, onSuccess, onCancel }: PartyFormProps) 
                 </div>
             </div>
 
-            <div className="flex justify-end gap-3 pt-4">
+            <div className="flex justify-end gap-3 pt-2 pb-2 border-t border-border sticky bottom-0 bg-card mt-2">
                 <Button 
                     type="button" 
                     variant="ghost" 

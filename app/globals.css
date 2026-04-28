@@ -217,6 +217,22 @@ header,
 }
 
 /* ─────────────────────────────────────────────────────────
+   Mobile Bottom Nav Clearance — PURE CSS, no JS needed
+   Bottom nav = 58px + safe-area-inset-bottom + 24px breathing
+   On md+ screens: normal 1.5rem padding (no bottom nav)
+───────────────────────────────────────────────────────── */
+.mobile-scroll-container {
+  /* Default: enough room for bottom nav on ALL mobile devices */
+  padding-bottom: calc(58px + env(safe-area-inset-bottom, 0px) + 24px) !important;
+}
+
+@media (min-width: 768px) {
+  .mobile-scroll-container {
+    padding-bottom: 1.5rem !important;
+  }
+}
+
+/* ─────────────────────────────────────────────────────────
    Reduced Motion — kill all animations
 ───────────────────────────────────────────────────────── */
 @media (prefers-reduced-motion: reduce) {

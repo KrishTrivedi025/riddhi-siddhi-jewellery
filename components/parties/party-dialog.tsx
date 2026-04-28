@@ -36,11 +36,11 @@ export function PartyDialog({ initialData, trigger, onSuccess }: PartyDialogProp
                     </Button>
                 )}
             </DialogTrigger>
-            <DialogContent className="bg-card border-border text-foreground sm:max-w-[600px]">
-                <DialogHeader>
-                    <DialogTitle>{initialData ? "Edit Party" : "Add New Party"}</DialogTitle>
+            <DialogContent className="bg-card border-border text-foreground w-[95vw] max-w-lg sm:max-w-xl rounded-2xl p-0 overflow-hidden gap-0">
+                <DialogHeader className="px-5 pt-5 pb-4 border-b border-border">
+                    <DialogTitle className="text-lg font-bold">{initialData ? "Edit Party" : "Add New Party"}</DialogTitle>
                 </DialogHeader>
-                <div className="pt-4">
+                <div className="overflow-y-auto max-h-[80vh]">
                     <PartyForm 
                         initialData={initialData} 
                         onSuccess={handleSuccess} 

@@ -114,25 +114,13 @@ export function PurchaseInvoiceLineItems({ items, inventoryItems, isInterState, 
                 </ProductBrowserModal>
             </div>
 
-            {/* Header Row */}
-            <div className="grid grid-cols-[2fr_1fr_0.8fr_0.8fr_0.8fr_1fr_0.5fr_0.3fr] gap-2 px-2 text-xs text-muted-foreground font-medium">
-                <span>Item</span>
-                <span>HSN</span>
-                <span>Qty</span>
-                <span>Rate (₹)</span>
-                <span>Disc</span>
-                <span>GST %</span>
-                <span className="text-right">Amount</span>
-                <span></span>
-            </div>
-
-            {/* Item Rows */}
-            <div className="space-y-2">
+            {/* Item Rows — mobile card layout */}
+            <div className="space-y-3">
                 {items.map((item, idx) => (
-                    <div key={idx} className="space-y-0">
-                        {/* Main Row */}
-                        <div className="grid grid-cols-[2fr_1fr_0.8fr_0.8fr_0.8fr_1fr_0.5fr_0.3fr] gap-2 items-center bg-card p-2 rounded-lg border border-border">
-                            {/* Item Display */}
+                    <div key={idx}>
+                        <div className="bg-card border border-border rounded-xl p-3 space-y-3">
+
+                            {/* Row 1: Item info + actions */}
                             <div className="flex items-center gap-3">
                                 {(() => {
                                     const inv = inventoryItems.find((i: any) => i.id === item.itemId)
@@ -142,110 +130,90 @@ export function PurchaseInvoiceLineItems({ items, inventoryItems, isInterState, 
                                                 value={item.itemName}
                                                 onChange={(e) => updateItem(idx, "itemName", e.target.value)}
                                                 placeholder="Item Name"
-                                                className="bg-background border-border text-foreground h-8 text-xs w-full"
+                                                className="bg-background border-border text-foreground h-9 text-xs flex-1"
                                             />
                                         )
                                     }
                                     return (
-                                        <>
+                                        <div className="flex items-center gap-2 flex-1 min-w-0">
                                             {inv?.imageUrl ? (
-                                                <img src={inv.imageUrl} alt="img" className="w-8 h-8 rounded-md object-cover border border-border" />
+                                                <img src={inv.imageUrl} alt="img" className="w-10 h-10 rounded-lg object-cover border border-border flex-shrink-0" />
                                             ) : (
-                                                <div className="w-8 h-8 rounded-md bg-background border border-border flex items-center justify-center text-muted-foreground">
-                                                    <ImageIcon size={14} />
+                                                <div className="w-10 h-10 rounded-lg bg-background border border-border flex items-center justify-center text-muted-foreground flex-shrink-0">
+                                                    <ImageIcon size={16} />
                                                 </div>
                                             )}
-                                            <div className="flex flex-col">
-                                                <span className="font-mono text-foreground font-semibold">{inv?.itemCode || "Unknown"}</span>
-                                                <span className="text-[10px] text-muted-foreground truncate max-w-[100px]">{inv?.category?.name || ""}</span>
+                                            <div className="min-w-0">
+                                                <span className="font-mono text-foreground font-bold text-sm block">{inv?.itemCode || "Unknown"}</span>
+                                                <span className="text-[11px] text-muted-foreground truncate block">{inv?.category?.name || ""}</span>
                                             </div>
-                                        </>
+                                        </div>
                                     )
                                 })()}
+                                <div className="flex gap-1 flex-shrink-0">
+                                    <button type="button" onClick={() => setExpandedRow(expandedRow === idx ? null : idx)}
+                                        className="p-2 rounded-lg bg-muted text-muted-foreground hover:text-foreground transition-colors">
+                                        {expandedRow === idx ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                                    </button>
+                                    <button type="button" onClick={() => removeItem(idx)} disabled={items.length <= 1}
+                                        className="p-2 rounded-lg bg-muted text-muted-foreground hover:text-rose-400 transition-colors">
+                                        <Trash2 size={14} />
+                                    </button>
+                                </div>
                             </div>
 
-                            {/* HSN */}
-                            <Input
-                                value={item.hsnCode || ""}
-                                onChange={(e) => updateItem(idx, "hsnCode", e.target.value)}
-                                placeholder="7113"
-                                className="bg-background border-border text-foreground h-8 text-xs placeholder:text-muted-foreground"
-                            />
-
-                            {/* Quantity */}
-                            <Input
-                                type="number"
-                                step="0.001"
-                                min="0.001"
-                                value={item.quantity}
-                                onChange={(e) => updateItem(idx, "quantity", parseFloat(e.target.value) || 0)}
-                                className="bg-background border-border text-foreground h-8 text-xs"
-                            />
-
-                            {/* Unit Price */}
-                            <Input
-                                type="number"
-                                step="0.01"
-                                min="0"
-                                value={item.unitPrice}
-                                onChange={(e) => updateItem(idx, "unitPrice", parseFloat(e.target.value) || 0)}
-                                className="bg-background border-border text-foreground h-8 text-xs"
-                            />
-
-                            {/* Discount */}
-                            <div className="flex gap-1">
-                                <Input
-                                    type="number"
-                                    step="0.01"
-                                    min="0"
-                                    value={item.discount}
-                                    onChange={(e) => updateItem(idx, "discount", parseFloat(e.target.value) || 0)}
-                                    className="bg-background border-border text-foreground h-8 text-xs flex-1"
-                                />
+                            {/* Row 2: HSN + Qty + Rate */}
+                            <div className="grid grid-cols-3 gap-2">
+                                <div className="space-y-1">
+                                    <p className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wide">HSN</p>
+                                    <Input value={item.hsnCode || ""} onChange={(e) => updateItem(idx, "hsnCode", e.target.value)}
+                                        placeholder="7113" className="bg-background border-border text-foreground h-9 text-xs" />
+                                </div>
+                                <div className="space-y-1">
+                                    <p className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wide">Qty</p>
+                                    <Input type="number" step="0.001" min="0.001" value={item.quantity}
+                                        onChange={(e) => updateItem(idx, "quantity", parseFloat(e.target.value) || 0)}
+                                        className="bg-background border-border text-foreground h-9 text-xs" />
+                                </div>
+                                <div className="space-y-1">
+                                    <p className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wide">Rate (₹)</p>
+                                    <Input type="number" step="0.01" min="0" value={item.unitPrice}
+                                        onChange={(e) => updateItem(idx, "unitPrice", parseFloat(e.target.value) || 0)}
+                                        className="bg-background border-border text-foreground h-9 text-xs" />
+                                </div>
                             </div>
 
-                            {/* GST Rate */}
-                            <Select
-                                value={String(item.gstRate)}
-                                onValueChange={(val) => updateItem(idx, "gstRate", parseFloat(val))}
-                            >
-                                <SelectTrigger className="bg-background border-border text-foreground h-8 text-xs">
-                                    <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent className="bg-card border-border text-foreground">
-                                    <SelectItem value="0">0%</SelectItem>
-                                    <SelectItem value="0.25">0.25%</SelectItem>
-                                    <SelectItem value="3">3%</SelectItem>
-                                    <SelectItem value="5">5%</SelectItem>
-                                    <SelectItem value="12">12%</SelectItem>
-                                    <SelectItem value="18">18%</SelectItem>
-                                    <SelectItem value="28">28%</SelectItem>
-                                </SelectContent>
-                            </Select>
-
-                            {/* Amount */}
-                            <p className="text-right text-xs font-semibold text-primary">
-                                ₹{getLineTotal(item).toLocaleString("en-IN", { minimumFractionDigits: 2 })}
-                            </p>
-
-                            {/* Actions */}
-                            <div className="flex gap-1">
-                                <button
-                                    type="button"
-                                    onClick={() => setExpandedRow(expandedRow === idx ? null : idx)}
-                                    className="p-1 text-muted-foreground hover:text-foreground transition-colors"
-                                    title="Jewellery details"
-                                >
-                                    {expandedRow === idx ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={() => removeItem(idx)}
-                                    className="p-1 text-muted-foreground hover:text-rose-400 transition-colors"
-                                    disabled={items.length <= 1}
-                                >
-                                    <Trash2 size={14} />
-                                </button>
+                            {/* Row 3: Disc + GST + Amount */}
+                            <div className="grid grid-cols-3 gap-2 items-end">
+                                <div className="space-y-1">
+                                    <p className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wide">Disc</p>
+                                    <Input type="number" step="0.01" min="0" value={item.discount}
+                                        onChange={(e) => updateItem(idx, "discount", parseFloat(e.target.value) || 0)}
+                                        className="bg-background border-border text-foreground h-9 text-xs" />
+                                </div>
+                                <div className="space-y-1">
+                                    <p className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wide">GST %</p>
+                                    <Select value={String(item.gstRate)} onValueChange={(val) => updateItem(idx, "gstRate", parseFloat(val))}>
+                                        <SelectTrigger className="bg-background border-border text-foreground h-9 text-xs"><SelectValue /></SelectTrigger>
+                                        <SelectContent className="bg-card border-border text-foreground">
+                                            <SelectItem value="0">0%</SelectItem>
+                                            <SelectItem value="0.25">0.25%</SelectItem>
+                                            <SelectItem value="3">3%</SelectItem>
+                                            <SelectItem value="5">5%</SelectItem>
+                                            <SelectItem value="12">12%</SelectItem>
+                                            <SelectItem value="18">18%</SelectItem>
+                                            <SelectItem value="28">28%</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                                <div className="space-y-1">
+                                    <p className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wide">Amount</p>
+                                    <div className="h-9 flex items-center justify-end px-2 rounded-lg bg-primary/10 border border-primary/20">
+                                        <p className="text-sm font-bold text-primary">
+                                            ₹{getLineTotal(item).toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+                                        </p>
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
@@ -253,9 +221,7 @@ export function PurchaseInvoiceLineItems({ items, inventoryItems, isInterState, 
                         {expandedRow === idx && (
                             <div className="bg-background border border-border border-t-0 rounded-b-lg p-3 space-y-3">
                                 <p className="text-xs font-medium text-primary mb-2">Jewellery Details</p>
-                                <div className="grid grid-cols-4 gap-3">
-                                    <div className="space-y-1">
-                                        <Label className="text-xs text-muted-foreground">Purity / Karat</Label>
+                                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                                         <Input
                                             value={item.purity || ""}
                                             onChange={(e) => updateItem(idx, "purity", e.target.value)}
@@ -294,9 +260,7 @@ export function PurchaseInvoiceLineItems({ items, inventoryItems, isInterState, 
                                         />
                                     </div>
                                 </div>
-                                <div className="grid grid-cols-4 gap-3">
-                                    <div className="space-y-1">
-                                        <Label className="text-xs text-muted-foreground">Wastage %</Label>
+                                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                                         <Input
                                             type="number"
                                             step="0.01"

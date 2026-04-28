@@ -185,27 +185,27 @@ export function PaymentOutForm({ suppliers }: PaymentOutFormProps) {
     return (
         <div className="space-y-6 max-w-5xl mx-auto">
             {/* Header */}
-            <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
+            <div className="space-y-3">
+                <div className="flex items-center gap-3">
                     <Button
                         variant="ghost"
                         onClick={() => router.push("/dashboard/payments")}
-                        className="text-muted-foreground hover:text-foreground hover:bg-border h-9 w-9 p-0"
+                        className="text-muted-foreground hover:text-foreground hover:bg-border h-9 w-9 p-0 flex-shrink-0"
                     >
                         <ArrowLeft size={18} />
                     </Button>
-                    <div>
-                        <h1 className="text-xl font-bold text-foreground flex items-center gap-2">
-                            <CreditCard size={20} className="text-rose-400" />
+                    <div className="min-w-0">
+                        <h1 className="text-lg font-bold text-foreground flex items-center gap-2 leading-tight">
+                            <CreditCard size={18} className="text-rose-400 flex-shrink-0" />
                             Record Payment Made
                         </h1>
-                        <p className="text-sm text-muted-foreground">Log money paid to a supplier</p>
+                        <p className="text-xs text-muted-foreground">Log money paid to a supplier</p>
                     </div>
                 </div>
                 <Button
                     onClick={handleSubmit}
                     disabled={loading}
-                    className="bg-rose-600 hover:bg-rose-700 text-white font-semibold"
+                    className="w-full bg-rose-600 hover:bg-rose-700 text-white font-semibold h-11"
                 >
                     {loading ? (
                         <><Loader2 size={16} className="mr-2 animate-spin" /> Saving...</>

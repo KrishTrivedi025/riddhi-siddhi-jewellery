@@ -1,44 +1,18 @@
 "use client"
 
-import { useEffect, useRef } from "react"
-
 /**
- * MobileScrollFix — sets exact padding-bottom so content
- * never hides under the bottom nav bar on ANY mobile device.
+ * MobileScrollFix
+ * Pure CSS solution — no JS, no useEffect, no timing issues.
  * 
- * Bottom nav = 58px + env(safe-area-inset-bottom)
- * We add 20px breathing room = total clearance guaranteed.
+ * Bottom nav height = 58px
+ * Safe area inset (home bar on notch phones) = env(safe-area-inset-bottom)
+ * Extra breathing room = 24px
+ * 
+ * On desktop (md+) the bottom nav is hidden so normal padding applies.
  */
 export function MobileScrollFix({ children }: { children: React.ReactNode }) {
-  const ref = useRef<HTMLElement>(null)
-
-  useEffect(() => {
-    const el = ref.current
-    if (!el) return
-
-    const apply = () => {
-      if (window.innerWidth < 768) {
-        // Get actual safe-area value
-        const safeArea = parseInt(
-          getComputedStyle(document.documentElement)
-            .getPropertyValue("--sat") || "0"
-        ) || 0
-        el.style.paddingBottom = `${58 + safeArea + 20}px`
-      } else {
-        el.style.paddingBottom = "1.5rem"
-      }
-    }
-
-    apply()
-    window.addEventListener("resize", apply)
-    return () => window.removeEventListener("resize", apply)
-  }, [])
-
   return (
-    <main
-      ref={ref}
-      className="flex-1 overflow-y-auto hw-scroll p-4 md:p-6 print:p-0 print:overflow-visible print:block"
-    >
+    <main className="flex-1 overflow-y-auto hw-scroll p-4 md:p-6 print:p-0 print:overflow-visible print:block mobile-scroll-container">
       {children}
     </main>
   )
