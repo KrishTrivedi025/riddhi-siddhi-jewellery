@@ -14,7 +14,7 @@ export function MobileScrollFix({ children }: { children: React.ReactNode }) {
         // ✅ Use inline style to completely avoid Tailwind cascade battles
         // p-4 is REMOVED from className — no more shorthand override conflict
         padding: "1rem",                           // default p-4 equivalent
-        paddingBottom: "calc(58px + 1.5rem)",      // 58px nav + 24px breathing room
+        paddingBottom: "calc(58px + 3rem)",      // 58px nav + 24px breathing room
       }}
     >
       {children}
