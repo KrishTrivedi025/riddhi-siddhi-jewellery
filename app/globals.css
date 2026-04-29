@@ -221,17 +221,17 @@ header,
    Bottom nav = 58px + safe-area-inset-bottom + 24px breathing
    On md+ screens: normal 1.5rem padding (no bottom nav)
 ───────────────────────────────────────────────────────── */
+/* ✅ No longer needed — padding handled via inline style in MobileScrollFix */
+/* Kept as backup utility only */
 .mobile-scroll-container {
-  /* 58px nav + env safe area (real value after MainActivity fix) + 56px nuclear buffer */
-  padding-bottom: calc(58px + env(safe-area-inset-bottom, 56px) + 56px) !important;
+  padding-bottom: calc(58px + 1.5rem);
 }
 
 @media (min-width: 768px) {
   .mobile-scroll-container {
-    padding-bottom: 1.5rem !important;
+    padding-bottom: 1.5rem;
   }
 }
-
 /* ─────────────────────────────────────────────────────────
    Reduced Motion — kill all animations
 ───────────────────────────────────────────────────────── */
