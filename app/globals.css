@@ -7,21 +7,21 @@
    Design Tokens — Light Mode
 ───────────────────────────────────────────────────────── */
 :root {
-  --background:        #FDFBF7;
-  --foreground:        #2C2620;
-  --card:              #FFFFFF;
-  --border:            #EAE3D9;
-  --muted:             #F2EEE6;
-  --muted-foreground:  #8C8074;
-  --primary:           #D4A017;
-  --primary-foreground:#FFFFFF;
-  --radius:            0.5rem;
+  --background: #FDFBF7;
+  --foreground: #2C2620;
+  --card: #FFFFFF;
+  --border: #EAE3D9;
+  --muted: #F2EEE6;
+  --muted-foreground: #8C8074;
+  --primary: #D4A017;
+  --primary-foreground: #FFFFFF;
+  --radius: 0.5rem;
 
   /* Shadows */
-  --shadow-sm:  0 1px 3px rgba(0,0,0,0.07), 0 1px 2px rgba(0,0,0,0.05);
-  --shadow-md:  0 4px 16px rgba(0,0,0,0.10), 0 2px 6px rgba(0,0,0,0.06);
-  --shadow-lg:  0 10px 40px rgba(0,0,0,0.12), 0 4px 12px rgba(0,0,0,0.08);
-  --gold-glow:  0 0 20px rgba(212,160,23,0.12);
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.07), 0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.10), 0 2px 6px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 10px 40px rgba(0, 0, 0, 0.12), 0 4px 12px rgba(0, 0, 0, 0.08);
+  --gold-glow: 0 0 20px rgba(212, 160, 23, 0.12);
 
   /* Color scheme hint — prevents flash on initial load */
   color-scheme: light dark;
@@ -31,37 +31,37 @@
    Design Tokens — Dark Mode
 ───────────────────────────────────────────────────────── */
 .dark {
-  --background:        #0F0F0F;
-  --foreground:        #F5F5F5;
-  --card:              #1A1A1A;
-  --border:            #2A2A2A;
-  --muted:             #1A1A1A;
-  --muted-foreground:  #A0A0A0;
-  --primary:           #D4A017;
-  --primary-foreground:#0F0F0F;
+  --background: #0F0F0F;
+  --foreground: #F5F5F5;
+  --card: #1A1A1A;
+  --border: #2A2A2A;
+  --muted: #1A1A1A;
+  --muted-foreground: #A0A0A0;
+  --primary: #D4A017;
+  --primary-foreground: #0F0F0F;
 
-  --shadow-sm:  0 1px 3px rgba(0,0,0,0.4);
-  --shadow-md:  0 4px 24px rgba(0,0,0,0.6);
-  --shadow-lg:  0 10px 50px rgba(0,0,0,0.7);
-  --gold-glow:  0 0 24px rgba(212,160,23,0.22);
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 4px 24px rgba(0, 0, 0, 0.6);
+  --shadow-lg: 0 10px 50px rgba(0, 0, 0, 0.7);
+  --gold-glow: 0 0 24px rgba(212, 160, 23, 0.22);
 }
 
 /* ─────────────────────────────────────────────────────────
    Tailwind Theme Bridge
 ───────────────────────────────────────────────────────── */
 @theme inline {
-  --color-background:       var(--background);
-  --color-foreground:       var(--foreground);
-  --color-card:             var(--card);
-  --color-border:           var(--border);
-  --color-muted:            var(--muted);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-border: var(--border);
+  --color-muted: var(--muted);
   --color-muted-foreground: var(--muted-foreground);
-  --color-primary:          var(--primary);
-  --color-primary-foreground:var(--primary-foreground);
-  --font-sans:              var(--font-sans);
-  --radius-sm:              calc(var(--radius) * 0.6);
-  --radius-md:              calc(var(--radius) * 0.8);
-  --radius-lg:              var(--radius);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --font-sans: var(--font-sans);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
 }
 
 /* ─────────────────────────────────────────────────────────
@@ -118,6 +118,7 @@
     -webkit-appearance: none;
     margin: 0;
   }
+
   input[type="number"] {
     -moz-appearance: textfield;
   }
@@ -139,17 +140,20 @@ header,
    Shimmer Animation — premium skeleton loading
 ───────────────────────────────────────────────────────── */
 @keyframes shimmer {
-  0%   { background-position: 200% 0; }
-  100% { background-position: -200% 0; }
+  0% {
+    background-position: 200% 0;
+  }
+
+  100% {
+    background-position: -200% 0;
+  }
 }
 
 .skeleton-shimmer {
-  background: linear-gradient(
-    90deg,
-    var(--border) 25%,
-    color-mix(in srgb, var(--border) 60%, var(--muted-foreground) 40%) 50%,
-    var(--border) 75%
-  );
+  background: linear-gradient(90deg,
+      var(--border) 25%,
+      color-mix(in srgb, var(--border) 60%, var(--muted-foreground) 40%) 50%,
+      var(--border) 75%);
   background-size: 200% 100%;
   animation: shimmer 1.4s ease-in-out infinite;
 }
@@ -161,13 +165,16 @@ header,
   width: 4px;
   height: 4px;
 }
+
 ::-webkit-scrollbar-track {
   background: transparent;
 }
+
 ::-webkit-scrollbar-thumb {
   background: var(--border);
   border-radius: 999px;
 }
+
 ::-webkit-scrollbar-thumb:hover {
   background: var(--muted-foreground);
 }
@@ -191,6 +198,7 @@ header,
 .pb-safe {
   padding-bottom: env(safe-area-inset-bottom);
 }
+
 .mb-safe {
   margin-bottom: env(safe-area-inset-bottom);
 }
@@ -202,40 +210,28 @@ header,
   @page {
     margin: 10mm;
   }
+
   body {
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
     /* Kill transitions when printing */
     transition: none !important;
   }
+
   * {
     transition: none !important;
   }
+
   .print\:hidden {
     display: none !important;
   }
 }
 
 /* ─────────────────────────────────────────────────────────
-   Mobile Bottom Nav Clearance — PURE CSS, no JS needed
-   Bottom nav = 58px + safe-area-inset-bottom + 24px breathing
-   On md+ screens: normal 1.5rem padding (no bottom nav)
-───────────────────────────────────────────────────────── */
-/* ✅ No longer needed — padding handled via inline style in MobileScrollFix */
-/* Kept as backup utility only */
-.mobile-scroll-container {
-  padding-bottom: calc(58px + 1.5rem);
-}
-
-@media (min-width: 768px) {
-  .mobile-scroll-container {
-    padding-bottom: 1.5rem;
-  }
-}
-/* ─────────────────────────────────────────────────────────
    Reduced Motion — kill all animations
 ───────────────────────────────────────────────────────── */
 @media (prefers-reduced-motion: reduce) {
+
   *,
   *::before,
   *::after {
