@@ -222,8 +222,8 @@ header,
    On md+ screens: normal 1.5rem padding (no bottom nav)
 ───────────────────────────────────────────────────────── */
 .mobile-scroll-container {
-  /* 58px nav + safe-area (now real value after styles.xml fix) + 48px hard fallback buffer */
-  padding-bottom: calc(58px + env(safe-area-inset-bottom, 48px) + 48px) !important;
+  /* 58px nav + env safe area (real value after MainActivity fix) + 56px nuclear buffer */
+  padding-bottom: calc(58px + env(safe-area-inset-bottom, 56px) + 56px) !important;
 }
 
 @media (min-width: 768px) {
