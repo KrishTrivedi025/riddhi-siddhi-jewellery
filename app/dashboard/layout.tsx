@@ -40,6 +40,10 @@ export default async function DashboardLayout({
             <AnimatePresenceWrapper>
               {children}
             </AnimatePresenceWrapper>
+
+            {/* ✅ Spacer — pushes content above the fixed bottom nav on mobile */}
+            {/* 58px = nav height, 16px = breathing room */}
+            <div className="block md:hidden" style={{ height: "74px", flexShrink: 0 }} />
           </MobileScrollFix>
         </div>
       </div>
