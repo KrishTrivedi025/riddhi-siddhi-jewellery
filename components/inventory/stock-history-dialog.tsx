@@ -7,14 +7,6 @@ import {
     DialogTitle,
     DialogTrigger,
 } from "@/components/ui/dialog"
-import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from "@/components/ui/table"
 import { ArrowUpCircle, ArrowDownCircle, History, Loader2 } from "lucide-react"
 import { useState, useEffect } from "react"
 import { getStockMovements } from "@/lib/actions/items"
@@ -52,14 +44,15 @@ export function StockHistoryDialog({ item, trigger }: StockHistoryDialogProps) {
     return (
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>{trigger}</DialogTrigger>
-            <DialogContent className="bg-card border-border text-foreground sm:max-w-[600px]">
+            <DialogContent className="bg-card border-border text-foreground sm:max-w-[600px] max-h-[80vh] flex flex-col">
                 <DialogHeader>
                     <DialogTitle className="flex items-center gap-2">
                         <History size={18} className="text-primary" />
                         Stock History — {item.name}
                     </DialogTitle>
                 </DialogHeader>
-                <div className="pt-2">
+
+                <div className="flex-1 overflow-y-auto pt-2 min-h-0">
                     {loading ? (
                         <div className="flex items-center justify-center py-12">
                             <Loader2 className="h-6 w-6 animate-spin text-primary" />
@@ -69,47 +62,45 @@ export function StockHistoryDialog({ item, trigger }: StockHistoryDialogProps) {
                             No stock movements recorded yet
                         </div>
                     ) : (
-                        <div className="max-h-[400px] overflow-y-auto rounded-lg border border-border">
-                            <Table>
-                                <TableHeader className="bg-muted/50 sticky top-0">
-                                    <TableRow className="hover:bg-transparent border-border">
-                                        <TableHead className="text-muted-foreground w-[35%]">Date</TableHead>
-                                        <TableHead className="text-muted-foreground w-[15%]">Type</TableHead>
-                                        <TableHead className="text-muted-foreground w-[20%] text-right">Qty</TableHead>
-                                        <TableHead className="text-muted-foreground w-[30%]">Reason</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {movements.map((m) => (
-                                        <TableRow
-                                            key={m.id}
-                                            className="border-border hover:bg-muted transition-colors"
-                                        >
-                                            <TableCell className="text-xs text-muted-foreground">
-                                                {formatDate(m.createdAt)}
-                                            </TableCell>
-                                            <TableCell>
-                                                {m.movementType === "in" ? (
-                                                    <span className="inline-flex items-center gap-1 text-xs font-medium text-emerald-500">
-                                                        <ArrowUpCircle size={12} /> In
-                                                    </span>
-                                                ) : (
-                                                    <span className="inline-flex items-center gap-1 text-xs font-medium text-rose-500">
-                                                        <ArrowDownCircle size={12} /> Out
-                                                    </span>
-                                                )}
-                                            </TableCell>
-                                            <TableCell className="text-right font-semibold text-foreground">
-                                                {m.movementType === "in" ? "+" : "−"}
-                                                {m.quantity} {item.unit}
-                                            </TableCell>
-                                            <TableCell className="text-xs text-muted-foreground">
+                        <div className="space-y-2">
+                            {movements.map((m) => (
+                                <div
+                                    key={m.id}
+                                    className="flex items-start justify-between gap-3 p-3 rounded-lg border border-border bg-background"
+                                >
+                                    {/* Left: type badge + date + reason */}
+                                    <div className="flex items-start gap-3 min-w-0">
+                                        {/* Type icon */}
+                                        <div className="shrink-0 mt-0.5">
+                                            {m.movementType === "in" ? (
+                                                <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-500 bg-emerald-500/10 px-2 py-0.5 rounded-full">
+                                                    <ArrowUpCircle size={11} /> In
+                                                </span>
+                                            ) : (
+                                                <span className="inline-flex items-center gap-1 text-xs font-semibold text-rose-500 bg-rose-500/10 px-2 py-0.5 rounded-full">
+                                                    <ArrowDownCircle size={11} /> Out
+                                                </span>
+                                            )}
+                                        </div>
+
+                                        {/* Date + reason stacked */}
+                                        <div className="min-w-0">
+                                            <p className="text-xs text-muted-foreground">{formatDate(m.createdAt)}</p>
+                                            <p className="text-xs text-foreground/70 truncate mt-0.5">
                                                 {m.reason || "—"}
-                                            </TableCell>
-                                        </TableRow>
-                                    ))}
-                                </TableBody>
-                            </Table>
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    {/* Right: qty */}
+                                    <span className={`text-sm font-bold shrink-0 ${
+                                        m.movementType === "in" ? "text-emerald-500" : "text-rose-500"
+                                    }`}>
+                                        {m.movementType === "in" ? "+" : "−"}
+                                        {m.quantity} {item.unit}
+                                    </span>
+                                </div>
+                            ))}
                         </div>
                     )}
                 </div>

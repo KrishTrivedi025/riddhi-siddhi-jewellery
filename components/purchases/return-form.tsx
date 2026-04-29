@@ -191,14 +191,14 @@ export function PurchaseReturnForm({ invoices }: ReturnFormProps) {
     }
 
     return (
-        <div className="space-y-6 max-w-4xl mx-auto">
+        <div className="space-y-4 max-w-4xl mx-auto">
             {/* Header */}
-            <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex items-start gap-3">
                     <Button
                         variant="ghost"
                         onClick={() => router.push("/dashboard/purchases")}
-                        className="text-muted-foreground hover:text-foreground hover:bg-border h-9 w-9 p-0"
+                        className="text-muted-foreground hover:text-foreground hover:bg-border h-9 w-9 p-0 shrink-0 mt-0.5"
                     >
                         <ArrowLeft size={18} />
                     </Button>
@@ -207,13 +207,13 @@ export function PurchaseReturnForm({ invoices }: ReturnFormProps) {
                             <RotateCcw size={20} className="text-primary" />
                             New Debit Note
                         </h1>
-                        <p className="text-sm text-muted-foreground">Create a purchase return against an existing invoice</p>
+                        <p className="text-xs text-muted-foreground">Create a purchase return against an existing invoice</p>
                     </div>
                 </div>
                 <Button
                     onClick={handleSubmit}
                     disabled={loading}
-                    className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold"
+                    className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold w-full sm:w-auto"
                 >
                     {loading ? (
                         <><Loader2 size={16} className="mr-2 animate-spin" /> Saving...</>
@@ -233,7 +233,7 @@ export function PurchaseReturnForm({ invoices }: ReturnFormProps) {
             {/* Select Invoice */}
             <div className="bg-card border border-border rounded-xl p-5 space-y-4">
                 <h3 className="text-sm font-semibold text-foreground">Original Invoice</h3>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                     <div className="space-y-2">
                         <Label className="text-xs text-muted-foreground">Select Invoice *</Label>
                         <Select value={selectedInvoiceId} onValueChange={handleInvoiceChange}>
@@ -272,7 +272,7 @@ export function PurchaseReturnForm({ invoices }: ReturnFormProps) {
 
                 {/* Invoice Summary */}
                 {selectedInvoice && (
-                    <div className="bg-background rounded-lg p-3 flex gap-6 text-sm">
+                    <div className="bg-background rounded-lg p-3 flex flex-wrap gap-x-6 gap-y-2 text-sm">
                         <div>
                             <span className="text-muted-foreground text-xs">Supplier:</span>{" "}
                             <span className="text-foreground">{selectedInvoice.party?.name}</span>
@@ -307,29 +307,37 @@ export function PurchaseReturnForm({ invoices }: ReturnFormProps) {
                         {returnItems.map((item, idx) => (
                             <div
                                 key={idx}
-                                className={`flex items-center gap-4 p-3 rounded-lg border transition-colors ${
+                                className={`flex flex-col gap-2 p-3 rounded-lg border transition-colors ${
                                     item.selected
                                         ? "bg-primary/5 border-primary/20"
                                         : "bg-background border-border"
                                 } ${item.maxQuantity <= 0 ? "opacity-50" : ""}`}
                             >
-                                <Checkbox
-                                    checked={item.selected}
-                                    onCheckedChange={() => toggleItem(idx)}
-                                    disabled={item.maxQuantity <= 0}
-                                    className="border-border data-[state=checked]:bg-primary data-[state=checked]:border-primary"
-                                />
-
-                                <div className="flex-1">
-                                    <p className="text-sm text-foreground">{item.itemName}</p>
-                                    <p className="text-xs text-muted-foreground">
-                                        {item.hsnCode && `HSN: ${item.hsnCode} • `}
-                                        Rate: {formatCurrency(item.unitPrice)} • GST: {item.gstRate}%
-                                    </p>
+                                {/* Top row: checkbox + item info */}
+                                <div className="flex items-start gap-3">
+                                    <Checkbox
+                                        checked={item.selected}
+                                        onCheckedChange={() => toggleItem(idx)}
+                                        disabled={item.maxQuantity <= 0}
+                                        className="border-border data-[state=checked]:bg-primary data-[state=checked]:border-primary mt-0.5 shrink-0"
+                                    />
+                                    <div className="flex-1 min-w-0">
+                                        <p className="text-sm font-medium text-foreground">{item.itemName}</p>
+                                        <p className="text-xs text-muted-foreground">
+                                            {item.hsnCode && `HSN: ${item.hsnCode} • `}
+                                            Rate: {formatCurrency(item.unitPrice)} • GST: {item.gstRate}%
+                                        </p>
+                                    </div>
+                                    {item.maxQuantity <= 0 && (
+                                        <Badge className="bg-border text-muted-foreground text-[10px] hover:bg-border shrink-0">
+                                            Fully Returned
+                                        </Badge>
+                                    )}
                                 </div>
 
-                                <div className="flex items-center gap-2">
-                                    <Label className="text-xs text-muted-foreground">Return Qty:</Label>
+                                {/* Bottom row: qty input */}
+                                <div className="flex items-center gap-2 pl-7">
+                                    <Label className="text-xs text-muted-foreground whitespace-nowrap">Return Qty:</Label>
                                     <Input
                                         type="number"
                                         step="0.001"
@@ -340,16 +348,10 @@ export function PurchaseReturnForm({ invoices }: ReturnFormProps) {
                                         disabled={!item.selected || item.maxQuantity <= 0}
                                         className="w-24 bg-background border-border text-foreground h-8 text-xs"
                                     />
-                                    <span className="text-xs text-muted-foreground">
+                                    <span className="text-xs text-muted-foreground whitespace-nowrap">
                                         / {item.maxQuantity} {item.unit}
                                     </span>
                                 </div>
-
-                                {item.maxQuantity <= 0 && (
-                                    <Badge className="bg-border text-muted-foreground text-[10px] hover:bg-border">
-                                        Fully Returned
-                                    </Badge>
-                                )}
                             </div>
                         ))}
                     </div>
@@ -358,7 +360,7 @@ export function PurchaseReturnForm({ invoices }: ReturnFormProps) {
 
                     {/* Return Total */}
                     <div className="flex justify-end">
-                        <div className="bg-background rounded-lg p-4 w-72">
+                        <div className="bg-background rounded-lg p-4 w-full sm:w-72">
                             <div className="flex justify-between text-sm">
                                 <span className="text-muted-foreground">Items Selected</span>
                                 <span className="text-foreground">{returnItems.filter((i) => i.selected).length}</span>
