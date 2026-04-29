@@ -196,10 +196,12 @@ export async function getStockSummaryReport() {
 // ─── 7. Stock Movement Report ─────────────────────────────────────────────────
 
 export async function getStockMovementReport(range: DateRange, itemId?: string) {
+    const userId = await requireUserId()
     const movements = await prisma.stockMovement.findMany({
         where: {
             ...dateWhere("createdAt", range),
             ...(itemId && itemId !== "all" ? { itemId } : {}),
+            item: { userId },
         },
         include: { item: { select: { id: true, name: true, unit: true } } },
         orderBy: { createdAt: "desc" },
@@ -328,8 +330,9 @@ export async function getCashBankBookReport(range: DateRange, accountId: string)
 // ─── 11. Item-wise Profit Report ─────────────────────────────────────────────
 
 export async function getItemProfitReport(range: DateRange) {
+    const userId = await requireUserId()
     const saleItems = await prisma.saleInvoiceItem.findMany({
-        where: { invoice: { deletedAt: null, status: "active", ...dateWhere("invoiceDate", range) } },
+        where: { invoice: { userId, deletedAt: null, status: "active", ...dateWhere("invoiceDate", range) } },
         include: { item: { select: { id: true, name: true, purchasePrice: true } }, invoice: { select: { invoiceDate: true } } },
     })
 

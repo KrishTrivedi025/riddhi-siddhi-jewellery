@@ -5,6 +5,7 @@ import { Download, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { format } from "date-fns"
 import { numberToWords } from "@/lib/amount-in-words"
+import { downloadOrSharePdf } from "@/lib/pdf-download"
 
 interface InvoicePDFProps {
     invoice: any
@@ -448,12 +449,7 @@ export function InvoicePDF({ invoice, businessProfile }: InvoicePDFProps) {
             )
 
             const blob = await pdf(<InvoiceDoc />).toBlob()
-            const url = URL.createObjectURL(blob)
-            const a = document.createElement("a")
-            a.href = url
-            a.download = `${invoice.invoiceNumber}.pdf`
-            a.click()
-            URL.revokeObjectURL(url)
+            await downloadOrSharePdf(blob, `${invoice.invoiceNumber}.pdf`)
         } catch (err) {
             console.error("PDF generation error:", err)
         } finally {

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
+import { Eye, EyeOff } from "lucide-react"
 
 const schema = z.object({
     email: z.string().email("Invalid email"),
@@ -17,6 +18,7 @@ export default function LoginPage() {
     const router = useRouter()
     const [error, setError] = useState("")
     const [loading, setLoading] = useState(false)
+    const [showPassword, setShowPassword] = useState(false)
 
     const { register, handleSubmit, formState: { errors } } = useForm<FormData>({
         resolver: zodResolver(schema),
@@ -67,12 +69,21 @@ export default function LoginPage() {
 
                         <div>
                             <label className="block text-sm text-muted-foreground mb-2">Password</label>
-                            <input
-                                {...register("password")}
-                                type="password"
-                                placeholder="••••••••"
-                                className="w-full bg-background border border-border rounded-xl px-4 py-3 text-foreground text-sm placeholder:text-muted-foreground focus:outline-none focus:border-primary transition-colors"
-                            />
+                            <div className="relative">
+                                <input
+                                    {...register("password")}
+                                    type={showPassword ? "text" : "password"}
+                                    placeholder="••••••••"
+                                    className="w-full bg-background border border-border rounded-xl px-4 py-3 pr-11 text-foreground text-sm placeholder:text-muted-foreground focus:outline-none focus:border-primary transition-colors"
+                                />
+                                <button
+                                    type="button"
+                                    onClick={() => setShowPassword(!showPassword)}
+                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                                >
+                                    {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                                </button>
+                            </div>
                             {errors.password && <p className="text-red-500 text-xs mt-1">{errors.password.message}</p>}
                         </div>
 
@@ -94,4 +105,4 @@ export default function LoginPage() {
             </div>
         </div>
     )
-}
+}

@@ -44,7 +44,7 @@ export function ProductBrowserModal({ inventoryItems, onSelect, children }: Prod
             <span onClick={() => setOpen(true)} className="cursor-pointer">{children}</span>
 
             <Dialog open={open} onOpenChange={setOpen}>
-                <DialogContent className="w-[96vw] max-w-lg h-[88vh] flex flex-col bg-card border-border p-0 overflow-hidden rounded-2xl gap-0 sm:max-w-2xl">
+                <DialogContent showCloseButton={false} className="w-[96vw] max-w-lg h-[88vh] flex flex-col bg-card border-border p-0 overflow-hidden rounded-2xl gap-0 sm:max-w-2xl">
 
                     {/* ── Header ── */}
                     <div className="flex items-center gap-3 px-4 pt-4 pb-3 border-b border-border flex-shrink-0">

@@ -19,6 +19,7 @@ import {
 } from "@react-pdf/renderer"
 import type { LedgerEntry, PartyLedgerSummary } from "@/lib/actions/party-ledger"
 import { format } from "date-fns"
+import { downloadOrSharePdf } from "@/lib/pdf-download"
 
 // ─── PDF Styles ─────────────────────────────────────────────────────────────
 
@@ -532,14 +533,7 @@ export function PartyStatementExport({
                 />
             )
             const blob = await pdf(doc).toBlob()
-            const url = URL.createObjectURL(blob)
-            const link = document.createElement("a")
-            link.href = url
-            link.download = `Statement_${party.name.replace(/\s+/g, "_")}_${format(new Date(), "yyyy-MM-dd")}.pdf`
-            document.body.appendChild(link)
-            link.click()
-            document.body.removeChild(link)
-            URL.revokeObjectURL(url)
+            await downloadOrSharePdf(blob, `Statement_${party.name.replace(/\s+/g, "_")}_${format(new Date(), "yyyy-MM-dd")}.pdf`)
         } catch (err) {
             console.error("PDF generation error:", err)
         } finally {
@@ -563,15 +557,7 @@ export function PartyStatementExport({
                 />
             )
             const blob = await pdf(doc).toBlob()
-            const url = URL.createObjectURL(blob)
-
-            // First download the PDF for the user (WhatsApp web cannot receive files directly)
-            const link = document.createElement("a")
-            link.href = url
-            link.download = `Statement_${party.name.replace(/\s+/g, "_")}_${format(new Date(), "yyyy-MM-dd")}.pdf`
-            document.body.appendChild(link)
-            link.click()
-            document.body.removeChild(link)
+            await downloadOrSharePdf(blob, `Statement_${party.name.replace(/\s+/g, "_")}_${format(new Date(), "yyyy-MM-dd")}.pdf`)
 
             // Build WhatsApp message with statement summary
             const closingBalance =
@@ -608,7 +594,6 @@ export function PartyStatementExport({
                 : `https://wa.me/?text=${whatsappMessage}`
 
             window.open(waUrl, "_blank")
-            URL.revokeObjectURL(url)
         } catch (err) {
             console.error("WhatsApp share error:", err)
         } finally {
