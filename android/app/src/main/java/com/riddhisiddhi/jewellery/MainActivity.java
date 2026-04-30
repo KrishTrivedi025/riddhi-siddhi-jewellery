@@ -43,6 +43,14 @@ public class MainActivity extends BridgeActivity {
                     // Let Capacitor's default handle anything else
                     super.onPermissionRequest(request);
                 }
+
+                @Override
+                public boolean onShowFileChooser(android.webkit.WebView webView,
+                        android.webkit.ValueCallback<android.net.Uri[]> filePathCallback,
+                        android.webkit.WebChromeClient.FileChooserParams fileChooserParams) {
+                    // Delegate to Capacitor's built-in file chooser (handles <input type="file">)
+                    return super.onShowFileChooser(webView, filePathCallback, fileChooserParams);
+                }
             });
         }
     }

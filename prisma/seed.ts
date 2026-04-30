@@ -47,10 +47,46 @@ async function main() {
         console.log("✅ Admin profile already exists — skipped")
     }
 
-    console.log("✅ Admin user:", adminEmail, "/ password: Kailash.1970")
+    // ── DEMO account ──────────────────────────────────────────────────────
+    const demoEmail    = "demo@vyapar.com"
+    const demoPassword = bcrypt.hashSync("demo1234", 10)
+
+    const demoUser = await prisma.user.upsert({
+        where:  { email: demoEmail },
+        update: { password: demoPassword },
+        create: { email: demoEmail, password: demoPassword },
+    })
+
+    const existingDemoProfile = await prisma.businessProfile.findUnique({
+        where: { userId: demoUser.id },
+    })
+    if (!existingDemoProfile) {
+        await prisma.businessProfile.create({
+            data: {
+                userId:        demoUser.id,
+                businessName:  "Demo Jewellery Shop",
+                ownerName:     "Demo User",
+                businessType:  "Jewellery Retailer",
+                state:         "Maharashtra",
+                city:          "Mumbai",
+                address:       "Demo Address",
+                pincode:       "400001",
+                mobile:        "9876543210",
+                email:         demoEmail,
+                invoicePrefix: "DEMO",
+                invoiceCounter: 1,
+            },
+        })
+        console.log("✅ Demo profile created")
+    } else {
+        console.log("✅ Demo profile already exists — skipped")
+    }
+
+    console.log("✅ Demo user:", demoEmail, "/ password: demo1234")
     console.log("")
     console.log("─────────────────────────────────────────────")
     console.log("  ADMIN   → kailashtrivedi7@gmail.com / Kailash.1970")
+    console.log("  DEMO    → demo@vyapar.com / demo1234")
     console.log("─────────────────────────────────────────────")
 }
 

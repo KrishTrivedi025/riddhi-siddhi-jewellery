@@ -16,13 +16,9 @@ export async function downloadOrSharePdf(blob: Blob, filename: string) {
             // User cancelled or share failed — fall through to download
         }
     }
-    // Fallback: classic download (works on desktop browsers)
+    // Fallback: open blob URL in new tab — works in Capacitor WebView + desktop
     const url = URL.createObjectURL(blob)
-    const a = document.createElement("a")
-    a.href = url
-    a.download = filename
-    document.body.appendChild(a)
-    a.click()
-    document.body.removeChild(a)
-    URL.revokeObjectURL(url)
+    window.open(url, "_blank")
+    // Revoke after delay — new tab needs time to load the blob
+    setTimeout(() => URL.revokeObjectURL(url), 30000)
 }

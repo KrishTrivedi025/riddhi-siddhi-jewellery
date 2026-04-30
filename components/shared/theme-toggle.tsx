@@ -16,10 +16,29 @@ export function ThemeToggle() {
 
   const isDark = theme === "dark"
 
+  const handleToggle = async () => {
+    const newTheme = isDark ? "light" : "dark"
+    setTheme(newTheme)
+
+    // Sync native Android status bar color with theme
+    try {
+      const { StatusBar, Style } = await import("@capacitor/status-bar")
+      if (newTheme === "dark") {
+        await StatusBar.setStyle({ style: Style.Dark })
+        await StatusBar.setBackgroundColor({ color: "#0F0F0F" })
+      } else {
+        await StatusBar.setStyle({ style: Style.Light })
+        await StatusBar.setBackgroundColor({ color: "#FFFFFF" })
+      }
+    } catch {
+      // Not in Capacitor — silently ignore
+    }
+  }
+
   return (
     <motion.button
       whileTap={tapScale}
-      onClick={() => setTheme(isDark ? "light" : "dark")}
+      onClick={handleToggle}
       className="relative w-9 h-9 rounded-xl border border-border bg-card
                  flex items-center justify-center overflow-hidden
                  hover:border-primary/40 hover:bg-primary/5
