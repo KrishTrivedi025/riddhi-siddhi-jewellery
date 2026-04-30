@@ -17,12 +17,18 @@ importers:
       '@capacitor/core':
         specifier: ^7.0.0
         version: 7.6.2
+      '@capacitor/filesystem':
+        specifier: ^7.1.8
+        version: 7.1.8(@capacitor/core@7.6.2)
       '@capacitor/haptics':
         specifier: ^7.0.0
         version: 7.0.5(@capacitor/core@7.6.2)
       '@capacitor/keyboard':
         specifier: ^7.0.0
         version: 7.0.6(@capacitor/core@7.6.2)
+      '@capacitor/share':
+        specifier: ^7.0.4
+        version: 7.0.4(@capacitor/core@7.6.2)
       '@capacitor/splash-screen':
         specifier: ^7.0.0
         version: 7.0.5(@capacitor/core@7.6.2)
@@ -335,6 +341,11 @@ packages:
   '@capacitor/core@7.6.2':
     resolution: {integrity: sha512-8HRKEUlYpCOeRec8bCHZwEA4o/E2q5dhHSd0v/Cr6+ume08fZY/gniF+ZCKF+6DO0T/nRaBeNRQn6Up+45J1mg==}
 
+  '@capacitor/filesystem@7.1.8':
+    resolution: {integrity: sha512-Qpw/2SE4/CzqAUvGgSM9hw/uXQ5qoOaF4wxbToXwpAaKPS+tzletS1h5ti3jjLmGcqizTs2sEXMtcsARW/Ceew==}
+    peerDependencies:
+      '@capacitor/core': '>=7.0.0'
+
   '@capacitor/haptics@7.0.5':
     resolution: {integrity: sha512-ujXuUkL8UG1YLhuJo/q+jiHr0K5JmclGZHmV1RttmiUBRG1XpC4Fc4gXUJyEX+6IoyfwWhgtPvJFRUB31HYnRQ==}
     peerDependencies:
@@ -342,6 +353,11 @@ packages:
 
   '@capacitor/keyboard@7.0.6':
     resolution: {integrity: sha512-mH9EHo4EnBA9zJAi6domGVB/PdEkcm0h27nJDHG4Y3fd2oKsheCxDRXlYrbgj8hcyQPe0cGWqAfzfwKzkWQoFQ==}
+    peerDependencies:
+      '@capacitor/core': '>=7.0.0'
+
+  '@capacitor/share@7.0.4':
+    resolution: {integrity: sha512-wNXxmXUcChrtbZ5jQv8scFIbIGKo3rk6B7qpWySxfUhYJP5NANgAqQ9Z69m0k/zYsucdh66SBU7XW1ykd9aUug==}
     peerDependencies:
       '@capacitor/core': '>=7.0.0'
 
@@ -354,6 +370,9 @@ packages:
     resolution: {integrity: sha512-7AVqj46b26QikImQzWfsJmzG8NUJZBGkrVSuoeTo+SX/YH3hXH0MqwwFgMqMGHfa/BICDgSvTjM9miVFlq0+RQ==}
     peerDependencies:
       '@capacitor/core': '>=7.0.0'
+
+  '@capacitor/synapse@1.0.4':
+    resolution: {integrity: sha512-/C1FUo8/OkKuAT4nCIu/34ny9siNHr9qtFezu4kxm6GY1wNFxrCFWjfYx5C1tUhVGz3fxBABegupkpjXvjCHrw==}
 
   '@cspotcode/source-map-support@0.8.1':
     resolution: {integrity: sha512-IchNf6dN4tHoMFIn/7OE8LWZ19Y6q/67Bmf6vnGREv8RSbBVb9LPJxEcnwrcwX6ixSvaiGoomAUvu4YSxXrVgw==}
@@ -6223,11 +6242,20 @@ snapshots:
     dependencies:
       tslib: 2.8.1
 
+  '@capacitor/filesystem@7.1.8(@capacitor/core@7.6.2)':
+    dependencies:
+      '@capacitor/core': 7.6.2
+      '@capacitor/synapse': 1.0.4
+
   '@capacitor/haptics@7.0.5(@capacitor/core@7.6.2)':
     dependencies:
       '@capacitor/core': 7.6.2
 
   '@capacitor/keyboard@7.0.6(@capacitor/core@7.6.2)':
+    dependencies:
+      '@capacitor/core': 7.6.2
+
+  '@capacitor/share@7.0.4(@capacitor/core@7.6.2)':
     dependencies:
       '@capacitor/core': 7.6.2
 
@@ -6238,6 +6266,8 @@ snapshots:
   '@capacitor/status-bar@7.0.6(@capacitor/core@7.6.2)':
     dependencies:
       '@capacitor/core': 7.6.2
+
+  '@capacitor/synapse@1.0.4': {}
 
   '@cspotcode/source-map-support@0.8.1':
     dependencies:
