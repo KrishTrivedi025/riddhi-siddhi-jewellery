@@ -203,6 +203,16 @@ header,
   margin-bottom: env(safe-area-inset-bottom);
 }
 
+/* Bottom nav clearance — mobile only */
+.pb-nav {
+  padding-bottom: calc(74px + env(safe-area-inset-bottom, 0px));
+}
+@media (min-width: 768px) {
+  .pb-nav {
+    padding-bottom: 0;
+  }
+}
+
 /* ─────────────────────────────────────────────────────────
    Print Styles
 ───────────────────────────────────────────────────────── */

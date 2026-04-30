@@ -20,7 +20,7 @@ export function AnimatePresenceWrapper({
 
   return (
     <AnimatePresence mode="wait" initial={false}>
-      <div key={pathname} className="h-full">
+      <div key={pathname}>
         {children}
       </div>
     </AnimatePresence>
