@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { Download, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { toast } from "sonner"
 import { format } from "date-fns"
 import { numberToWords } from "@/lib/amount-in-words"
 import { downloadOrSharePdf } from "@/lib/pdf-download"
@@ -452,6 +453,7 @@ export function InvoicePDF({ invoice, businessProfile }: InvoicePDFProps) {
             await downloadOrSharePdf(blob, `${invoice.invoiceNumber}.pdf`)
         } catch (err) {
             console.error("PDF generation error:", err)
+            toast.error("Failed to generate PDF. Please try again.")
         } finally {
             setDownloading(false)
         }
