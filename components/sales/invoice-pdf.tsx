@@ -175,8 +175,8 @@ export function InvoicePDF({ invoice, businessProfile }: InvoicePDFProps) {
                             <Text style={S.regText}>PAN : {biz.pan || "—"}</Text>
                         </View>
 
-                        {/* TAX INVOICE */}
-                        <Text style={S.taxInvoiceTitle}>TAX INVOICE</Text>
+                        {/* INVOICE TITLE */}
+                        <Text style={S.taxInvoiceTitle}>{invoice.isGst === false ? "INVOICE" : "TAX INVOICE"}</Text>
 
                         {/* PARTY TABLE */}
                         <View style={S.partyTable}>
@@ -454,9 +454,13 @@ export function InvoicePDF({ invoice, businessProfile }: InvoicePDFProps) {
     return (
         <div className="flex flex-col items-center gap-4">
             <div className="text-center">
-                <p className="text-sm text-foreground">Professional Tax Invoice PDF</p>
+                <p className="text-sm text-foreground">
+                    {invoice.isGst === false ? "Invoice PDF (Without GST)" : "Professional Tax Invoice PDF"}
+                </p>
                 <p className="text-xs text-muted-foreground mt-1">
-                    Includes party details, bank info, GST breakup table & authorised signatory
+                    {invoice.isGst === false
+                        ? "Includes party details, bank info & authorised signatory"
+                        : "Includes party details, bank info, GST breakup table & authorised signatory"}
                 </p>
             </div>
             <Button
@@ -467,7 +471,7 @@ export function InvoicePDF({ invoice, businessProfile }: InvoicePDFProps) {
                 {downloading ? (
                     <><Loader2 size={16} className="mr-2 animate-spin" /> Generating PDF...</>
                 ) : (
-                    <><Download size={16} className="mr-2" /> Download Tax Invoice</>
+                    <><Download size={16} className="mr-2" /> {invoice.isGst === false ? "Download Invoice" : "Download Tax Invoice"}</>
                 )}
             </Button>
         </div>
