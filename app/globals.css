@@ -3,6 +3,13 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* Prevent Android system font scaling from breaking layouts */
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  font-size: 16px !important;
+}
+
 /* ─────────────────────────────────────────────────────────
    Design Tokens — Light Mode
 ───────────────────────────────────────────────────────── */
@@ -207,6 +214,7 @@ header,
 .pb-nav {
   padding-bottom: calc(74px + env(safe-area-inset-bottom, 0px));
 }
+
 @media (min-width: 768px) {
   .pb-nav {
     padding-bottom: 0;

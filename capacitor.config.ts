@@ -40,6 +40,8 @@ const config: CapacitorConfig = {
     captureInput: true,
     // WebContentsDebuggingEnabled for development (set false for release)
     webContentsDebuggingEnabled: false,
+    // @ts-ignore
+    allowFontScaling: false,
   },
 
   // ── Plugin Configuration ──────────────────────────────────────────────────
