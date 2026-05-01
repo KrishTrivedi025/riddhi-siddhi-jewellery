@@ -1,4 +1,5 @@
 import { Suspense } from "react"
+import { auth } from "@/auth"
 import { getNextPurchaseInvoiceNumber } from "@/lib/actions/purchases"
 import { getItems } from "@/lib/actions/items"
 import { getBusinessProfile } from "@/lib/actions/sales" // Can reuse getBusinessProfile
@@ -15,12 +16,15 @@ export default async function NewPurchasePage() {
 }
 
 async function NewPurchaseData() {
+    const session = await auth()
+    if (!session?.user?.id) return null
+
     const [nextNumber, businessProfile, items, parties] = await Promise.all([
         getNextPurchaseInvoiceNumber(),
         getBusinessProfile(),
         getItems(),
         prisma.party.findMany({
-            where: { deletedAt: null, partyType: "SUPPLIER" },
+            where: { deletedAt: null, partyType: "SUPPLIER", userId: session.user.id },
             orderBy: { name: "asc" },
             select: {
                 id: true,
