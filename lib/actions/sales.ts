@@ -1,7 +1,7 @@
 "use server"
 
 import { prisma } from "@/lib/db"
-import { revalidatePath } from "next/cache"
+import { revalidatePath, unstable_noStore as noStore } from "next/cache"
 import { SaleInvoiceFormValues } from "../schemas/sale-invoice-schema"
 import { SaleReturnFormValues } from "../schemas/sale-return-schema"
 import { calculateLineItemGST } from "../gst-utils"
@@ -110,10 +110,11 @@ export async function getSaleInvoices(filters?: {
 // ─── Sale Invoice — Get by ID ────────────────────────────────────────────────
 
 export async function getSaleInvoiceById(id: string) {
+    noStore()
     try {
         const userId = await requireUserId()
-        const invoice = await prisma.saleInvoice.findFirst({
-            where: { id, userId },
+        const invoice = await prisma.saleInvoice.findUnique({
+            where: { id },
             include: {
                 party: true,
                 items: {
@@ -128,6 +129,7 @@ export async function getSaleInvoiceById(id: string) {
                 } as never,
             },
         })
+        if (invoice && invoice.userId !== userId) return null;
         return invoice
     } catch (error) {
         console.error("Error fetching sale invoice:", error)

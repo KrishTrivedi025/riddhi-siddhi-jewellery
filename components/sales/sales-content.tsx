@@ -73,8 +73,8 @@ export function SalesContent({ invoices, returns }: SalesContentProps) {
             />
 
             {/* Content */}
-            {activeTab === "gst" && <InvoiceTable invoices={gstInvoices} />}
-            {activeTab === "nogst" && <InvoiceTable invoices={noGstInvoices} />}
+            {activeTab === "gst" && <InvoiceTable key="gst" invoices={gstInvoices} />}
+            {activeTab === "nogst" && <InvoiceTable key="nogst" invoices={noGstInvoices} />}
             {activeTab === "returns" && <ReturnTable returns={returns} />}
 
             {/* Bill Type Modal */}
