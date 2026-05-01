@@ -207,15 +207,7 @@ export function InvoicePDF({ invoice, businessProfile }: InvoicePDFProps) {
                                 <View style={S.partyRow}>
                                     <Text style={S.partyRowLabel}>Invoice No. :</Text>
                                     <Text style={S.partyRowValue}>
-                                        {(() => {
-                                            // Dynamically apply current prefix to existing numbers for display
-                                            const currentPrefix = biz.invoicePrefix || "INV"
-                                            const parts = invoice.invoiceNumber.split("-")
-                                            if (parts.length > 1) {
-                                                return `${currentPrefix}-${parts.slice(1).join("-")}`
-                                            }
-                                            return invoice.invoiceNumber
-                                        })()}
+                                        {invoice.invoiceNumber}
                                     </Text>
                                 </View>
                                 <View style={S.partyRow}>

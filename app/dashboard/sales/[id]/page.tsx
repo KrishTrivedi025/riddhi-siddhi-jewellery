@@ -4,6 +4,8 @@ import { getSaleInvoiceById, getBusinessProfile } from "@/lib/actions/sales"
 import { InvoiceDetail } from "@/components/sales/invoice-detail"
 import { Skeleton } from "@/components/ui/skeleton"
 
+export const dynamic = "force-dynamic"
+
 interface InvoiceDetailPageProps {
     params: Promise<{ id: string }>
 }

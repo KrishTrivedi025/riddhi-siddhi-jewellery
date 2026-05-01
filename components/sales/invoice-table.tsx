@@ -88,7 +88,7 @@ export function InvoiceTable({ invoices }: InvoiceTableProps) {
                     {/* Mobile cards */}
                     <div className="md:hidden space-y-3">
                         {filtered.map((inv) => (
-                            <div key={inv.id} onClick={() => router.push(`/dashboard/sales/${inv.id}`)}
+                            <div key={inv.id} onClick={() => { router.refresh(); router.push(`/dashboard/sales/${inv.id}`) }}
                                 className="bg-card border border-border rounded-xl p-4 cursor-pointer active:scale-[0.99] transition-transform">
                                 <div className="flex items-start justify-between gap-2 mb-3">
                                     <div>
@@ -126,7 +126,7 @@ export function InvoiceTable({ invoices }: InvoiceTableProps) {
                             <TableBody>
                                 {filtered.map((inv) => (
                                     <TableRow key={inv.id} className="border-border hover:bg-card/50 cursor-pointer"
-                                        onClick={() => router.push(`/dashboard/sales/${inv.id}`)}>
+                                        onClick={() => { router.refresh(); router.push(`/dashboard/sales/${inv.id}`) }}>
                                         <TableCell className="font-medium text-foreground">{inv.invoiceNumber}</TableCell>
                                         <TableCell className="text-muted-foreground">{format(new Date(inv.invoiceDate), "dd MMM yyyy")}</TableCell>
                                         <TableCell className="text-foreground">{inv.party?.name}</TableCell>
@@ -142,7 +142,7 @@ export function InvoiceTable({ invoices }: InvoiceTableProps) {
                                                     </Button>
                                                 </DropdownMenuTrigger>
                                                 <DropdownMenuContent align="end" className="bg-card border-border text-foreground" onClick={(e) => e.stopPropagation()}>
-                                                    <DropdownMenuItem onClick={() => router.push(`/dashboard/sales/${inv.id}`)} className="hover:bg-border cursor-pointer">
+                                                    <DropdownMenuItem onClick={() => { router.refresh(); router.push(`/dashboard/sales/${inv.id}`) }} className="hover:bg-border cursor-pointer">
                                                         <Eye size={14} className="mr-2" /> View Details
                                                     </DropdownMenuItem>
                                                     {inv.status !== "cancelled" && inv.paymentStatus !== "paid" && (
