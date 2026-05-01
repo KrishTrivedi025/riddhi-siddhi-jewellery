@@ -66,12 +66,7 @@ export function InvoiceDetail({ invoice, businessProfile }: InvoiceDetailProps) 
                 </Button>
                 <div className="min-w-0 flex-1">
                     <h1 className="text-xl font-bold text-foreground leading-tight">
-                        {(() => {
-                            const currentPrefix = businessProfile?.invoicePrefix || "INV"
-                            const parts = invoice.invoiceNumber.split("-")
-                            if (parts.length > 1) return `${currentPrefix}-${parts.slice(1).join("-")}`
-                            return invoice.invoiceNumber
-                        })()}
+                        {invoice.invoiceNumber}
                     </h1>
                     <p className="text-xs text-muted-foreground">
                         {format(new Date(invoice.invoiceDate), "dd MMM yyyy")}
