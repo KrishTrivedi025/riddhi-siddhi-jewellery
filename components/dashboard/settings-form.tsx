@@ -52,6 +52,7 @@ interface SettingsFormProps {
         logoUrl: string | null
         signatureUrl: string | null
         invoicePrefix: string
+        noGstInvoicePrefix: string | null
         termsConditions: string | null
         defaultBank?: {
             bankName: string | null
@@ -87,6 +88,7 @@ export default function SettingsForm({ profile, signOutAction }: SettingsFormPro
         mobile:         profile.mobile || "",
         email:          profile.email || "",
         invoicePrefix:  profile.invoicePrefix,
+        noGstInvoicePrefix: profile.noGstInvoicePrefix || "BILL",
         termsConditions:profile.termsConditions || "",
         bankName:       profile.defaultBank?.bankName || "",
         accountName:    profile.defaultBank?.accountName || "",
@@ -429,6 +431,18 @@ export default function SettingsForm({ profile, signOutAction }: SettingsFormPro
                                 <div>
                                     <label className={L}>Invoice Prefix</label>
                                     <input value={form.invoicePrefix} onChange={e => set("invoicePrefix", e.target.value.toUpperCase())} className={I} />
+                                </div>
+                            </div>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div>
+                                    <label className={L}>Invoice Prefix (without GST bill)</label>
+                                    <input
+                                        value={form.noGstInvoicePrefix}
+                                        onChange={e => set("noGstInvoicePrefix", e.target.value.toUpperCase())}
+                                        placeholder="BILL"
+                                        className={I}
+                                    />
+                                    <p className="text-[10px] text-muted-foreground mt-1">Used for bills without GST</p>
                                 </div>
                             </div>
                             <div>

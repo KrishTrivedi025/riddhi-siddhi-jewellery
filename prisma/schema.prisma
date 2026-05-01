@@ -48,8 +48,10 @@ model BusinessProfile {
   financialYear     String   @default("April-March")
   currency          String   @default("INR")
   defaultTaxRate    Float    @default(3)
-  invoicePrefix     String   @default("INV")
-  invoiceCounter    Int      @default(1)
+  invoicePrefix        String   @default("INV")
+  invoiceCounter       Int      @default(1)
+  noGstInvoicePrefix   String   @default("BILL")
+  noGstInvoiceCounter  Int      @default(1)
   termsConditions   String?
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
@@ -183,6 +185,7 @@ model SaleInvoice {
   notes           String?
   termsConditions String?
   status          String            @default("active")
+  isGst           Boolean           @default(true)
   deletedAt       DateTime?
   createdAt       DateTime          @default(now())
   updatedAt       DateTime          @updatedAt

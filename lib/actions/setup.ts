@@ -31,6 +31,7 @@ export interface SetupFormData {
     branchName?: string
     signatureUrl?: string
     invoicePrefix: string
+    noGstInvoicePrefix?: string
     termsConditions?: string
 }
 
@@ -123,6 +124,7 @@ export async function updateBusinessProfile(data: Partial<SetupFormData> & { id:
             mobile: data.mobile,
             email: data.email || null,
             invoicePrefix: data.invoicePrefix,
+            noGstInvoicePrefix: data.noGstInvoicePrefix || "BILL",
             termsConditions: data.termsConditions || null,
             bankName: data.bankName || null,
             accountName: data.accountName || null,

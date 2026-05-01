@@ -35,12 +35,19 @@ export async function getBusinessProfile() {
 
 // ─── Invoice Number Generation ───────────────────────────────────────────────
 
-export async function getNextInvoiceNumber(): Promise<string> {
+export async function getNextInvoiceNumber(isGst: boolean = true): Promise<string> {
     const userId = await requireUserId()
     const profile = await prisma.businessProfile.findFirst({ where: { userId } })
-    const prefix = profile?.invoicePrefix || "INV"
-    const counter = profile?.invoiceCounter || 1
-    return `${prefix}-${String(counter).padStart(3, "0")}`
+    if (isGst) {
+        const prefix = profile?.invoicePrefix || "INV"
+        const counter = profile?.invoiceCounter || 1
+        return `${prefix}-${String(counter).padStart(3, "0")}`
+    } else {
+        const p = profile as unknown as { noGstInvoicePrefix?: string; noGstInvoiceCounter?: number }
+        const prefix = p?.noGstInvoicePrefix || "BILL"
+        const counter = p?.noGstInvoiceCounter || 1
+        return `${prefix}-${String(counter).padStart(3, "0")}`
+    }
 }
 
 export async function getNextCreditNoteNumber(): Promise<string> {
@@ -130,9 +137,10 @@ export async function getSaleInvoiceById(id: string) {
 
 // ─── Create Sale Invoice ─────────────────────────────────────────────────────
 
-export async function createSaleInvoice(data: SaleInvoiceFormValues) {
+export async function createSaleInvoice(data: SaleInvoiceFormValues & { isGst?: boolean }) {
     try {
         const userId = await requireUserId()
+        const isGst = data.isGst !== false // default true
         const result = await prisma.$transaction(async (tx) => {
             // 1. Get business profile for state + invoice number
             const profile = await tx.businessProfile.findFirst({ where: { userId } })
@@ -144,8 +152,11 @@ export async function createSaleInvoice(data: SaleInvoiceFormValues) {
 
             const interState = isInterState(businessState, data.placeOfSupply)
 
-            // 2. Generate invoice number
-            const invoiceNumber = `${profile.invoicePrefix}-${String(profile.invoiceCounter).padStart(3, "0")}`
+            // 2. Generate invoice number based on GST type
+            const profileExt = profile as unknown as { noGstInvoicePrefix?: string; noGstInvoiceCounter?: number }
+            const invoiceNumber = isGst
+                ? `${profile.invoicePrefix}-${String(profile.invoiceCounter).padStart(3, "0")}`
+                : `${profileExt.noGstInvoicePrefix || "BILL"}-${String(profileExt.noGstInvoiceCounter || 1).padStart(3, "0")}`
 
             // 3. Calculate totals for each line item
             let subtotal = 0
@@ -156,12 +167,13 @@ export async function createSaleInvoice(data: SaleInvoiceFormValues) {
             let totalIgst = 0
 
             const invoiceItems = data.items.map((item) => {
+                const effectiveGstRate = isGst ? item.gstRate : 0
                 const gst = calculateLineItemGST(
                     item.unitPrice,
                     item.quantity,
                     item.discount,
                     item.discountType,
-                    item.gstRate,
+                    effectiveGstRate,
                     interState,
                     item.makingCharges || 0
                 )
@@ -191,7 +203,7 @@ export async function createSaleInvoice(data: SaleInvoiceFormValues) {
                     unitPrice: item.unitPrice,
                     discount: item.discount,
                     discountType: item.discountType,
-                    gstRate: item.gstRate,
+                    gstRate: effectiveGstRate,
                     cgst: gst.cgst,
                     sgst: gst.sgst,
                     igst: gst.igst,
@@ -241,6 +253,7 @@ export async function createSaleInvoice(data: SaleInvoiceFormValues) {
                     notes: data.notes || null,
                     termsConditions: data.termsConditions || null,
                     status: "active",
+                    isGst,
                     items: {
                         create: invoiceItems,
                     },
@@ -274,7 +287,9 @@ export async function createSaleInvoice(data: SaleInvoiceFormValues) {
             // 6. Increment invoice counter
             await tx.businessProfile.update({
                 where: { id: profile.id },
-                data: { invoiceCounter: profile.invoiceCounter + 1 },
+                data: isGst
+                    ? { invoiceCounter: profile.invoiceCounter + 1 }
+                    : { noGstInvoiceCounter: (profileExt.noGstInvoiceCounter || 1) + 1 },
             })
 
             return invoice

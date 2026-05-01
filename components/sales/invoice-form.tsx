@@ -24,6 +24,7 @@ interface InvoiceFormProps {
     parties: any[]
     items: any[]
     businessProfile: any
+    isGst: boolean
 }
 
 const emptyItem: SaleInvoiceItemFormValues = {
@@ -46,7 +47,7 @@ const emptyItem: SaleInvoiceItemFormValues = {
     stoneDetails: "",
 }
 
-export function InvoiceForm({ nextInvoiceNumber, parties, items, businessProfile }: InvoiceFormProps) {
+export function InvoiceForm({ nextInvoiceNumber, parties, items, businessProfile, isGst }: InvoiceFormProps) {
     const router = useRouter()
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState("")
@@ -61,7 +62,7 @@ export function InvoiceForm({ nextInvoiceNumber, parties, items, businessProfile
     const [partyId, setPartyId] = useState("")
     const [placeOfSupply, setPlaceOfSupply] = useState(businessProfile?.state || "")
     const [shipToAddress, setShipToAddress] = useState("")
-    const [lineItems, setLineItems] = useState<SaleInvoiceItemFormValues[]>([{ ...emptyItem }])
+    const [lineItems, setLineItems] = useState<SaleInvoiceItemFormValues[]>([{ ...emptyItem, gstRate: isGst ? 3 : 0 }])
     const [notes, setNotes] = useState("")
     const [termsConditions, setTermsConditions] = useState("")
     const [paymentMode, setPaymentMode] = useState("none")
@@ -149,6 +150,7 @@ export function InvoiceForm({ nextInvoiceNumber, parties, items, businessProfile
                 termsConditions: termsConditions || null,
                 paymentMode: paymentMode as any,
                 amountPaid,
+                isGst,
             })
 
             if (result.success) {
@@ -176,7 +178,14 @@ export function InvoiceForm({ nextInvoiceNumber, parties, items, businessProfile
                         <ArrowLeft size={18} />
                     </Button>
                     <div>
-                        <h1 className="text-xl font-bold text-foreground">New Sale Invoice</h1>
+                        <div className="flex items-center gap-2">
+                            <h1 className="text-xl font-bold text-foreground">New Sale Invoice</h1>
+                            {isGst ? (
+                                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-500 border border-emerald-500/30">WITH GST</span>
+                            ) : (
+                                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-500 border border-amber-500/30">WITHOUT GST</span>
+                            )}
+                        </div>
                         <p className="text-sm text-muted-foreground">Invoice Number: <span className="text-primary font-medium">{nextInvoiceNumber}</span></p>
                     </div>
                 </div>
@@ -289,6 +298,7 @@ export function InvoiceForm({ nextInvoiceNumber, parties, items, businessProfile
                             items={lineItems}
                             inventoryItems={items}
                             isInterState={interState}
+                            isGst={isGst}
                             onChange={setLineItems}
                         />
                     </div>

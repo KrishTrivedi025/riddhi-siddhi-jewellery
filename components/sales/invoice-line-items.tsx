@@ -18,6 +18,7 @@ interface InvoiceLineItemsProps {
     items: SaleInvoiceItemFormValues[]
     inventoryItems: any[]
     isInterState: boolean
+    isGst: boolean
     onChange: (items: SaleInvoiceItemFormValues[]) => void
 }
 
@@ -41,7 +42,7 @@ const emptyItem: SaleInvoiceItemFormValues = {
     stoneDetails: "",
 }
 
-export function InvoiceLineItems({ items, inventoryItems, isInterState, onChange }: InvoiceLineItemsProps) {
+export function InvoiceLineItems({ items, inventoryItems, isInterState, isGst, onChange }: InvoiceLineItemsProps) {
     const [expandedRow, setExpandedRow] = useState<number | null>(null)
 
     const removeItem = (index: number) => {
@@ -72,7 +73,7 @@ export function InvoiceLineItems({ items, inventoryItems, isInterState, onChange
             hsnCode: inv.hsnCode || "7113",
             unit: inv.unit || "pcs",
             unitPrice: inv.salePrice || 0,
-            gstRate: inv.gstRate ?? 3,
+            gstRate: isGst ? (inv.gstRate ?? 3) : 0,
             purity: inv.purity || "",
             makingCharges: inv.makingCharges || 0,
         }
@@ -225,23 +226,29 @@ export function InvoiceLineItems({ items, inventoryItems, isInterState, onChange
                                 </div>
                                 <div className="space-y-1">
                                     <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-wide">GST %</p>
-                                    <Select
-                                        value={String(item.gstRate)}
-                                        onValueChange={(val) => updateItem(idx, "gstRate", parseFloat(val))}
-                                    >
-                                        <SelectTrigger className="bg-background border-border text-foreground h-9 text-xs">
-                                            <SelectValue />
-                                        </SelectTrigger>
-                                        <SelectContent className="bg-card border-border text-foreground">
-                                            <SelectItem value="0">0%</SelectItem>
-                                            <SelectItem value="0.25">0.25%</SelectItem>
-                                            <SelectItem value="3">3%</SelectItem>
-                                            <SelectItem value="5">5%</SelectItem>
-                                            <SelectItem value="12">12%</SelectItem>
-                                            <SelectItem value="18">18%</SelectItem>
-                                            <SelectItem value="28">28%</SelectItem>
-                                        </SelectContent>
-                                    </Select>
+                                    {isGst ? (
+                                        <Select
+                                            value={String(item.gstRate)}
+                                            onValueChange={(val) => updateItem(idx, "gstRate", parseFloat(val))}
+                                        >
+                                            <SelectTrigger className="bg-background border-border text-foreground h-9 text-xs">
+                                                <SelectValue />
+                                            </SelectTrigger>
+                                            <SelectContent className="bg-card border-border text-foreground">
+                                                <SelectItem value="0">0%</SelectItem>
+                                                <SelectItem value="0.25">0.25%</SelectItem>
+                                                <SelectItem value="3">3%</SelectItem>
+                                                <SelectItem value="5">5%</SelectItem>
+                                                <SelectItem value="12">12%</SelectItem>
+                                                <SelectItem value="18">18%</SelectItem>
+                                                <SelectItem value="28">28%</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                    ) : (
+                                        <div className="h-9 flex items-center px-2 rounded-lg bg-muted border border-border opacity-60">
+                                            <span className="text-xs text-muted-foreground font-medium">0% (No GST)</span>
+                                        </div>
+                                    )}
                                 </div>
                                 <div className="space-y-1">
                                     <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-wide">Amount</p>
