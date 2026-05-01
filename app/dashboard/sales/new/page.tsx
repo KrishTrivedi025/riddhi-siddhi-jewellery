@@ -6,20 +6,27 @@ import { prisma } from "@/lib/db"
 import { InvoiceForm } from "@/components/sales/invoice-form"
 import { Skeleton } from "@/components/ui/skeleton"
 
-export default async function NewInvoicePage() {
+export default async function NewInvoicePage({
+    searchParams,
+}: {
+    searchParams: Promise<{ type?: string }>
+}) {
+    const params = await searchParams
+    const isGst = params.type !== "nogst"
+
     return (
         <Suspense fallback={<NewInvoiceSkeleton />}>
-            <NewInvoiceData />
+            <NewInvoiceData isGst={isGst} />
         </Suspense>
     )
 }
 
-async function NewInvoiceData() {
+async function NewInvoiceData({ isGst }: { isGst: boolean }) {
     const session = await auth()
     if (!session?.user?.id) return null
 
     const [nextNumber, businessProfile, items, parties] = await Promise.all([
-        getNextInvoiceNumber(),
+        getNextInvoiceNumber(isGst),
         getBusinessProfile(),
         getItems(),
         prisma.party.findMany({
@@ -45,6 +52,7 @@ async function NewInvoiceData() {
             parties={parties}
             items={items}
             businessProfile={businessProfile}
+            isGst={isGst}
         />
     )
 }
