@@ -1,7 +1,15 @@
 import type { NextAuthConfig } from "next-auth"
 
+const secret = process.env.AUTH_SECRET ?? process.env.NEXTAUTH_SECRET
+if (!secret) {
+    throw new Error(
+        "AUTH_SECRET (or NEXTAUTH_SECRET) is not set. Generate one with `npx auth secret` " +
+        "and add it to your .env file — see .env.example."
+    )
+}
+
 export const authConfig = {
-    secret: process.env.AUTH_SECRET ?? process.env.NEXTAUTH_SECRET ?? "REDACTED",
+    secret,
     session: { strategy: "jwt" },
     pages: { signIn: "/login" },
     providers: [],
