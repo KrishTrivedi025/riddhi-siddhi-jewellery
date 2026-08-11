@@ -19,7 +19,7 @@ export function AnimatePresenceWrapper({
   const pathname = usePathname()
 
   return (
-    <AnimatePresence initial={false}>
+    <AnimatePresence mode="wait" initial={false}>
       <div key={pathname}>
         {children}
       </div>
