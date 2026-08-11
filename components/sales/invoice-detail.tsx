@@ -18,6 +18,8 @@ import { formatCurrency } from "@/lib/gst-utils"
 import { numberToWords } from "@/lib/amount-in-words"
 import { markInvoiceAsPaid, voidInvoice } from "@/lib/actions/sales"
 import { InvoicePDF } from "./invoice-pdf"
+import { toast } from "sonner"
+import { useConfirm } from "@/components/shared/confirm-provider"
 
 interface InvoiceDetailProps {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -30,20 +32,29 @@ export function InvoiceDetail({ invoice, businessProfile }: InvoiceDetailProps) 
     const router = useRouter()
     const [loading, setLoading] = useState("")
     const [showPdf, setShowPdf] = useState(false)
+    const confirm = useConfirm()
 
     const handleMarkPaid = async () => {
         setLoading("paid")
-        await markInvoiceAsPaid(invoice.id)
+        const result = await markInvoiceAsPaid(invoice.id)
         setLoading("")
-        router.refresh()
+        if (result.success) { toast.success("Invoice marked as paid"); router.refresh() }
+        else toast.error(result.error)
     }
 
     const handleVoid = async () => {
-        if (!confirm("Cancel this invoice? Stock will be reversed.")) return
+        const ok = await confirm({
+            title: "Cancel this invoice?",
+            description: "Stock will be reversed back into inventory.",
+            confirmText: "Cancel Invoice",
+            variant: "destructive",
+        })
+        if (!ok) return
         setLoading("void")
-        await voidInvoice(invoice.id)
+        const result = await voidInvoice(invoice.id)
         setLoading("")
-        router.refresh()
+        if (result.success) { toast.success("Invoice cancelled"); router.refresh() }
+        else toast.error(result.error)
     }
 
     const handleWhatsAppShare = () => {

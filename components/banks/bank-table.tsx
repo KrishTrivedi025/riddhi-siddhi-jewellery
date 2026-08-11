@@ -10,16 +10,24 @@ import { BankDialog } from "./bank-dialog"
 import { deleteBankAccount } from "@/lib/actions/banks"
 import { toast } from "sonner"
 import { useRouter } from "next/navigation"
+import { useConfirm } from "@/components/shared/confirm-provider"
 
 interface BankTableProps { accounts: any[] }
 
 export function BankTable({ accounts }: BankTableProps) {
     const [loadingId, setLoadingId] = useState<string | null>(null)
     const router = useRouter()
+    const confirm = useConfirm()
 
     const onDelete = async (id: string, e: React.MouseEvent) => {
         e.stopPropagation()
-        if (!confirm("Delete this account?")) return
+        const ok = await confirm({
+            title: "Delete this account?",
+            description: "This bank account will be permanently removed.",
+            confirmText: "Delete",
+            variant: "destructive",
+        })
+        if (!ok) return
         setLoadingId(id)
         try {
             const result = await deleteBankAccount(id)

@@ -18,6 +18,7 @@ import {
 import { Separator } from "@/components/ui/separator"
 import { Loader2, Plus } from "lucide-react"
 import { ImageCaptureWidget } from "./image-capture-widget"
+import { toast } from "sonner"
 
 interface ItemFormProps {
     initialData?: any
@@ -84,13 +85,13 @@ export function ItemForm({ initialData, categories, onSuccess, onCancel }: ItemF
             if (initialData?.id) {
                 const result = await updateItem(initialData.id, data)
                 if (!result.success) {
-                    alert(result.error)
+                    toast.error(result.error)
                     return
                 }
             } else {
                 const result = await createItem(data)
                 if (!result.success) {
-                    alert(result.error)
+                    toast.error(result.error)
                     return
                 }
             }

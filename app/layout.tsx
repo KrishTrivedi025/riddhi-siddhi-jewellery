@@ -2,6 +2,8 @@ import type { Metadata, Viewport } from "next"
 import { Inter } from "next/font/google"
 import "./globals.css"
 import { ThemeProvider } from "@/components/theme-provider"
+import { ConfirmProvider } from "@/components/shared/confirm-provider"
+import { Toaster } from "sonner"
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" })
 
@@ -43,7 +45,20 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en" suppressHydrationWarning>
       <body className={`${inter.variable} font-sans antialiased`}>
         <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}>
-          {children}
+          <ConfirmProvider>
+            {children}
+          </ConfirmProvider>
+          <Toaster
+            position="top-center"
+            richColors
+            toastOptions={{
+              style: {
+                background: "var(--card)",
+                border: "1px solid var(--border)",
+                color: "var(--foreground)",
+              },
+            }}
+          />
         </ThemeProvider>
       </body>
     </html>

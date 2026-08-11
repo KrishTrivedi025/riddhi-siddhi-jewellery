@@ -1,5 +1,8 @@
 "use client"
 
+import { useState } from "react"
+import { useRouter } from "next/navigation"
+import { toast } from "sonner"
 import {
     Table,
     TableBody,
@@ -15,13 +18,14 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { MoreHorizontal, Edit, Trash2, AlertTriangle, ArrowUpDown, History } from "lucide-react"
+import { MoreHorizontal, Edit, Trash2, AlertTriangle, ArrowUpDown, History, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { deleteItem } from "@/lib/actions/items"
 import { ItemDialog } from "./item-dialog"
 import { StockAdjustDialog } from "./stock-adjust-dialog"
 import { StockHistoryDialog } from "./stock-history-dialog"
 import { Image as ImageIcon } from "lucide-react"
+import { useConfirm } from "@/components/shared/confirm-provider"
 
 interface ItemTableProps {
     data: any[]
@@ -29,9 +33,31 @@ interface ItemTableProps {
 }
 
 export function ItemTable({ data, categories }: ItemTableProps) {
+    const [loadingId, setLoadingId] = useState<string | null>(null)
+    const router = useRouter()
+    const confirm = useConfirm()
+
     const handleDelete = async (id: string) => {
-        if (confirm("Are you sure you want to delete this item?")) {
-            await deleteItem(id)
+        const ok = await confirm({
+            title: "Delete this item?",
+            description: "This item will be removed from inventory.",
+            confirmText: "Delete",
+            variant: "destructive",
+        })
+        if (!ok) return
+        setLoadingId(id)
+        try {
+            const result = await deleteItem(id)
+            if (result.success) {
+                toast.success("Item deleted")
+                router.refresh()
+            } else {
+                toast.error(result.error)
+            }
+        } catch {
+            toast.error("Failed to delete item")
+        } finally {
+            setLoadingId(null)
         }
     }
 
@@ -111,7 +137,7 @@ export function ItemTable({ data, categories }: ItemTableProps) {
                                                     <StockHistoryDialog item={item} trigger={<DropdownMenuItem onSelect={(e) => e.preventDefault()} className="flex items-center gap-2 cursor-pointer hover:bg-border"><History size={14} className="text-[#3B82F6]" /> View History</DropdownMenuItem>} />
                                                     <DropdownMenuSeparator className="bg-border" />
                                                     <ItemDialog initialData={item} categories={categories} trigger={<DropdownMenuItem onSelect={(e) => e.preventDefault()} className="flex items-center gap-2 cursor-pointer hover:bg-border"><Edit size={14} /> Edit</DropdownMenuItem>} />
-                                                    <DropdownMenuItem onClick={() => handleDelete(item.id)} className="flex items-center gap-2 text-rose-500 cursor-pointer hover:bg-rose-500/10"><Trash2 size={14} /> Delete</DropdownMenuItem>
+                                                    <DropdownMenuItem onClick={() => handleDelete(item.id)} disabled={loadingId === item.id} className="flex items-center gap-2 text-rose-500 cursor-pointer hover:bg-rose-500/10">{loadingId === item.id ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />} Delete</DropdownMenuItem>
                                                 </DropdownMenuContent>
                                             </DropdownMenu>
                                         </TableCell>
@@ -169,7 +195,7 @@ export function ItemTable({ data, categories }: ItemTableProps) {
                                                     <StockHistoryDialog item={item} trigger={<DropdownMenuItem onSelect={(e) => e.preventDefault()} className="flex items-center gap-2 cursor-pointer hover:bg-border"><History size={14} className="text-[#3B82F6]" /> View History</DropdownMenuItem>} />
                                                     <DropdownMenuSeparator className="bg-border" />
                                                     <ItemDialog initialData={item} categories={categories} trigger={<DropdownMenuItem onSelect={(e) => e.preventDefault()} className="flex items-center gap-2 cursor-pointer hover:bg-border"><Edit size={14} /> Edit</DropdownMenuItem>} />
-                                                    <DropdownMenuItem onClick={() => handleDelete(item.id)} className="flex items-center gap-2 text-rose-500 cursor-pointer hover:bg-rose-500/10"><Trash2 size={14} /> Delete</DropdownMenuItem>
+                                                    <DropdownMenuItem onClick={() => handleDelete(item.id)} disabled={loadingId === item.id} className="flex items-center gap-2 text-rose-500 cursor-pointer hover:bg-rose-500/10">{loadingId === item.id ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />} Delete</DropdownMenuItem>
                                                 </DropdownMenuContent>
                                             </DropdownMenu>
                                         </div>

@@ -11,6 +11,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu"
 import { formatCurrency } from "@/lib/gst-utils"
 import { markInvoiceAsPaid, voidInvoice, deleteSaleInvoice } from "@/lib/actions/sales"
+import { toast } from "sonner"
+import { useConfirm } from "@/components/shared/confirm-provider"
 
 interface InvoiceTableProps { invoices: any[] }
 
@@ -36,6 +38,7 @@ export function InvoiceTable({ invoices }: InvoiceTableProps) {
     const [statusFilter, setStatusFilter] = useState("all")
     const [loading, setLoading] = useState<string | null>(null)
     const router = useRouter()
+    const confirm = useConfirm()
 
     const filtered = invoices.filter((inv) => {
         const matchSearch = !search ||
@@ -45,14 +48,40 @@ export function InvoiceTable({ invoices }: InvoiceTableProps) {
         return matchSearch && matchStatus
     })
 
-    const handleMarkPaid = async (id: string) => { setLoading(id); await markInvoiceAsPaid(id); setLoading(null) }
+    const handleMarkPaid = async (id: string) => {
+        setLoading(id)
+        const result = await markInvoiceAsPaid(id)
+        setLoading(null)
+        if (result.success) { toast.success("Invoice marked as paid"); router.refresh() }
+        else toast.error(result.error)
+    }
     const handleVoid = async (id: string) => {
-        if (!confirm("Cancel this invoice? Stock will be reversed.")) return
-        setLoading(id); await voidInvoice(id); setLoading(null)
+        const ok = await confirm({
+            title: "Cancel this invoice?",
+            description: "Stock will be reversed back into inventory.",
+            confirmText: "Cancel Invoice",
+            variant: "destructive",
+        })
+        if (!ok) return
+        setLoading(id)
+        const result = await voidInvoice(id)
+        setLoading(null)
+        if (result.success) { toast.success("Invoice cancelled"); router.refresh() }
+        else toast.error(result.error)
     }
     const handleDelete = async (id: string) => {
-        if (!confirm("Delete this invoice?")) return
-        setLoading(id); await deleteSaleInvoice(id); setLoading(null)
+        const ok = await confirm({
+            title: "Delete this invoice?",
+            description: "This cannot be undone.",
+            confirmText: "Delete",
+            variant: "destructive",
+        })
+        if (!ok) return
+        setLoading(id)
+        const result = await deleteSaleInvoice(id)
+        setLoading(null)
+        if (result.success) { toast.success("Invoice deleted"); router.refresh() }
+        else toast.error(result.error)
     }
 
     return (

@@ -11,6 +11,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu"
 import { formatCurrency } from "@/lib/gst-utils"
 import { markPurchaseInvoiceAsPaid, voidPurchaseInvoice } from "@/lib/actions/purchases"
+import { toast } from "sonner"
+import { useConfirm } from "@/components/shared/confirm-provider"
 
 interface PurchaseTableProps { invoices: any[] }
 
@@ -36,6 +38,7 @@ export function PurchaseTable({ invoices }: PurchaseTableProps) {
     const [statusFilter, setStatusFilter] = useState("all")
     const [loading, setLoading] = useState<string | null>(null)
     const router = useRouter()
+    const confirm = useConfirm()
 
     const filtered = invoices.filter((inv) => {
         const matchSearch = !search ||
@@ -46,10 +49,26 @@ export function PurchaseTable({ invoices }: PurchaseTableProps) {
         return matchSearch && matchStatus
     })
 
-    const handleMarkPaid = async (id: string) => { setLoading(id); await markPurchaseInvoiceAsPaid(id); setLoading(null) }
+    const handleMarkPaid = async (id: string) => {
+        setLoading(id)
+        const result = await markPurchaseInvoiceAsPaid(id)
+        setLoading(null)
+        if (result.success) { toast.success("Purchase marked as paid"); router.refresh() }
+        else toast.error(result.error)
+    }
     const handleVoid = async (id: string) => {
-        if (!confirm("Cancel this purchase? Stock will be reversed.")) return
-        setLoading(id); await voidPurchaseInvoice(id); setLoading(null)
+        const ok = await confirm({
+            title: "Cancel this purchase?",
+            description: "Stock will be reversed.",
+            confirmText: "Cancel Purchase",
+            variant: "destructive",
+        })
+        if (!ok) return
+        setLoading(id)
+        const result = await voidPurchaseInvoice(id)
+        setLoading(null)
+        if (result.success) { toast.success("Purchase cancelled"); router.refresh() }
+        else toast.error(result.error)
     }
 
     return (

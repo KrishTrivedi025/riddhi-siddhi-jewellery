@@ -10,12 +10,17 @@ import { deleteParty } from "@/lib/actions/parties"
 import { PartyDialog } from "./party-dialog"
 import { Input } from "@/components/ui/input"
 import Link from "next/link"
+import { toast } from "sonner"
+import { useConfirm } from "@/components/shared/confirm-provider"
+import { Loader2 } from "lucide-react"
 
 interface PartyTableProps { data: any[] }
 
 export function PartyTable({ data }: PartyTableProps) {
     const [search, setSearch] = useState("")
+    const [loadingId, setLoadingId] = useState<string | null>(null)
     const router = useRouter()
+    const confirm = useConfirm()
 
     const filteredData = data.filter(party =>
         party.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -24,7 +29,27 @@ export function PartyTable({ data }: PartyTableProps) {
     )
 
     const handleDelete = async (id: string) => {
-        if (confirm("Delete this party?")) await deleteParty(id)
+        const ok = await confirm({
+            title: "Delete this party?",
+            description: "This party will be removed from your list.",
+            confirmText: "Delete",
+            variant: "destructive",
+        })
+        if (!ok) return
+        setLoadingId(id)
+        try {
+            const result = await deleteParty(id)
+            if (result.success) {
+                toast.success("Party deleted")
+                router.refresh()
+            } else {
+                toast.error(result.error)
+            }
+        } catch {
+            toast.error("Failed to delete party")
+        } finally {
+            setLoadingId(null)
+        }
     }
 
     return (
@@ -90,8 +115,8 @@ export function PartyTable({ data }: PartyTableProps) {
                                                     </DropdownMenuItem>
                                                 }
                                             />
-                                            <DropdownMenuItem onClick={() => handleDelete(party.id)} className="flex items-center gap-2 text-rose-500 cursor-pointer hover:bg-rose-500/10">
-                                                <Trash2 size={14} /> Delete
+                                            <DropdownMenuItem onClick={() => handleDelete(party.id)} disabled={loadingId === party.id} className="flex items-center gap-2 text-rose-500 cursor-pointer hover:bg-rose-500/10">
+                                                {loadingId === party.id ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />} Delete
                                             </DropdownMenuItem>
                                         </DropdownMenuContent>
                                     </DropdownMenu>
@@ -157,8 +182,8 @@ export function PartyTable({ data }: PartyTableProps) {
                                                             </DropdownMenuItem>
                                                         }
                                                     />
-                                                    <DropdownMenuItem onClick={() => handleDelete(party.id)} className="flex items-center gap-2 text-rose-500 cursor-pointer hover:bg-rose-500/10">
-                                                        <Trash2 size={14} /> Delete
+                                                    <DropdownMenuItem onClick={() => handleDelete(party.id)} disabled={loadingId === party.id} className="flex items-center gap-2 text-rose-500 cursor-pointer hover:bg-rose-500/10">
+                                                        {loadingId === party.id ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />} Delete
                                                     </DropdownMenuItem>
                                                 </DropdownMenuContent>
                                             </DropdownMenu>

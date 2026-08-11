@@ -17,6 +17,8 @@ import {
 import { formatCurrency } from "@/lib/gst-utils"
 import { numberToWords } from "@/lib/amount-in-words"
 import { markPurchaseInvoiceAsPaid, voidPurchaseInvoice } from "@/lib/actions/purchases"
+import { toast } from "sonner"
+import { useConfirm } from "@/components/shared/confirm-provider"
 
 interface PurchaseDetailProps {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -26,20 +28,29 @@ interface PurchaseDetailProps {
 export function PurchaseDetail({ invoice }: PurchaseDetailProps) {
     const router = useRouter()
     const [loading, setLoading] = useState("")
+    const confirm = useConfirm()
 
     const handleMarkPaid = async () => {
         setLoading("paid")
-        await markPurchaseInvoiceAsPaid(invoice.id)
+        const result = await markPurchaseInvoiceAsPaid(invoice.id)
         setLoading("")
-        router.refresh()
+        if (result.success) { toast.success("Purchase marked as paid"); router.refresh() }
+        else toast.error(result.error)
     }
 
     const handleVoid = async () => {
-        if (!confirm("Cancel this purchase? Stock will be reversed (decreased).")) return
+        const ok = await confirm({
+            title: "Cancel this purchase?",
+            description: "Stock will be reversed (decreased).",
+            confirmText: "Cancel Purchase",
+            variant: "destructive",
+        })
+        if (!ok) return
         setLoading("void")
-        await voidPurchaseInvoice(invoice.id)
+        const result = await voidPurchaseInvoice(invoice.id)
         setLoading("")
-        router.refresh()
+        if (result.success) { toast.success("Purchase cancelled"); router.refresh() }
+        else toast.error(result.error)
     }
 
     const isInterState = invoice.igst > 0
