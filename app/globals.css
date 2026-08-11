@@ -104,15 +104,6 @@ html {
     transition: background-color 0.25s ease, color 0.2s ease;
   }
 
-  /* Prevent layout shift during theme transition */
-  *,
-  *::before,
-  *::after {
-    transition-property: background-color, border-color, color;
-    transition-duration: 0.2s;
-    transition-timing-function: ease;
-  }
-
   /* Override for animation properties — must not be slowed by the transition above */
   .motion-safe\:animate-none {
     animation: none;

@@ -2,7 +2,7 @@
 
 import { prisma } from "@/lib/db"
 import { auth } from "@/auth"
-import { revalidatePath } from "next/cache"
+import { revalidatePath, updateTag, unstable_cache } from "next/cache"
 
 export interface SetupFormData {
     // Step 1 - Business Identity
@@ -94,6 +94,7 @@ export async function createBusinessSetup(data: SetupFormData) {
         })
 
         revalidatePath("/dashboard")
+        updateTag("profile-exists")
         return { success: true }
     } catch (err) {
         console.error("Setup error:", err)
@@ -152,15 +153,26 @@ export async function updateBusinessProfile(data: Partial<SetupFormData> & { id:
 }
 
 /** Returns true if the currently logged-in user has a business profile */
+// Runs on every dashboard navigation (layout is force-dynamic), so this is
+// cached across requests instead of hitting Postgres every time. Invalidated
+// via revalidateTag("profile-exists") the moment setup actually completes.
+const getCachedProfileExists = unstable_cache(
+    async (userId: string): Promise<boolean> => {
+        const profile = await prisma.businessProfile.findUnique({
+            where: { userId },
+            select: { id: true },
+        })
+        return !!profile
+    },
+    ["check-profile-exists"],
+    { revalidate: 300, tags: ["profile-exists"] }
+)
+
 export async function checkProfileExists(): Promise<boolean> {
     try {
         const session = await auth()
         if (!session?.user?.id) return false
-        const profile = await prisma.businessProfile.findUnique({
-            where: { userId: session.user.id },
-            select: { id: true },
-        })
-        return !!profile
+        return await getCachedProfileExists(session.user.id)
     } catch {
         return false
     }

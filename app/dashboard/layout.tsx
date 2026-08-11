@@ -34,7 +34,7 @@ export default async function DashboardLayout({
 
         <div className="flex flex-col flex-1 overflow-hidden min-w-0 print:overflow-visible print:block">
           <div className="print:hidden">
-            <Header />
+            <Header email={session.user?.email ?? ""} />
           </div>
 
           <MobileScrollFix>

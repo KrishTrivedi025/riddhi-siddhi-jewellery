@@ -13,9 +13,10 @@
  */
 
 import { useState } from "react"
-import Link from "next/link"
+import Link, { useLinkStatus } from "next/link"
 import { usePathname } from "next/navigation"
 import { motion, AnimatePresence } from "framer-motion"
+import type { LucideIcon } from "lucide-react"
 import {
   LayoutDashboard,
   ShoppingCart,
@@ -53,6 +54,48 @@ const SECONDARY = [
 function isActive(href: string, pathname: string) {
   if (href === "/dashboard") return pathname === "/dashboard"
   return pathname === href || pathname.startsWith(href + "/")
+}
+
+// ── Primary tab content — dims while navigation is pending ─────────────────
+function TabContent({ icon: Icon, label, active }: { icon: LucideIcon; label: string; active: boolean }) {
+  const { pending } = useLinkStatus()
+  return (
+    <motion.div
+      whileTap={{ scale: 0.82 }}
+      transition={{ type: "spring", stiffness: 500, damping: 28 }}
+      className="flex flex-col items-center justify-center gap-0.5 w-full py-1"
+      style={{ opacity: pending ? 0.55 : 1 }}
+    >
+      {/* Active pill background */}
+      {active && (
+        <motion.div
+          layoutId="bottom-active-pill"
+          className="absolute inset-1 rounded-xl bg-primary/10"
+          transition={springSmooth}
+        />
+      )}
+
+      {/* Icon */}
+      <div className="relative z-10 mt-1">
+        <Icon
+          size={22}
+          className={`transition-colors duration-200 ${
+            active ? "text-primary" : "text-muted-foreground"
+          }`}
+          strokeWidth={active ? 2.5 : 2}
+        />
+      </div>
+
+      {/* Label */}
+      <span
+        className={`relative z-10 text-[10px] font-semibold tracking-wide transition-colors duration-200 ${
+          active ? "text-primary" : "text-muted-foreground"
+        }`}
+      >
+        {label}
+      </span>
+    </motion.div>
+  )
 }
 
 // ── More Sheet ────────────────────────────────────────────────────────────────
@@ -173,40 +216,7 @@ export function BottomNav() {
                 href={href}
                 className="relative flex-1 flex flex-col items-center justify-center gap-0.5 select-none"
               >
-                <motion.div
-                  whileTap={{ scale: 0.82 }}
-                  transition={{ type: "spring", stiffness: 500, damping: 28 }}
-                  className="flex flex-col items-center justify-center gap-0.5 w-full py-1"
-                >
-                  {/* Active pill background */}
-                  {active && (
-                    <motion.div
-                      layoutId="bottom-active-pill"
-                      className="absolute inset-1 rounded-xl bg-primary/10"
-                      transition={springSmooth}
-                    />
-                  )}
-
-                  {/* Icon */}
-                  <div className="relative z-10 mt-1">
-                    <Icon
-                      size={22}
-                      className={`transition-colors duration-200 ${
-                        active ? "text-primary" : "text-muted-foreground"
-                      }`}
-                      strokeWidth={active ? 2.5 : 2}
-                    />
-                  </div>
-
-                  {/* Label */}
-                  <span
-                    className={`relative z-10 text-[10px] font-semibold tracking-wide transition-colors duration-200 ${
-                      active ? "text-primary" : "text-muted-foreground"
-                    }`}
-                  >
-                    {label}
-                  </span>
-                </motion.div>
+                <TabContent icon={Icon} label={label} active={active} />
               </Link>
             )
           })}

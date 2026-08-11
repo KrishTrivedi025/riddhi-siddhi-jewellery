@@ -1,6 +1,6 @@
 "use client"
 
-import Link from "next/link"
+import Link, { useLinkStatus } from "next/link"
 import { usePathname } from "next/navigation"
 import { motion, AnimatePresence } from "framer-motion"
 import {
@@ -29,6 +29,17 @@ const navItems = [
   { translationKey: "reports",   href: "/dashboard/reports",    icon: BarChart2       },
   { translationKey: "settings",  href: "/dashboard/settings",   icon: Settings        },
 ]
+
+// ── Nav item content — dims while navigation is pending ─────────────────────
+function NavItemContent({ icon: Icon, label }: { icon: React.ComponentType<{ size?: number }>; label: string }) {
+  const { pending } = useLinkStatus()
+  return (
+    <span className="relative z-10 flex items-center gap-3" style={{ opacity: pending ? 0.55 : 1 }}>
+      <Icon size={16} />
+      {label}
+    </span>
+  )
+}
 
 // ── Shared sidebar content ────────────────────────────────────────────────────
 function SidebarContent({ onNavClick }: { onNavClick?: () => void }) {
@@ -114,8 +125,7 @@ function SidebarContent({ onNavClick }: { onNavClick?: () => void }) {
                     transition={{ duration: 0.15 }}
                   />
                 )}
-                <span className="relative z-10"><Icon size={16} /></span>
-                <span className="relative z-10">{t(translationKey)}</span>
+                <NavItemContent icon={Icon} label={t(translationKey)} />
               </Link>
             </motion.div>
           )
