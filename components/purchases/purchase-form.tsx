@@ -18,6 +18,7 @@ import { createPurchaseInvoice } from "@/lib/actions/purchases"
 import { INDIAN_STATES, isInterState } from "@/lib/indian-states"
 import { calculateInvoiceTotals } from "@/lib/gst-utils"
 import { PurchaseInvoiceItemFormValues } from "@/lib/schemas/purchase-schema"
+import { useTrackDirty } from "@/lib/hooks/use-unsaved-changes"
 
 interface InvoiceFormProps {
     nextInvoiceNumber: string
@@ -65,6 +66,10 @@ export function PurchaseInvoiceForm({ nextInvoiceNumber, parties, items, busines
     const [notes, setNotes] = useState("")
     const [paymentMode, setPaymentMode] = useState("none")
     const [amountPaid, setAmountPaid] = useState(0)
+
+    useTrackDirty(
+        !!partyId || lineItems.some((item) => item.itemName.trim() !== "") || notes.trim() !== "" || amountPaid > 0
+    )
 
     // Compute is inter-state based on BUSINESS state vs Supplier state. Reversing standard view.
     // For purchase, if Supplier state !== Business state, it's interstate (IGST).

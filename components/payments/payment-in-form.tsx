@@ -19,6 +19,7 @@ import { formatCurrency } from "@/lib/gst-utils"
 import { getCustomerOutstandingInvoices, createPaymentIn } from "@/lib/actions/payments-in"
 import { format } from "date-fns"
 import { PaymentModeSelector, PaymentModeLine } from "./payment-mode-selector"
+import { useTrackDirty } from "@/lib/hooks/use-unsaved-changes"
 
 interface PaymentInFormProps {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -55,6 +56,8 @@ export function PaymentInForm({ customers }: PaymentInFormProps) {
     
     // Invoices State
     const [invoices, setInvoices] = useState<AllocatableInvoice[]>([])
+
+    useTrackDirty(!!partyId || modes.some((m) => m.amount > 0) || notes.trim() !== "")
 
     // Load Invoices when Customer changes
     const handleCustomerChange = async (id: string) => {

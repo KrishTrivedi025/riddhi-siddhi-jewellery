@@ -9,6 +9,7 @@ import { AnimatePresenceWrapper } from "@/components/shared/animate-presence-wra
 import { SidebarProvider } from "@/lib/sidebar-context"
 import { BottomNav } from "@/components/shared/bottom-nav"
 import { MobileScrollFix } from "@/components/shared/mobile-scroll-fix"
+import { BackButtonHandler } from "@/components/shared/back-button-handler"
 
 export default async function DashboardLayout({
   children,
@@ -45,6 +46,7 @@ export default async function DashboardLayout({
       </div>
 
       <BottomNav />
+      <BackButtonHandler />
     </SidebarProvider>
   )
 }

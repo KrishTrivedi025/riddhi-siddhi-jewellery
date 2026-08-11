@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/select"
 import { Separator } from "@/components/ui/separator"
 import { Loader2, CheckCircle2, AlertCircle } from "lucide-react"
+import { useTrackDirty } from "@/lib/hooks/use-unsaved-changes"
 
 interface PartyFormProps {
     initialData?: any
@@ -54,7 +55,9 @@ export function PartyForm({ initialData, onSuccess, onCancel }: PartyFormProps) 
         }
     })
 
-    const { register, handleSubmit, setValue, watch, formState: { errors } } = form
+    const { register, handleSubmit, setValue, watch, formState: { errors, isDirty } } = form
+
+    useTrackDirty(isDirty)
 
     const partyType = watch("partyType")
     const balanceType = watch("balanceType")

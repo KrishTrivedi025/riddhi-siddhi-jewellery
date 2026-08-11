@@ -31,6 +31,7 @@ import { upsertExpense } from "@/lib/actions/expenses"
 import { getBankAccounts } from "@/lib/actions/banks"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
+import { useTrackDirty } from "@/lib/hooks/use-unsaved-changes"
 
 interface ExpenseFormProps {
     initialData?: any
@@ -71,8 +72,10 @@ export function ExpenseForm({ initialData, accounts, onSuccess }: ExpenseFormPro
         handleSubmit,
         setValue,
         watch,
-        formState: { errors },
+        formState: { errors, isDirty },
     } = form
+
+    useTrackDirty(isDirty)
 
     const expenseDate = watch("expenseDate")
     const amount      = watch("amount") || 0

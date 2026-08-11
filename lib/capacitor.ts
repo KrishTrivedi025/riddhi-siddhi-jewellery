@@ -61,12 +61,15 @@ export const setStatusBar = async (
 
 /**
  * Register Android hardware back button handler.
- * Prevents the app from closing unexpectedly.
+ *
+ * Always invokes `onBack` — the caller decides what "back" means (close a
+ * dialog, confirm discarding unsaved data, router.back(), or minimize the
+ * app), since the WebView's own `canGoBack` doesn't reflect the app's
+ * client-side routing state.
  *
  * Usage (call once in your root client component):
  *   useEffect(() => {
- *     const cleanup = registerBackButton(() => router.back())
- *     return cleanup
+ *     return registerBackButton(() => router.back())
  *   }, [])
  */
 export const registerBackButton = (
@@ -74,26 +77,23 @@ export const registerBackButton = (
 ): (() => void) => {
   if (!isNativeApp()) return () => {}
 
-  let cleanup = () => {}
+  let removed = false
+  let handle: { remove: () => void } | null = null
 
-  ;(async () => {
-    try {
-      const { App } = await import("@capacitor/app")
-      const handle = await App.addListener("backButton", ({ canGoBack }) => {
-        if (canGoBack) {
-          onBack()
-        } else {
-          // On root screen — minimize app instead of closing
-          App.minimizeApp()
-        }
-      })
-      cleanup = () => handle.remove()
-    } catch {
+  import("@capacitor/app")
+    .then(({ App }) => App.addListener("backButton", () => onBack()))
+    .then((h) => {
+      if (removed) h.remove()
+      else handle = h
+    })
+    .catch(() => {
       // Plugin not available
-    }
-  })()
+    })
 
-  return () => cleanup()
+  return () => {
+    removed = true
+    handle?.remove()
+  }
 }
 
 // ─── App State ────────────────────────────────────────────────────────────────

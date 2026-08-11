@@ -3,6 +3,8 @@ import { Inter } from "next/font/google"
 import "./globals.css"
 import { ThemeProvider } from "@/components/theme-provider"
 import { ConfirmProvider } from "@/components/shared/confirm-provider"
+import { UnsavedChangesProvider } from "@/lib/hooks/use-unsaved-changes"
+import { SplashHider } from "@/components/shared/splash-hider"
 import { Toaster } from "sonner"
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" })
@@ -45,9 +47,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en" suppressHydrationWarning>
       <body className={`${inter.variable} font-sans antialiased`}>
         <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}>
-          <ConfirmProvider>
-            {children}
-          </ConfirmProvider>
+          <UnsavedChangesProvider>
+            <ConfirmProvider>
+              <SplashHider />
+              {children}
+            </ConfirmProvider>
+          </UnsavedChangesProvider>
           <Toaster
             position="top-center"
             richColors

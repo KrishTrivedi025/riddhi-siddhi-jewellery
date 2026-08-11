@@ -19,6 +19,7 @@ import { formatCurrency } from "@/lib/gst-utils"
 import { getSupplierOutstandingInvoices, createPaymentOut } from "@/lib/actions/payments-out"
 import { format } from "date-fns"
 import { PaymentModeSelector, PaymentModeLine } from "./payment-mode-selector"
+import { useTrackDirty } from "@/lib/hooks/use-unsaved-changes"
 
 interface PaymentOutFormProps {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -53,6 +54,8 @@ export function PaymentOutForm({ suppliers }: PaymentOutFormProps) {
     
     // Invoices State
     const [invoices, setInvoices] = useState<AllocatableInvoice[]>([])
+
+    useTrackDirty(!!partyId || modes.some((m) => m.amount > 0) || notes.trim() !== "")
 
     // Load Invoices when Supplier changes
     const handleSupplierChange = async (id: string) => {

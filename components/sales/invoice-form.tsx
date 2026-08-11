@@ -18,6 +18,7 @@ import { createSaleInvoice } from "@/lib/actions/sales"
 import { INDIAN_STATES, isInterState } from "@/lib/indian-states"
 import { calculateInvoiceTotals } from "@/lib/gst-utils"
 import { SaleInvoiceItemFormValues } from "@/lib/schemas/sale-invoice-schema"
+import { useTrackDirty } from "@/lib/hooks/use-unsaved-changes"
 
 interface InvoiceFormProps {
     nextInvoiceNumber: string
@@ -67,6 +68,10 @@ export function InvoiceForm({ nextInvoiceNumber, parties, items, businessProfile
     const [termsConditions, setTermsConditions] = useState("")
     const [paymentMode, setPaymentMode] = useState("none")
     const [amountPaid, setAmountPaid] = useState(0)
+
+    useTrackDirty(
+        !!partyId || lineItems.some((item) => item.itemName.trim() !== "") || notes.trim() !== "" || amountPaid > 0
+    )
 
     // Compute is inter-state
     const interState = useMemo(() => {

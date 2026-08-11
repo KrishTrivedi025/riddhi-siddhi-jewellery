@@ -19,6 +19,7 @@ import { Separator } from "@/components/ui/separator"
 import { Loader2, Plus } from "lucide-react"
 import { ImageCaptureWidget } from "./image-capture-widget"
 import { toast } from "sonner"
+import { useTrackDirty } from "@/lib/hooks/use-unsaved-changes"
 
 interface ItemFormProps {
     initialData?: any
@@ -59,8 +60,10 @@ export function ItemForm({ initialData, categories, onSuccess, onCancel }: ItemF
         handleSubmit,
         setValue,
         watch,
-        formState: { errors },
+        formState: { errors, isDirty },
     } = form
+
+    useTrackDirty(isDirty)
 
     const handleAddCategory = async () => {
         if (!newCatName.trim()) return
