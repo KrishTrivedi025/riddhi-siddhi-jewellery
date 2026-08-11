@@ -37,7 +37,7 @@ export function InventoryContent({ items, categories }: InventoryContentProps) {
     }, [items, search, categoryFilter]);
 
     const dynamicSummary = useMemo(() => {
-        let totalItems = filteredItems.length
+        const totalItems = filteredItems.length
         let totalStockValueCost = 0
         let totalStockValueSale = 0
         let lowStockCount = 0
