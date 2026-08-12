@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation"
 import { format } from "date-fns"
 import {
     ArrowLeft, Download, Share2, CheckCircle2,
-    Ban, RotateCcw, Loader2,
+    Ban, RotateCcw, Loader2, Edit,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -378,6 +378,16 @@ export function InvoiceDetail({ invoice, businessProfile }: InvoiceDetailProps) 
             {/* Quick Actions */}
             {invoice.status === "active" && (
                 <div className="flex gap-3">
+                    {invoice.paymentStatus === "unpaid" && (
+                        <Button
+                            variant="ghost"
+                            onClick={() => router.push(`/dashboard/sales/${invoice.id}/edit`)}
+                            className="text-muted-foreground hover:text-primary hover:bg-primary/10"
+                        >
+                            <Edit size={16} className="mr-2" />
+                            Edit Invoice
+                        </Button>
+                    )}
                     <Button
                         variant="ghost"
                         onClick={() => router.push(`/dashboard/sales/returns/new?invoiceId=${invoice.id}`)}

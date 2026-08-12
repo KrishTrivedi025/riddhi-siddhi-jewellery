@@ -404,15 +404,227 @@ export async function voidInvoice(id: string) {
     }
 }
 
-// ─── Delete Sale Invoice (soft) ──────────────────────────────────────────────
+// ─── Update Sale Invoice (unpaid only) ───────────────────────────────────────
+
+export async function updateSaleInvoice(id: string, data: SaleInvoiceFormValues & { isGst?: boolean }) {
+    try {
+        const userId = await requireUserId()
+        const existing = await prisma.saleInvoice.findUnique({ where: { id }, include: { items: true } })
+        if (!existing || existing.userId !== userId) return { success: false, error: "Invoice not found" }
+        if (existing.status === "cancelled") return { success: false, error: "Cannot edit a cancelled invoice" }
+        if (existing.paymentStatus !== "unpaid") {
+            return { success: false, error: "Only unpaid invoices can be edited. Cancel and reissue instead." }
+        }
+
+        const isGst = data.isGst !== false
+
+        const result = await prisma.$transaction(async (tx) => {
+            const profile = await tx.businessProfile.findFirst({ where: { userId } })
+            if (!profile) throw new Error("Business profile not found")
+            const businessState = profile.state || ""
+            const party = await tx.party.findFirst({ where: { id: data.partyId, userId } })
+            if (!party) throw new Error("Customer not found")
+            const interState = isInterState(businessState, data.placeOfSupply)
+
+            // 1. Reverse stock deducted by the original line items
+            for (const item of existing.items) {
+                if (item.itemId) {
+                    const inventoryItem = await tx.item.findUnique({ where: { id: item.itemId } })
+                    if (inventoryItem) {
+                        await tx.item.update({
+                            where: { id: item.itemId },
+                            data: { currentStock: inventoryItem.currentStock + item.quantity },
+                        })
+                        await tx.stockMovement.create({
+                            data: {
+                                itemId: item.itemId,
+                                movementType: "in",
+                                quantity: item.quantity,
+                                reason: `Edit reversal — Invoice ${existing.invoiceNumber}`,
+                                referenceId: id,
+                                referenceType: "sale_reversal",
+                            },
+                        })
+                    }
+                }
+            }
+
+            // 2. Recalculate totals for the new line items
+            let subtotal = 0
+            let totalDiscount = 0
+            let taxableAmount = 0
+            let totalCgst = 0
+            let totalSgst = 0
+            let totalIgst = 0
+
+            const invoiceItems = data.items.map((item) => {
+                const effectiveGstRate = isGst ? item.gstRate : 0
+                const gst = calculateLineItemGST(
+                    item.unitPrice,
+                    item.quantity,
+                    item.discount,
+                    item.discountType,
+                    effectiveGstRate,
+                    interState,
+                    item.makingCharges || 0
+                )
+
+                const baseAmount = item.unitPrice * item.quantity + (item.makingCharges || 0)
+                subtotal += baseAmount
+
+                let discountAmt = 0
+                if (item.discountType === "percent") {
+                    discountAmt = (baseAmount * item.discount) / 100
+                } else {
+                    discountAmt = item.discount
+                }
+                totalDiscount += discountAmt
+                taxableAmount += gst.taxableAmount
+                totalCgst += gst.cgst
+                totalSgst += gst.sgst
+                totalIgst += gst.igst
+
+                return {
+                    itemId: item.itemId || null,
+                    itemName: item.itemName,
+                    hsnCode: item.hsnCode || null,
+                    description: item.description || null,
+                    quantity: item.quantity,
+                    unit: item.unit,
+                    unitPrice: item.unitPrice,
+                    discount: item.discount,
+                    discountType: item.discountType,
+                    gstRate: effectiveGstRate,
+                    cgst: gst.cgst,
+                    sgst: gst.sgst,
+                    igst: gst.igst,
+                    amount: gst.totalAmount,
+                    purity: item.purity || null,
+                    netWeight: item.netWeight || null,
+                    grossWeight: item.grossWeight || null,
+                    makingCharges: item.makingCharges || null,
+                    wastagePercent: item.wastagePercent || null,
+                    hallmarkNumber: item.hallmarkNumber || null,
+                    stoneDetails: item.stoneDetails || null,
+                }
+            })
+
+            const totalBeforeRound = taxableAmount + totalCgst + totalSgst + totalIgst
+            const roundOff = Math.round(totalBeforeRound * 100) / 100
+            const grandTotal = Math.round(totalBeforeRound)
+            const actualRoundOff = grandTotal - roundOff
+
+            const amountPaid = data.amountPaid || 0
+            const balanceDue = grandTotal - amountPaid
+            let paymentStatus = "unpaid"
+            if (amountPaid >= grandTotal) paymentStatus = "paid"
+            else if (amountPaid > 0) paymentStatus = "partial"
+
+            // 3. Replace line items and update the invoice
+            await tx.saleInvoiceItem.deleteMany({ where: { invoiceId: id } })
+            const invoice = await tx.saleInvoice.update({
+                where: { id },
+                data: {
+                    invoiceDate: data.invoiceDate,
+                    dueDate: data.dueDate || null,
+                    partyId: data.partyId,
+                    placeOfSupply: data.placeOfSupply,
+                    shipToAddress: data.shipToAddress || null,
+                    subtotal: Math.round(subtotal * 100) / 100,
+                    totalDiscount: Math.round(totalDiscount * 100) / 100,
+                    taxableAmount: Math.round(taxableAmount * 100) / 100,
+                    cgst: Math.round(totalCgst * 100) / 100,
+                    sgst: Math.round(totalSgst * 100) / 100,
+                    igst: Math.round(totalIgst * 100) / 100,
+                    roundOff: Math.round(actualRoundOff * 100) / 100,
+                    grandTotal,
+                    amountPaid,
+                    balanceDue,
+                    paymentStatus,
+                    notes: data.notes || null,
+                    termsConditions: data.termsConditions || null,
+                    items: {
+                        create: invoiceItems,
+                    },
+                },
+                include: { items: true, party: true },
+            })
+
+            // 4. Deduct stock for the new line items
+            for (const item of data.items) {
+                if (item.itemId) {
+                    const inventoryItem = await tx.item.findUnique({ where: { id: item.itemId } })
+                    if (inventoryItem) {
+                        await tx.item.update({
+                            where: { id: item.itemId },
+                            data: { currentStock: Math.max(0, inventoryItem.currentStock - item.quantity) },
+                        })
+                        await tx.stockMovement.create({
+                            data: {
+                                itemId: item.itemId,
+                                movementType: "out",
+                                quantity: item.quantity,
+                                reason: `Edit — Invoice ${existing.invoiceNumber}`,
+                                referenceId: id,
+                                referenceType: "sale",
+                            },
+                        })
+                    }
+                }
+            }
+
+            return invoice
+        })
+
+        revalidatePath("/dashboard/sales")
+        revalidatePath(`/dashboard/sales/${id}`)
+        revalidatePath("/dashboard/inventory")
+        revalidatePath("/dashboard")
+        return { success: true, data: result }
+    } catch (error: unknown) {
+        console.error("Error updating sale invoice:", error)
+        return { success: false, error: error instanceof Error ? error.message : "Failed to update sale invoice" }
+    }
+}
+
+// ─── Delete Sale Invoice (soft, unpaid only) ─────────────────────────────────
 
 export async function deleteSaleInvoice(id: string) {
     try {
-        await prisma.saleInvoice.update({
-            where: { id },
-            data: { deletedAt: new Date() },
+        const invoice = await prisma.saleInvoice.findUnique({ where: { id }, include: { items: true } })
+        if (!invoice) return { success: false, error: "Invoice not found" }
+        if (invoice.paymentStatus !== "unpaid") {
+            return { success: false, error: "Only unpaid invoices can be deleted. Cancel it instead." }
+        }
+
+        await prisma.$transaction(async (tx) => {
+            // Reverse stock deducted at creation
+            for (const item of invoice.items) {
+                if (item.itemId) {
+                    const inventoryItem = await tx.item.findUnique({ where: { id: item.itemId } })
+                    if (inventoryItem) {
+                        await tx.item.update({
+                            where: { id: item.itemId },
+                            data: { currentStock: inventoryItem.currentStock + item.quantity },
+                        })
+                        await tx.stockMovement.create({
+                            data: {
+                                itemId: item.itemId,
+                                movementType: "in",
+                                quantity: item.quantity,
+                                reason: `Deleted Invoice ${invoice.invoiceNumber}`,
+                                referenceId: id,
+                                referenceType: "sale_reversal",
+                            },
+                        })
+                    }
+                }
+            }
+            await tx.saleInvoice.update({ where: { id }, data: { deletedAt: new Date() } })
         })
+
         revalidatePath("/dashboard/sales")
+        revalidatePath("/dashboard/inventory")
         return { success: true }
     } catch (error) {
         console.error("Error deleting sale invoice:", error)

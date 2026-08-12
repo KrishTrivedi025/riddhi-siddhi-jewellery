@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { format } from "date-fns"
-import { Search, Eye, MoreHorizontal, CheckCircle2, XCircle, Ban, FileText } from "lucide-react"
+import { Search, Eye, MoreHorizontal, CheckCircle2, XCircle, Ban, FileText, Loader2, Edit } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -174,20 +174,27 @@ export function InvoiceTable({ invoices }: InvoiceTableProps) {
                                                     <DropdownMenuItem onClick={() => { window.location.href = `/dashboard/sales/${inv.id}` }} className="hover:bg-border cursor-pointer">
                                                         <Eye size={14} className="mr-2" /> View Details
                                                     </DropdownMenuItem>
+                                                    {inv.status !== "cancelled" && inv.paymentStatus === "unpaid" && (
+                                                        <DropdownMenuItem onClick={() => { window.location.href = `/dashboard/sales/${inv.id}/edit` }} className="hover:bg-border cursor-pointer">
+                                                            <Edit size={14} className="mr-2" /> Edit Invoice
+                                                        </DropdownMenuItem>
+                                                    )}
                                                     {inv.status !== "cancelled" && inv.paymentStatus !== "paid" && (
                                                         <DropdownMenuItem onClick={() => handleMarkPaid(inv.id)} disabled={loading === inv.id} className="hover:bg-border cursor-pointer text-emerald-400">
-                                                            <CheckCircle2 size={14} className="mr-2" /> Mark as Paid
+                                                            {loading === inv.id ? <Loader2 size={14} className="mr-2 animate-spin" /> : <CheckCircle2 size={14} className="mr-2" />} Mark as Paid
                                                         </DropdownMenuItem>
                                                     )}
                                                     <DropdownMenuSeparator className="bg-border" />
                                                     {inv.status !== "cancelled" && (
                                                         <DropdownMenuItem onClick={() => handleVoid(inv.id)} disabled={loading === inv.id} className="hover:bg-border cursor-pointer text-amber-400">
-                                                            <Ban size={14} className="mr-2" /> Cancel Invoice
+                                                            {loading === inv.id ? <Loader2 size={14} className="mr-2 animate-spin" /> : <Ban size={14} className="mr-2" />} Cancel Invoice
                                                         </DropdownMenuItem>
                                                     )}
-                                                    <DropdownMenuItem onClick={() => handleDelete(inv.id)} disabled={loading === inv.id} className="hover:bg-border cursor-pointer text-rose-400">
-                                                        <XCircle size={14} className="mr-2" /> Delete
-                                                    </DropdownMenuItem>
+                                                    {inv.paymentStatus === "unpaid" && (
+                                                        <DropdownMenuItem onClick={() => handleDelete(inv.id)} disabled={loading === inv.id} className="hover:bg-border cursor-pointer text-rose-400">
+                                                            {loading === inv.id ? <Loader2 size={14} className="mr-2 animate-spin" /> : <XCircle size={14} className="mr-2" />} Delete
+                                                        </DropdownMenuItem>
+                                                    )}
                                                 </DropdownMenuContent>
                                             </DropdownMenu>
                                         </TableCell>
