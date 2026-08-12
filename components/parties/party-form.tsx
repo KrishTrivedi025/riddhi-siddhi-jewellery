@@ -52,6 +52,7 @@ export function PartyForm({ initialData, onSuccess, onCancel }: PartyFormProps) 
             creditLimit: initialData?.creditLimit || 0,
             paymentTerms: initialData?.paymentTerms || "",
             notes: initialData?.notes || "",
+            priceMultiplier: initialData?.priceMultiplier ?? 1,
         }
     })
 
@@ -240,6 +241,23 @@ export function PartyForm({ initialData, onSuccess, onCancel }: PartyFormProps) 
                         </Select>
                     </div>
                 </div>
+                {partyType === "CUSTOMER" && (
+                    <div className="space-y-2 mt-4">
+                        <Label className="text-muted-foreground">Price Multiplier</Label>
+                        <Input
+                            type="number"
+                            step="0.01"
+                            {...register("priceMultiplier", { valueAsNumber: true })}
+                            className="bg-background border-border text-foreground max-w-[160px]"
+                        />
+                        <p className="text-[10px] text-muted-foreground">
+                            1 = no change. e.g. 1.05 = +5%, 0.95 = -5%. Applied silently to non-GST invoice prices only.
+                        </p>
+                        {errors.priceMultiplier && (
+                            <p className="text-xs text-rose-500">{errors.priceMultiplier.message}</p>
+                        )}
+                    </div>
+                )}
             </div>
 
             <div className="flex justify-end gap-3 pt-2 pb-2 border-t border-border sticky bottom-0 bg-card mt-2">

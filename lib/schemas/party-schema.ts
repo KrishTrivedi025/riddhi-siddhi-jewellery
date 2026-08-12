@@ -18,6 +18,7 @@ export const partySchema = z.object({
     creditLimit: z.number().optional().nullable(),
     paymentTerms: z.string().optional().nullable(),
     notes: z.string().optional().nullable(),
+    priceMultiplier: z.number().min(0.01, "Must be greater than 0").max(10, "Must be 10 or less").default(1),
 })
 
 export type PartyFormValues = z.infer<typeof partySchema>

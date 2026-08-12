@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { useForm } from "react-hook-form"
+import { useForm, useFieldArray } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { itemSchema, ItemFormValues } from "@/lib/schemas/item-schema"
 import { createItem, updateItem, createCategory } from "@/lib/actions/items"
@@ -16,7 +16,7 @@ import {
     SelectValue,
 } from "@/components/ui/select"
 import { Separator } from "@/components/ui/separator"
-import { Loader2, Plus } from "lucide-react"
+import { Loader2, Plus, Trash2 } from "lucide-react"
 import { ImageCaptureWidget } from "./image-capture-widget"
 import { toast } from "sonner"
 import { useTrackDirty } from "@/lib/hooks/use-unsaved-changes"
@@ -46,10 +46,14 @@ export function ItemForm({ initialData, categories, onSuccess, onCancel }: ItemF
             gstRate: initialData?.gstRate ?? 3,
             purchasePrice: initialData?.purchasePrice || 0,
             salePrice: initialData?.salePrice || 0,
+            weight: initialData?.weight ?? null,
             openingStock: initialData?.openingStock || 0,
             currentStock: initialData?.currentStock || 0,
             lowStockAlert: initialData?.lowStockAlert || 0,
             imageUrl: initialData?.imageUrl || "",
+            priceComponents: initialData?.priceComponents?.length
+                ? initialData.priceComponents.map((c: any) => ({ label: c.label, amount: c.amount }))
+                : [],
         },
     })
 
@@ -60,8 +64,18 @@ export function ItemForm({ initialData, categories, onSuccess, onCancel }: ItemF
         handleSubmit,
         setValue,
         watch,
+        control,
         formState: { errors, isDirty },
     } = form
+
+    const { fields: priceComponentFields, append: appendPriceComponent, remove: removePriceComponent } = useFieldArray({
+        control,
+        name: "priceComponents",
+    })
+
+    const priceComponentTotal = (watch("priceComponents") || []).reduce(
+        (sum, c) => sum + (Number(c?.amount) || 0), 0
+    )
 
     useTrackDirty(isDirty)
 
@@ -264,6 +278,82 @@ export function ItemForm({ initialData, categories, onSuccess, onCancel }: ItemF
                             className="bg-background border-border text-foreground focus:border-primary transition-all"
                         />
                     </div>
+                </div>
+            </div>
+
+            <Separator className="bg-border" />
+
+            {/* ── Price Generator ── */}
+            <div>
+                <div className="flex items-center justify-between mb-4">
+                    <h4 className="text-sm font-medium text-foreground">Price Generator</h4>
+                    <span className="text-xs text-muted-foreground">Optional — composes a sale price from parts</span>
+                </div>
+
+                <div className="space-y-2 max-w-[200px] mb-4">
+                    <Label className="text-muted-foreground">Weight (g)</Label>
+                    <Input
+                        type="number"
+                        step="0.001"
+                        {...register("weight", { valueAsNumber: true })}
+                        placeholder="e.g. 8.5"
+                        className="bg-background border-border text-foreground focus:border-primary transition-all"
+                    />
+                </div>
+
+                {priceComponentFields.length > 0 && (
+                    <div className="space-y-2 mb-3">
+                        {priceComponentFields.map((field, index) => (
+                            <div key={field.id} className="flex gap-2 items-center">
+                                <Input
+                                    {...register(`priceComponents.${index}.label` as const)}
+                                    placeholder="e.g. Gold Value"
+                                    className="bg-background border-border text-foreground flex-1"
+                                />
+                                <Input
+                                    type="number"
+                                    step="0.01"
+                                    {...register(`priceComponents.${index}.amount` as const, { valueAsNumber: true })}
+                                    placeholder="Amount"
+                                    className="bg-background border-border text-foreground w-32"
+                                />
+                                <Button
+                                    type="button"
+                                    variant="ghost"
+                                    onClick={() => removePriceComponent(index)}
+                                    className="text-rose-500 hover:bg-rose-500/10 h-9 w-9 p-0 shrink-0"
+                                >
+                                    <Trash2 size={14} />
+                                </Button>
+                            </div>
+                        ))}
+                    </div>
+                )}
+
+                <div className="flex flex-wrap items-center gap-2">
+                    <Button
+                        type="button"
+                        variant="ghost"
+                        onClick={() => appendPriceComponent({ label: "", amount: 0 })}
+                        className="text-primary hover:bg-primary/10 border border-primary/30"
+                    >
+                        <Plus size={14} className="mr-1.5" /> Add Component
+                    </Button>
+                    {priceComponentFields.length > 0 && (
+                        <>
+                            <span className="text-xs text-muted-foreground ml-1">
+                                Total: ₹{priceComponentTotal.toLocaleString("en-IN")}
+                            </span>
+                            <Button
+                                type="button"
+                                variant="ghost"
+                                onClick={() => setValue("salePrice", priceComponentTotal)}
+                                className="text-muted-foreground hover:text-foreground hover:bg-border ml-auto"
+                            >
+                                Use as Sale Price
+                            </Button>
+                        </>
+                    )}
                 </div>
             </div>
 

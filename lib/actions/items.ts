@@ -16,7 +16,7 @@ export async function getItems(categoryId?: string) {
                 deletedAt: null,
                 ...(categoryId && { categoryId }),
             },
-            include: { category: true },
+            include: { category: true, priceComponents: { orderBy: { sortOrder: "asc" } } },
             orderBy: { name: "asc" },
         })
         return items
@@ -31,7 +31,7 @@ export async function getItemById(id: string) {
         const userId = await requireUserId()
         const item = await prisma.item.findFirst({
             where: { id, userId },
-            include: { category: true },
+            include: { category: true, priceComponents: { orderBy: { sortOrder: "asc" } } },
         })
         return item
     } catch (error) {
@@ -55,10 +55,14 @@ export async function createItem(data: ItemFormValues) {
                 gstRate: data.gstRate,
                 purchasePrice: data.purchasePrice,
                 salePrice: data.salePrice,
+                weight: data.weight ?? null,
                 openingStock: data.openingStock,
                 currentStock: data.currentStock || data.openingStock,
                 lowStockAlert: data.lowStockAlert,
                 imageUrl: data.imageUrl,
+                priceComponents: data.priceComponents?.length
+                    ? { create: data.priceComponents.map((c, i) => ({ label: c.label, amount: c.amount, sortOrder: i })) }
+                    : undefined,
             },
         })
         revalidatePath("/dashboard/inventory")
@@ -75,9 +79,20 @@ export async function createItem(data: ItemFormValues) {
 export async function updateItem(id: string, data: Partial<ItemFormValues>) {
     try {
         const userId = await requireUserId()
-        const item = await prisma.item.update({
-            where: { id, userId },
-            data: { ...data, name: data.itemCode },
+        const { priceComponents, ...rest } = data
+        const item = await prisma.$transaction(async (tx) => {
+            if (priceComponents) {
+                await tx.itemPriceComponent.deleteMany({ where: { itemId: id } })
+                if (priceComponents.length) {
+                    await tx.itemPriceComponent.createMany({
+                        data: priceComponents.map((c, i) => ({ itemId: id, label: c.label, amount: c.amount, sortOrder: i })),
+                    })
+                }
+            }
+            return tx.item.update({
+                where: { id, userId },
+                data: { ...rest, name: rest.itemCode },
+            })
         })
         revalidatePath("/dashboard/inventory")
         return { success: true, data: item }
