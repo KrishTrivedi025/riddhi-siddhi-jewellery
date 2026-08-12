@@ -1,11 +1,16 @@
 "use client"
 
+import dynamic from "next/dynamic"
 import { motion } from "framer-motion"
-import { SalesPurchaseChart } from "./sales-purchase-chart"
-import { ProfitLossChart } from "./profit-loss-chart"
-import { PaymentDonutChart } from "./payment-donut-chart"
 import { containerVariants, itemVariants } from "@/lib/animations"
 import { useReducedMotion } from "@/lib/hooks/use-reduced-motion"
+import { Skeleton } from "@/components/ui/skeleton"
+
+const chartLoading = () => <Skeleton className="w-full h-[350px] rounded-2xl" />
+
+const SalesPurchaseChart = dynamic(() => import("./sales-purchase-chart").then(m => m.SalesPurchaseChart), { loading: chartLoading })
+const ProfitLossChart = dynamic(() => import("./profit-loss-chart").then(m => m.ProfitLossChart), { loading: chartLoading })
+const PaymentDonutChart = dynamic(() => import("./payment-donut-chart").then(m => m.PaymentDonutChart), { loading: chartLoading })
 
 interface ChartsGridProps {
     data: any

@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { format } from "date-fns"
-import { Search, Eye, MoreHorizontal, CheckCircle2, Ban, FileText } from "lucide-react"
+import { Search, Eye, MoreHorizontal, CheckCircle2, Ban, FileText, Loader2 } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -170,13 +170,13 @@ export function PurchaseTable({ invoices }: PurchaseTableProps) {
                                                     </DropdownMenuItem>
                                                     {inv.status !== "cancelled" && inv.paymentStatus !== "paid" && (
                                                         <DropdownMenuItem onClick={() => handleMarkPaid(inv.id)} disabled={loading === inv.id} className="hover:bg-border cursor-pointer text-emerald-400">
-                                                            <CheckCircle2 size={14} className="mr-2" /> Mark as Paid
+                                                            {loading === inv.id ? <Loader2 size={14} className="mr-2 animate-spin" /> : <CheckCircle2 size={14} className="mr-2" />} Mark as Paid
                                                         </DropdownMenuItem>
                                                     )}
                                                     <DropdownMenuSeparator className="bg-border" />
                                                     {inv.status !== "cancelled" && (
                                                         <DropdownMenuItem onClick={() => handleVoid(inv.id)} disabled={loading === inv.id} className="hover:bg-border cursor-pointer text-amber-400">
-                                                            <Ban size={14} className="mr-2" /> Cancel Purchase
+                                                            {loading === inv.id ? <Loader2 size={14} className="mr-2 animate-spin" /> : <Ban size={14} className="mr-2" />} Cancel Purchase
                                                         </DropdownMenuItem>
                                                     )}
                                                 </DropdownMenuContent>
