@@ -176,7 +176,7 @@ export function InvoicePDF({ invoice, businessProfile }: InvoicePDFProps) {
                         </View>
 
                         {/* INVOICE TITLE */}
-                        <Text style={S.taxInvoiceTitle}>{invoice.isGst === false ? "INVOICE" : "TAX INVOICE"}</Text>
+                        <Text style={S.taxInvoiceTitle}>{invoice.isGst === false ? "ESTIMATE/ON ARRIVAL" : "TAX INVOICE"}</Text>
 
                         {/* PARTY TABLE */}
                         <View style={S.partyTable}>
@@ -188,9 +188,9 @@ export function InvoicePDF({ invoice, businessProfile }: InvoicePDFProps) {
                                 <View style={{ marginBottom: 3 }}>
                                     <Text style={S.partyLabel}>Address :  {party.billingAddress || "—"}{party.city ? `, ${party.city}` : ""}</Text>
                                 </View>
-                                <View style={S.partyRow}>
-                                    <Text style={S.partyRowLabel}>Party's GSTIN No. :</Text>
-                                    <Text style={S.partyRowValue}>{party.gstin || "—"}</Text>
+                                <View style={[S.partyRow, { flexDirection: "row" }]}>
+                                    <Text style={S.partyLabel}>Party's GSTIN No. : </Text>
+                                    <Text style={S.partyValue}>{party.gstin || "—"}</Text>
                                 </View>
                                 <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
                                     <View style={{ flexDirection: "row" }}>
@@ -423,7 +423,7 @@ export function InvoicePDF({ invoice, businessProfile }: InvoicePDFProps) {
                             <View style={S.signBox}>
                                 <Text style={S.signTitle}>For {biz.businessName || "Riddhi Siddhi Jewellery"}</Text>
                                 {biz.signatureUrl ? (
-                                    <PdfImage src={biz.signatureUrl} style={{ width: 140, height: 50, objectFit: "contain", marginVertical: 4 }} />
+                                    <PdfImage src={biz.signatureUrl} style={{ width: 170, height: 62, objectFit: "contain", marginVertical: 4 }} />
                                 ) : (
                                     <View style={S.signLine} />
                                 )}
