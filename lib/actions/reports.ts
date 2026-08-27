@@ -3,7 +3,7 @@
 import { prisma } from "@/lib/db"
 import { requireUserId } from "./auth-helper"
 import {
-    startOfDay, endOfDay, startOfMonth, endOfMonth,
+    startOfMonth, endOfMonth,
     subMonths, eachMonthOfInterval, format, isWithinInterval,
 } from "date-fns"
 
@@ -176,110 +176,6 @@ export async function getOutstandingPayableReport() {
     return { buckets, parties, grandTotal, invoiceCount: invoices.length }
 }
 
-// ─── 6. Stock Summary Report ──────────────────────────────────────────────────
-
-export async function getStockSummaryReport() {
-    const userId = await requireUserId()
-    const items = await prisma.item.findMany({
-        where: { userId, deletedAt: null },
-        include: { category: { select: { name: true } } },
-        orderBy: { name: "asc" },
-    })
-    const totalItems    = items.length
-    const totalCostVal  = items.reduce((s, i) => s + i.currentStock * i.purchasePrice, 0)
-    const totalSaleVal  = items.reduce((s, i) => s + i.currentStock * i.salePrice, 0)
-    const lowStockCount = items.filter(i => i.currentStock > 0 && i.currentStock <= i.lowStockAlert).length
-    const outOfStock    = items.filter(i => i.currentStock <= 0).length
-    return { items, totalItems, totalCostVal, totalSaleVal, lowStockCount, outOfStock }
-}
-
-// ─── 7. Stock Movement Report ─────────────────────────────────────────────────
-
-export async function getStockMovementReport(range: DateRange, itemId?: string) {
-    const userId = await requireUserId()
-    const movements = await prisma.stockMovement.findMany({
-        where: {
-            ...dateWhere("createdAt", range),
-            ...(itemId && itemId !== "all" ? { itemId } : {}),
-            item: { userId },
-        },
-        include: { item: { select: { id: true, name: true, unit: true } } },
-        orderBy: { createdAt: "desc" },
-    })
-    const totalIn  = movements.filter(m => m.movementType === "in").reduce((s, m) => s + m.quantity, 0)
-    const totalOut = movements.filter(m => m.movementType === "out").reduce((s, m) => s + m.quantity, 0)
-    return { movements, totalIn, totalOut }
-}
-
-// ─── 8. Expense Report ────────────────────────────────────────────────────────
-
-export async function getExpenseReport(range: DateRange) {
-    const userId = await requireUserId()
-    const expenses = await prisma.expense.findMany({
-        where: { userId, deletedAt: null, ...dateWhere("expenseDate", range) },
-        include: { bankAccount: { select: { accountName: true, isCash: true } } },
-        orderBy: { expenseDate: "desc" },
-    })
-    const total    = expenses.reduce((s, e) => s + e.amount, 0)
-    const totalITC = expenses.reduce((s, e) => s + e.gstAmount, 0)
-    const catMap: Record<string, { count: number; amount: number }> = {}
-    for (const e of expenses) {
-        if (!catMap[e.category]) catMap[e.category] = { count: 0, amount: 0 }
-        catMap[e.category].count++
-        catMap[e.category].amount += e.amount
-    }
-    const byCategory = Object.entries(catMap)
-        .map(([name, d]) => ({ name, count: d.count, amount: d.amount, pct: total > 0 ? (d.amount / total) * 100 : 0 }))
-        .sort((a, b) => b.amount - a.amount)
-    return { expenses, total, totalITC, byCategory }
-}
-
-// ─── 9. Day Book Report ───────────────────────────────────────────────────────
-
-export async function getDayBookReport(date: Date) {
-    const userId = await requireUserId()
-    const from = startOfDay(date)
-    const to   = endOfDay(date)
-
-    const sales     = await prisma.saleInvoice.findMany({
-        where: { userId, deletedAt: null, ...dateWhere("invoiceDate", { from, to }) },
-        include: { party: { select: { name: true } } },
-        orderBy: { invoiceDate: "asc" },
-    })
-    const purchases = await prisma.purchaseInvoice.findMany({
-        where: { userId, deletedAt: null, ...dateWhere("invoiceDate", { from, to }) },
-        include: { party: { select: { name: true } } },
-        orderBy: { invoiceDate: "asc" },
-    })
-    const payments  = await prisma.payment.findMany({
-        where: { userId, deletedAt: null, ...dateWhere("paymentDate", { from, to }) },
-        include: { party: { select: { name: true } }, paymentModes: true },
-        orderBy: { paymentDate: "asc" },
-    })
-    const expenses  = await prisma.expense.findMany({
-        where: { userId, deletedAt: null, ...dateWhere("expenseDate", { from, to }) },
-        orderBy: { expenseDate: "asc" },
-    })
-
-    type Entry = { date: Date; type: string; reference: string; description: string; debit: number; credit: number; badge: string }
-    const entries: Entry[] = [
-        ...sales.map(s => ({ date: s.invoiceDate, type: "Sale", reference: s.invoiceNumber, description: s.party.name, debit: 0, credit: s.grandTotal, badge: "sale" })),
-        ...purchases.map(p => ({ date: p.invoiceDate, type: "Purchase", reference: p.invoiceNumber, description: p.party.name, debit: p.grandTotal, credit: 0, badge: "purchase" })),
-        ...payments.map(p => p.paymentType === "IN"
-            ? { date: p.paymentDate, type: "Payment In", reference: `PMT-${p.id.slice(-6).toUpperCase()}`, description: p.party.name, debit: 0, credit: p.totalAmount, badge: "payment_in" }
-            : { date: p.paymentDate, type: "Payment Out", reference: `PMT-${p.id.slice(-6).toUpperCase()}`, description: p.party.name, debit: p.totalAmount, credit: 0, badge: "payment_out" }
-        ),
-        ...expenses.map(e => ({ date: e.expenseDate, type: "Expense", reference: e.category, description: e.description || e.category, debit: e.amount, credit: 0, badge: "expense" })),
-    ].sort((a, b) => a.date.getTime() - b.date.getTime())
-
-    // Running balance
-    let balance = 0
-    const entriesWithBalance = entries.map(e => { balance += e.credit - e.debit; return { ...e, balance } })
-    const totalDebit  = entries.reduce((s, e) => s + e.debit, 0)
-    const totalCredit = entries.reduce((s, e) => s + e.credit, 0)
-    return { entries: entriesWithBalance, totalDebit, totalCredit }
-}
-
 // ─── 10. Cash/Bank Book Report ────────────────────────────────────────────────
 
 export async function getCashBankBookReport(range: DateRange, accountId: string) {
@@ -325,41 +221,6 @@ export async function getCashBankBookReport(range: DateRange, accountId: string)
     const totalDebit  = entries.reduce((s, e) => s + e.debit, 0)
     const totalCredit = entries.reduce((s, e) => s + e.credit, 0)
     return { account, entries: entriesWithBalance, totalDebit, totalCredit, closingBalance: balance }
-}
-
-// ─── 11. Item-wise Profit Report ─────────────────────────────────────────────
-
-export async function getItemProfitReport(range: DateRange) {
-    const userId = await requireUserId()
-    const saleItems = await prisma.saleInvoiceItem.findMany({
-        where: { invoice: { userId, deletedAt: null, status: "active", ...dateWhere("invoiceDate", range) } },
-        include: { item: { select: { id: true, name: true, purchasePrice: true } }, invoice: { select: { invoiceDate: true } } },
-    })
-
-    type Row = { itemId: string; name: string; qtySold: number; totalRevenue: number; totalCost: number; profit: number; margin: number }
-    const map: Record<string, Row> = {}
-    for (const si of saleItems) {
-        const id   = si.itemId || `custom-${si.itemName}`
-        const cost = (si.item?.purchasePrice || 0) * si.quantity
-        if (!map[id]) map[id] = { itemId: id, name: si.itemName, qtySold: 0, totalRevenue: 0, totalCost: 0, profit: 0, margin: 0 }
-        map[id].qtySold     += si.quantity
-        map[id].totalRevenue += si.amount
-        map[id].totalCost    += cost
-        map[id].profit        = map[id].totalRevenue - map[id].totalCost
-        map[id].margin        = map[id].totalRevenue > 0 ? (map[id].profit / map[id].totalRevenue) * 100 : 0
-    }
-    const rows = Object.values(map).sort((a, b) => b.profit - a.profit)
-    const totalRevenue = rows.reduce((s, r) => s + r.totalRevenue, 0)
-    const totalProfit  = rows.reduce((s, r) => s + r.profit, 0)
-    const overallMargin = totalRevenue > 0 ? (totalProfit / totalRevenue) * 100 : 0
-    return { rows, totalRevenue, totalProfit, overallMargin }
-}
-
-// ─── Utility: Fetch items list for stock movement filter ──────────────────────
-
-export async function getItemsForFilter() {
-    const userId = await requireUserId()
-    return prisma.item.findMany({ where: { userId, deletedAt: null }, select: { id: true, name: true }, orderBy: { name: "asc" } })
 }
 
 // ─── Utility: Fetch bank accounts for cash/bank book ─────────────────────────

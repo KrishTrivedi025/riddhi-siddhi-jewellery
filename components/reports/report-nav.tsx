@@ -6,8 +6,7 @@ import { ChevronDown } from "lucide-react"
 
 export type ReportId =
     | "profit_loss" | "sales" | "purchase" | "receivable" | "payable"
-    | "stock_summary" | "stock_movement" | "expense" | "day_book"
-    | "cash_bank_book" | "item_profit"
+    | "cash_bank_book"
 
 interface NavGroup {
     label: string
@@ -22,16 +21,9 @@ const NAV_GROUPS: NavGroup[] = [
         { id: "receivable", label: "Outstanding Receivable", icon: "📥" },
         { id: "payable",    label: "Outstanding Payable",    icon: "📤" },
     ]},
-    { label: "Inventory", items: [
-        { id: "stock_summary",  label: "Stock Summary",  icon: "📦" },
-        { id: "stock_movement", label: "Stock Movement", icon: "🔄" },
-    ]},
-    { label: "Expenses",      items: [{ id: "expense",       label: "Expense Report", icon: "💸" }] },
     { label: "Ledgers",       items: [
-        { id: "day_book",       label: "Day Book",       icon: "📖" },
         { id: "cash_bank_book", label: "Cash/Bank Book", icon: "🏦" },
     ]},
-    { label: "Profitability", items: [{ id: "item_profit", label: "Item-wise Profit", icon: "📈" }] },
 ]
 
 const ALL_ITEMS = NAV_GROUPS.flatMap(g => g.items)

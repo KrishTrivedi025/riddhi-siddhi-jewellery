@@ -9,12 +9,7 @@ import { SalesReport }                  from "@/components/reports/sales-report"
 import { PurchaseReport }               from "@/components/reports/purchase-report"
 import { OutstandingReceivableReport }  from "@/components/reports/outstanding-receivable-report"
 import { OutstandingPayableReport }     from "@/components/reports/outstanding-payable-report"
-import { StockSummaryReport }           from "@/components/reports/stock-summary-report"
-import { StockMovementReport }          from "@/components/reports/stock-movement-report"
-import { ExpenseReport }                from "@/components/reports/expense-report"
-import { DayBookReport }                from "@/components/reports/daybook-report"
 import { CashBankBookReport }           from "@/components/reports/cashbank-book-report"
-import { ItemProfitReport }             from "@/components/reports/item-profit-report"
 
 const reportTransition = { duration: 0.18, ease: [0.25, 0.46, 0.45, 0.94] as const }
 
@@ -25,12 +20,7 @@ function ActiveReport({ id }: { id: ReportId }) {
         case "purchase":       return <PurchaseReport />
         case "receivable":     return <OutstandingReceivableReport />
         case "payable":        return <OutstandingPayableReport />
-        case "stock_summary":  return <StockSummaryReport />
-        case "stock_movement": return <StockMovementReport />
-        case "expense":        return <ExpenseReport />
-        case "day_book":       return <DayBookReport />
         case "cash_bank_book": return <CashBankBookReport />
-        case "item_profit":    return <ItemProfitReport />
         default:               return <ProfitLossReport />
     }
 }
