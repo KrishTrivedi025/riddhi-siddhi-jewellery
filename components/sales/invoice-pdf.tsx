@@ -7,6 +7,7 @@ import { toast } from "sonner"
 import { format } from "date-fns"
 import { numberToWords } from "@/lib/amount-in-words"
 import { downloadOrSharePdf } from "@/lib/pdf-download"
+import { getStateCodeFromGSTIN, getStateByName } from "@/lib/indian-states"
 
 interface InvoicePDFProps {
     invoice: any
@@ -158,7 +159,7 @@ export function InvoicePDF({ invoice, businessProfile }: InvoicePDFProps) {
                             </View>
                             <View>
                                 <Text style={S.bizName}>{biz.businessName || "Riddhi Siddhi Jewellery"}</Text>
-                                <Text style={S.bizTagline}>{biz.businessType || "Jewellery Manufacturer & Retailer"}</Text>
+                                <Text style={S.bizTagline}>MFG & Trading In :  All Kinds of Imitation Jewellery</Text>
                             </View>
                         </View>
 
@@ -169,14 +170,15 @@ export function InvoicePDF({ invoice, businessProfile }: InvoicePDFProps) {
                             {biz.email ? `  |  E-Mail : ${biz.email}` : ""}
                         </Text>
 
-                        {/* GSTIN | MSME */}
+                        {/* GSTIN | STATE CODE | PAN */}
                         <View style={S.regRow}>
                             <Text style={S.regText}>GSTIN/UIN : {biz.gstin || "—"}</Text>
+                            <Text style={S.regText}>State Code : {getStateCodeFromGSTIN(biz.gstin || "") || getStateByName(biz.state || "")?.code || "—"}</Text>
                             <Text style={S.regText}>PAN : {biz.pan || "—"}</Text>
                         </View>
 
                         {/* INVOICE TITLE */}
-                        <Text style={S.taxInvoiceTitle}>{invoice.isGst === false ? "ESTIMATE/ON ARRIVAL" : "TAX INVOICE"}</Text>
+                        <Text style={S.taxInvoiceTitle}>{invoice.isGst === false ? "ESTIMATE/ON APPROVAL" : "TAX INVOICE"}</Text>
 
                         {/* PARTY TABLE */}
                         <View style={S.partyTable}>
