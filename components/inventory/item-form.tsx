@@ -42,7 +42,7 @@ export function ItemForm({ initialData, categories, onSuccess, onCancel }: ItemF
             description: initialData?.description || "",
             categoryId: initialData?.categoryId || "",
             unit: initialData?.unit || "pcs",
-            hsnCode: initialData?.hsnCode || "7113",
+            hsnCode: initialData?.hsnCode || "7117",
             gstRate: initialData?.gstRate ?? 3,
             purchasePrice: initialData?.purchasePrice || 0,
             salePrice: initialData?.salePrice || 0,
@@ -183,7 +183,7 @@ export function ItemForm({ initialData, categories, onSuccess, onCancel }: ItemF
                             <Label className="text-xs font-bold text-muted-foreground uppercase tracking-widest">HSN Code</Label>
                             <Input
                                 {...register("hsnCode")}
-                                placeholder="7113"
+                                placeholder="7117"
                                 className="bg-background border-border text-foreground h-11 placeholder:text-muted-foreground"
                             />
                         </div>

@@ -69,7 +69,7 @@ export function PurchaseInvoiceLineItems({ items, inventoryItems, isInterState, 
             ...emptyItem,
             itemId: inv.id,
             itemName: inv.itemCode, // Store code as name for DB purposes
-            hsnCode: inv.hsnCode || "7113",
+            hsnCode: inv.hsnCode || "7117",
             unit: inv.unit || "pcs",
             unitPrice: inv.purchasePrice || 0, // Using purchasePrice
             gstRate: inv.gstRate ?? 3,
@@ -167,7 +167,7 @@ export function PurchaseInvoiceLineItems({ items, inventoryItems, isInterState, 
                                 <div className="space-y-1">
                                     <p className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wide">HSN</p>
                                     <Input value={item.hsnCode || ""} onChange={(e) => updateItem(idx, "hsnCode", e.target.value)}
-                                        placeholder="7113" className="bg-background border-border text-foreground h-9 text-xs" />
+                                        placeholder="7117" className="bg-background border-border text-foreground h-9 text-xs" />
                                 </div>
                                 <div className="space-y-1">
                                     <p className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wide">Qty</p>

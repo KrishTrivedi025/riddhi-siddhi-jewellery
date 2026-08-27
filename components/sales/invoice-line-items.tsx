@@ -71,7 +71,7 @@ export function InvoiceLineItems({ items, inventoryItems, isInterState, isGst, p
             ...emptyItem,
             itemId: inv.id,
             itemName: inv.itemCode, // Store code as name for DB purposes
-            hsnCode: inv.hsnCode || "7113",
+            hsnCode: inv.hsnCode || "7117",
             unit: inv.unit || "pcs",
             unitPrice: Math.round((inv.salePrice || 0) * priceMultiplier * 100) / 100,
             gstRate: isGst ? (inv.gstRate ?? 3) : 0,
@@ -172,7 +172,7 @@ export function InvoiceLineItems({ items, inventoryItems, isInterState, isGst, p
                                     <Input
                                         value={item.hsnCode || ""}
                                         onChange={(e) => updateItem(idx, "hsnCode", e.target.value)}
-                                        placeholder="7113"
+                                        placeholder="7117"
                                         className="bg-background border-border text-foreground h-9 text-xs placeholder:text-muted-foreground"
                                     />
                                 </div>

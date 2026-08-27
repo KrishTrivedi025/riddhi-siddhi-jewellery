@@ -30,7 +30,7 @@ interface InvoiceFormProps {
 const emptyItem: PurchaseInvoiceItemFormValues = {
     itemId: null,
     itemName: "",
-    hsnCode: "7113",
+    hsnCode: "7117",
     description: "",
     quantity: 1,
     unit: "pcs",
