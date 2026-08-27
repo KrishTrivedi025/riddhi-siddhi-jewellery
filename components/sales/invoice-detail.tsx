@@ -15,6 +15,7 @@ import {
     TableHeader, TableRow,
 } from "@/components/ui/table"
 import { formatCurrency } from "@/lib/gst-utils"
+import { formatItemDisplayName } from "@/lib/utils"
 import { numberToWords } from "@/lib/amount-in-words"
 import { markInvoiceAsPaid, voidInvoice } from "@/lib/actions/sales"
 import { InvoicePDF } from "./invoice-pdf"
@@ -216,7 +217,7 @@ export function InvoiceDetail({ invoice, businessProfile }: InvoiceDetailProps) 
                                 <TableRow key={item.id} className="border-border">
                                     <TableCell className="text-muted-foreground text-sm">{idx + 1}</TableCell>
                                     <TableCell>
-                                        <p className="text-foreground text-sm">{item.itemName}</p>
+                                        <p className="text-foreground text-sm">{formatItemDisplayName(item.itemName, item.item?.category?.name)}</p>
                                         {item.makingCharges > 0 && (
                                             <p className="text-[10px] text-muted-foreground">Making: ₹{item.makingCharges}</p>
                                         )}

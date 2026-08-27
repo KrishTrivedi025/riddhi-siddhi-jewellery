@@ -72,7 +72,7 @@ export async function getPurchaseInvoiceById(id: string) {
             include: {
                 party: true,
                 items: {
-                    include: { item: { select: { name: true, currentStock: true } } },
+                    include: { item: { select: { name: true, currentStock: true, category: { select: { name: true } } } } },
                 },
                 payments: {
                     include: { paymentModes: true },

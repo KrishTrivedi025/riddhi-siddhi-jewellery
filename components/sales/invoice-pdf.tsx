@@ -8,6 +8,7 @@ import { format } from "date-fns"
 import { numberToWords } from "@/lib/amount-in-words"
 import { downloadOrSharePdf } from "@/lib/pdf-download"
 import { getStateCodeFromGSTIN, getStateByName } from "@/lib/indian-states"
+import { formatItemDisplayName } from "@/lib/utils"
 
 interface InvoicePDFProps {
     invoice: any
@@ -247,7 +248,7 @@ export function InvoicePDF({ invoice, businessProfile }: InvoicePDFProps) {
                             {items.map((item: any, idx: number) => (
                                 <View key={item.id} style={idx % 2 === 0 ? S.tableRow : S.tableRowAlt}>
                                     <Text style={[S.tdCell, col("5%")]}>{idx + 1}</Text>
-                                    <Text style={[S.tdCell, col("28%"), { textAlign: "left" }]}>{item.itemName}{item.purity ? `\n(${item.purity})` : ""}{item.makingCharges > 0 ? `\nMaking: \u20B9${item.makingCharges.toFixed(2)}` : ""}</Text>
+                                    <Text style={[S.tdCell, col("28%"), { textAlign: "left" }]}>{formatItemDisplayName(item.itemName, item.item?.category?.name)}{item.purity ? `\n(${item.purity})` : ""}{item.makingCharges > 0 ? `\nMaking: \u20B9${item.makingCharges.toFixed(2)}` : ""}</Text>
                                     <Text style={[S.tdCell, col("10%")]}>{item.hsnCode || "—"}</Text>
                                     <Text style={[S.tdCell, col("7%")]}>{item.gstRate} %</Text>
                                     <Text style={[S.tdCell, col("10%")]}>{item.quantity} {item.unit}</Text>
