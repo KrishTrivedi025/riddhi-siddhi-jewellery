@@ -42,6 +42,7 @@ async function NewInvoiceData({ isGst }: { isGst: boolean }) {
                 pincode: true,
                 phone: true,
                 email: true,
+                priceMultiplier: true,
             },
         }),
     ])

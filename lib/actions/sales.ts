@@ -154,9 +154,6 @@ export async function createSaleInvoice(data: SaleInvoiceFormValues & { isGst?: 
 
             const interState = isInterState(businessState, data.placeOfSupply)
 
-            // Non-GST bills silently apply the party's price multiplier to each line's unit price.
-            const priceMultiplier = !isGst ? (party.priceMultiplier || 1) : 1
-
             // 2. Generate invoice number based on GST type
             const profileExt = profile as unknown as { noGstInvoicePrefix?: string; noGstInvoiceCounter?: number }
             const invoiceNumber = isGst
@@ -173,9 +170,8 @@ export async function createSaleInvoice(data: SaleInvoiceFormValues & { isGst?: 
 
             const invoiceItems = data.items.map((item) => {
                 const effectiveGstRate = isGst ? item.gstRate : 0
-                const effectiveUnitPrice = Math.round(item.unitPrice * priceMultiplier * 100) / 100
                 const gst = calculateLineItemGST(
-                    effectiveUnitPrice,
+                    item.unitPrice,
                     item.quantity,
                     item.discount,
                     item.discountType,
@@ -184,7 +180,7 @@ export async function createSaleInvoice(data: SaleInvoiceFormValues & { isGst?: 
                     item.makingCharges || 0
                 )
 
-                const baseAmount = effectiveUnitPrice * item.quantity + (item.makingCharges || 0)
+                const baseAmount = item.unitPrice * item.quantity + (item.makingCharges || 0)
                 subtotal += baseAmount
 
                 let discountAmt = 0
@@ -206,7 +202,7 @@ export async function createSaleInvoice(data: SaleInvoiceFormValues & { isGst?: 
                     description: item.description || null,
                     quantity: item.quantity,
                     unit: item.unit,
-                    unitPrice: effectiveUnitPrice,
+                    unitPrice: item.unitPrice,
                     discount: item.discount,
                     discountType: item.discountType,
                     gstRate: effectiveGstRate,

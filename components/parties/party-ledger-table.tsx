@@ -66,6 +66,16 @@ const typeConfig: Record<
         variant: "bg-rose-500/10 text-rose-400 border-rose-500/20",
         icon: <ArrowUpDown size={12} />,
     },
+    sale_return: {
+        label: "Sale Return",
+        variant: "bg-blue-500/5 text-blue-400 border-blue-500/10",
+        icon: <TrendingDown size={12} />,
+    },
+    purchase_return: {
+        label: "Purchase Return",
+        variant: "bg-amber-500/5 text-amber-400 border-amber-500/10",
+        icon: <TrendingUp size={12} />,
+    },
 }
 
 export function PartyLedgerTable({

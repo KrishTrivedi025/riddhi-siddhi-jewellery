@@ -109,6 +109,12 @@ export function InvoiceForm({ nextInvoiceNumber, parties, items, businessProfile
         return isInterState(businessState, placeOfSupply)
     }, [businessProfile?.state, placeOfSupply])
 
+    // Selected party's price multiplier — applied when a product is picked into a line item
+    const priceMultiplier = useMemo(() => {
+        const party = parties.find((p: any) => p.id === partyId)
+        return party?.priceMultiplier || 1
+    }, [parties, partyId])
+
     // Compute grand total for payment
     const grandTotal = useMemo(() => {
         const validItems = lineItems
@@ -337,6 +343,7 @@ export function InvoiceForm({ nextInvoiceNumber, parties, items, businessProfile
                             inventoryItems={items}
                             isInterState={interState}
                             isGst={isGst}
+                            priceMultiplier={priceMultiplier}
                             onChange={setLineItems}
                         />
                     </div>

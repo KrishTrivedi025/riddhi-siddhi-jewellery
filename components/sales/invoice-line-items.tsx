@@ -19,6 +19,7 @@ interface InvoiceLineItemsProps {
     inventoryItems: any[]
     isInterState: boolean
     isGst: boolean
+    priceMultiplier?: number
     onChange: (items: SaleInvoiceItemFormValues[]) => void
 }
 
@@ -42,7 +43,7 @@ const emptyItem: SaleInvoiceItemFormValues = {
     stoneDetails: "",
 }
 
-export function InvoiceLineItems({ items, inventoryItems, isInterState, isGst, onChange }: InvoiceLineItemsProps) {
+export function InvoiceLineItems({ items, inventoryItems, isInterState, isGst, priceMultiplier = 1, onChange }: InvoiceLineItemsProps) {
     const [expandedRow, setExpandedRow] = useState<number | null>(null)
 
     const removeItem = (index: number) => {
@@ -72,7 +73,7 @@ export function InvoiceLineItems({ items, inventoryItems, isInterState, isGst, o
             itemName: inv.itemCode, // Store code as name for DB purposes
             hsnCode: inv.hsnCode || "7113",
             unit: inv.unit || "pcs",
-            unitPrice: inv.salePrice || 0,
+            unitPrice: Math.round((inv.salePrice || 0) * priceMultiplier * 100) / 100,
             gstRate: isGst ? (inv.gstRate ?? 3) : 0,
             purity: inv.purity || "",
             makingCharges: inv.makingCharges || 0,

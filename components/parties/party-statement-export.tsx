@@ -410,7 +410,11 @@ function StatementPDF({
                                         ? "Purch."
                                         : entry.type === "payment_in"
                                           ? "Pymt In"
-                                          : "Pymt Out"}
+                                          : entry.type === "payment_out"
+                                            ? "Pymt Out"
+                                            : entry.type === "sale_return"
+                                              ? "Sale Ret."
+                                              : "Purch. Ret."}
                             </Text>
                             <Text style={[styles.tableCell, styles.colRef]}>
                                 {entry.referenceNumber}
