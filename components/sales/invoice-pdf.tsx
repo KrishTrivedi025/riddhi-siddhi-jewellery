@@ -423,7 +423,7 @@ export function InvoicePDF({ invoice, businessProfile }: InvoicePDFProps) {
                             <View style={S.signBox}>
                                 <Text style={S.signTitle}>For {biz.businessName || "Riddhi Siddhi Jewellery"}</Text>
                                 {biz.signatureUrl ? (
-                                    <PdfImage src={biz.signatureUrl} style={{ width: 150, height: 55, objectFit: "fill", marginVertical: 4 }} />
+                                    <PdfImage src={biz.signatureUrl} style={{ width: 150, height: 100, objectFit: "fill", marginVertical: 4 }} />
                                 ) : (
                                     <View style={S.signLine} />
                                 )}
