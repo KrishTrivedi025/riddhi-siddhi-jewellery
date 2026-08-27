@@ -273,7 +273,7 @@ export async function getPartyLedger(
         if (!hasDateFilter) {
             ledger.push({
                 id: "opening",
-                date: party.createdAt,
+                date: party.openingBalanceDate || party.createdAt,
                 type: "opening",
                 referenceNumber: "—",
                 description: "Opening Balance",

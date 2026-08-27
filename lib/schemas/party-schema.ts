@@ -14,6 +14,8 @@ export const partySchema = z.object({
     state: z.string().optional().nullable(),
     pincode: z.string().optional().nullable(),
     openingBalance: z.number().default(0),
+    openingBalanceDate: z.string().optional().nullable()
+        .transform((val) => (val ? new Date(val) : null)),
     balanceType: z.enum(["debit", "credit"]).default("debit"),
     creditLimit: z.number().optional().nullable(),
     paymentTerms: z.string().optional().nullable(),

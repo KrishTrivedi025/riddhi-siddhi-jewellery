@@ -48,6 +48,9 @@ export function PartyForm({ initialData, onSuccess, onCancel }: PartyFormProps) 
             state: initialData?.state || "",
             pincode: initialData?.pincode || "",
             openingBalance: initialData?.openingBalance || 0,
+            openingBalanceDate: (initialData?.openingBalanceDate
+                ? new Date(initialData.openingBalanceDate).toISOString().split("T")[0]
+                : "") as unknown as Date,
             balanceType: initialData?.balanceType || "debit",
             creditLimit: initialData?.creditLimit || 0,
             paymentTerms: initialData?.paymentTerms || "",
@@ -219,7 +222,7 @@ export function PartyForm({ initialData, onSuccess, onCancel }: PartyFormProps) 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-2">
                         <Label className="text-muted-foreground">Opening Balance</Label>
-                        <Input 
+                        <Input
                             type="number"
                             {...register("openingBalance", { valueAsNumber: true })}
                             className="bg-background border-border text-foreground"
@@ -227,7 +230,7 @@ export function PartyForm({ initialData, onSuccess, onCancel }: PartyFormProps) 
                     </div>
                     <div className="space-y-2">
                         <Label className="text-muted-foreground">Balance Type</Label>
-                        <Select 
+                        <Select
                             onValueChange={(val) => setValue("balanceType", val as any)}
                             defaultValue={balanceType}
                         >
@@ -240,6 +243,14 @@ export function PartyForm({ initialData, onSuccess, onCancel }: PartyFormProps) 
                             </SelectContent>
                         </Select>
                     </div>
+                    <div className="space-y-2">
+                        <Label className="text-muted-foreground">Opening Balance Date</Label>
+                        <Input
+                            type="date"
+                            {...register("openingBalanceDate" as any)}
+                            className="bg-background border-border text-foreground"
+                        />
+                    </div>
                 </div>
                 {partyType === "CUSTOMER" && (
                     <div className="space-y-2 mt-4">
@@ -251,7 +262,7 @@ export function PartyForm({ initialData, onSuccess, onCancel }: PartyFormProps) 
                             className="bg-background border-border text-foreground max-w-[160px]"
                         />
                         <p className="text-[10px] text-muted-foreground">
-                            1 = no change. e.g. 1.05 = +5%, 0.95 = -5%. Applied silently to non-GST invoice prices only.
+                            1 = no change. e.g. 1.05 = +5%, 0.95 = -5%. Applied to this party&apos;s invoice prices (GST and non-GST).
                         </p>
                         {errors.priceMultiplier && (
                             <p className="text-xs text-rose-500">{errors.priceMultiplier.message}</p>

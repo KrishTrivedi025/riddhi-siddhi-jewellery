@@ -9,91 +9,92 @@ datasource db {
 }
 
 model User {
-  id              String           @id @default(cuid())
-  email           String           @unique
-  password        String
-  createdAt       DateTime         @default(now())
-  updatedAt       DateTime         @updatedAt
-  businessProfile BusinessProfile?
-  parties         Party[]
-  bankAccounts    BankAccount[]
-  categories      ItemCategory[]
-  items           Item[]
-  saleInvoices    SaleInvoice[]
+  id               String            @id @default(cuid())
+  email            String            @unique
+  password         String
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  businessProfile  BusinessProfile?
+  parties          Party[]
+  bankAccounts     BankAccount[]
+  categories       ItemCategory[]
+  items            Item[]
+  saleInvoices     SaleInvoice[]
   purchaseInvoices PurchaseInvoice[]
-  expenses        Expense[]
-  payments        Payment[]
-  saleReturns     SaleReturn[]
-  purchaseReturns PurchaseReturn[]
+  expenses         Expense[]
+  payments         Payment[]
+  saleReturns      SaleReturn[]
+  purchaseReturns  PurchaseReturn[]
   accountTransfers AccountTransfer[]
 }
 
 model BusinessProfile {
-  id                String   @id @default(cuid())
-  userId            String   @unique
-  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  businessName      String
-  ownerName         String
-  businessType      String   @default("Jewellery Manufacturer")
-  gstin             String?
-  pan               String?
-  address           String?
-  city              String?
-  state             String?
-  pincode           String?
-  mobile            String?
-  email             String?
-  logoUrl           String?
-  signatureUrl      String?
-  financialYear     String   @default("April-March")
-  currency          String   @default("INR")
-  defaultTaxRate    Float    @default(3)
-  invoicePrefix        String   @default("INV")
-  invoiceCounter       Int      @default(1)
-  noGstInvoicePrefix   String   @default("BILL")
-  noGstInvoiceCounter  Int      @default(1)
-  termsConditions   String?
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
-  creditNoteCounter Int      @default(1)
-  creditNotePrefix  String   @default("CN")
-  accountName       String?
-  accountNumber     String?
-  bankName          String?
-  branchName        String?
-  ifscCode          String?
+  id                  String   @id @default(cuid())
+  userId              String   @unique
+  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  businessName        String
+  ownerName           String
+  businessType        String   @default("Jewellery Manufacturer")
+  gstin               String?
+  pan                 String?
+  address             String?
+  city                String?
+  state               String?
+  pincode             String?
+  mobile              String?
+  email               String?
+  logoUrl             String?
+  signatureUrl        String?
+  financialYear       String   @default("April-March")
+  currency            String   @default("INR")
+  defaultTaxRate      Float    @default(3)
+  invoicePrefix       String   @default("INV")
+  invoiceCounter      Int      @default(1)
+  noGstInvoicePrefix  String   @default("BILL")
+  noGstInvoiceCounter Int      @default(1)
+  termsConditions     String?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+  creditNoteCounter   Int      @default(1)
+  creditNotePrefix    String   @default("CN")
+  accountName         String?
+  accountNumber       String?
+  bankName            String?
+  branchName          String?
+  ifscCode            String?
 }
 
 model Party {
-  id               String            @id @default(cuid())
-  userId           String
-  user             User              @relation(fields: [userId], references: [id], onDelete: Cascade)
-  partyType        String
-  name             String
-  contactPerson    String?
-  phone            String?
-  email            String?
-  gstin            String?
-  pan              String?
-  billingAddress   String?
-  shippingAddress  String?
-  city             String?
-  state            String?
-  pincode          String?
-  openingBalance   Float             @default(0)
-  balanceType      String            @default("debit")
-  creditLimit      Float?
-  paymentTerms     String?
-  notes            String?
-  priceMultiplier  Float             @default(1)
-  deletedAt        DateTime?
-  createdAt        DateTime          @default(now())
-  updatedAt        DateTime          @updatedAt
-  payments         Payment[]
-  purchaseInvoices PurchaseInvoice[]
-  purchaseReturns  PurchaseReturn[]
-  saleInvoices     SaleInvoice[]
-  saleReturns      SaleReturn[]
+  id                 String            @id @default(cuid())
+  userId             String
+  user               User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  partyType          String
+  name               String
+  contactPerson      String?
+  phone              String?
+  email              String?
+  gstin              String?
+  pan                String?
+  billingAddress     String?
+  shippingAddress    String?
+  city               String?
+  state              String?
+  pincode            String?
+  openingBalance     Float             @default(0)
+  openingBalanceDate DateTime?
+  balanceType        String            @default("debit")
+  creditLimit        Float?
+  paymentTerms       String?
+  notes              String?
+  priceMultiplier    Float             @default(1)
+  deletedAt          DateTime?
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
+  payments           Payment[]
+  purchaseInvoices   PurchaseInvoice[]
+  purchaseReturns    PurchaseReturn[]
+  saleInvoices       SaleInvoice[]
+  saleReturns        SaleReturn[]
 }
 
 model BankAccount {
@@ -463,7 +464,7 @@ model PurchaseReturnItem {
   unit             String         @default("pcs")
   unitPrice        Float
   discount         Float          @default(0)
-  discountType     String          @default("percent")
+  discountType     String         @default("percent")
   gstRate          Float          @default(3)
   cgst             Float          @default(0)
   sgst             Float          @default(0)
