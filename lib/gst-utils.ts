@@ -1,5 +1,8 @@
 // ─── GST Calculation Engine ──────────────────────────────────────────────────
 
+/** Flat multiplier applied to every product's price on GST invoices, for every party. */
+export const GST_PRICE_MULTIPLIER = 2
+
 export interface LineItemGST {
     taxableAmount: number
     cgst: number

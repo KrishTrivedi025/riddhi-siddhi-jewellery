@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/select"
 import { useState } from "react"
 import { SaleInvoiceItemFormValues } from "@/lib/schemas/sale-invoice-schema"
-import { calculateLineItemGST } from "@/lib/gst-utils"
+import { calculateLineItemGST, GST_PRICE_MULTIPLIER } from "@/lib/gst-utils"
 import { ProductBrowserModal } from "./product-browser-modal"
 import { Image as ImageIcon } from "lucide-react"
 
@@ -76,7 +76,9 @@ export function InvoiceLineItems({ items, inventoryItems, isInterState, isGst, o
             itemName: inv.itemCode, // Store code as name for DB purposes
             hsnCode: inv.hsnCode || "7117",
             unit: inv.unit || "pcs",
-            unitPrice: inv.salePrice || 0,
+            unitPrice: isGst
+                ? Math.round((inv.salePrice || 0) * GST_PRICE_MULTIPLIER * 100) / 100
+                : inv.salePrice || 0,
             gstRate: isGst ? (inv.gstRate ?? 3) : 0,
             purity: inv.purity || "",
             makingCharges: inv.makingCharges || 0,
