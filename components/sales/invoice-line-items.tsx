@@ -19,7 +19,6 @@ interface InvoiceLineItemsProps {
     inventoryItems: any[]
     isInterState: boolean
     isGst: boolean
-    priceMultiplier?: number
     onChange: (items: SaleInvoiceItemFormValues[]) => void
 }
 
@@ -43,11 +42,15 @@ const emptyItem: SaleInvoiceItemFormValues = {
     stoneDetails: "",
 }
 
-export function InvoiceLineItems({ items, inventoryItems, isInterState, isGst, priceMultiplier = 1, onChange }: InvoiceLineItemsProps) {
+export function InvoiceLineItems({ items, inventoryItems, isInterState, isGst, onChange }: InvoiceLineItemsProps) {
     const [expandedRow, setExpandedRow] = useState<number | null>(null)
 
     const removeItem = (index: number) => {
-        if (items.length <= 1) return
+        if (items.length <= 1) {
+            onChange([{ ...emptyItem, gstRate: isGst ? 3 : 0 }])
+            if (expandedRow === index) setExpandedRow(null)
+            return
+        }
         const newItems = items.filter((_, i) => i !== index)
         onChange(newItems)
         if (expandedRow === index) setExpandedRow(null)
@@ -73,7 +76,7 @@ export function InvoiceLineItems({ items, inventoryItems, isInterState, isGst, p
             itemName: inv.itemCode, // Store code as name for DB purposes
             hsnCode: inv.hsnCode || "7117",
             unit: inv.unit || "pcs",
-            unitPrice: Math.round((inv.salePrice || 0) * priceMultiplier * 100) / 100,
+            unitPrice: inv.salePrice || 0,
             gstRate: isGst ? (inv.gstRate ?? 3) : 0,
             purity: inv.purity || "",
             makingCharges: inv.makingCharges || 0,
@@ -157,10 +160,10 @@ export function InvoiceLineItems({ items, inventoryItems, isInterState, isGst, p
                                     <button
                                         type="button"
                                         onClick={() => removeItem(idx)}
-                                        className="p-2 rounded-lg bg-muted text-muted-foreground hover:text-rose-400 transition-colors"
-                                        disabled={items.length <= 1}
+                                        className="p-2.5 rounded-lg bg-rose-500/10 text-rose-500 border border-rose-500/20 hover:bg-rose-500/20 active:scale-95 transition-all"
+                                        title="Remove item"
                                     >
-                                        <Trash2 size={14} />
+                                        <Trash2 size={16} />
                                     </button>
                                 </div>
                             </div>

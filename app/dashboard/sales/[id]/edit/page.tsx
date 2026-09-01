@@ -48,7 +48,6 @@ async function EditInvoiceData({ id }: { id: string }) {
                 pincode: true,
                 phone: true,
                 email: true,
-                priceMultiplier: true,
             },
         }),
     ])

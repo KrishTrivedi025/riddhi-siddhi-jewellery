@@ -75,6 +75,11 @@ export async function getPartyLedger(
         })
         if (!party) throw new Error("Party not found")
 
+        // The client's real price for a party can differ from the recorded (GST-clean) bill —
+        // Without-GST sales/returns are shown multiplied here so the ledger reflects what's
+        // actually owed, while the invoice itself always shows the real, unmultiplied price.
+        const multiplier = scope === "sales" && isGst === false ? (party.priceMultiplier || 1) : 1
+
         const dateFilter = {
             ...(fromDate && { gte: fromDate }),
             ...(toDate && { lte: new Date(toDate.setHours(23, 59, 59, 999)) }),
@@ -127,7 +132,7 @@ export async function getPartyLedger(
                     type: "sale",
                     referenceNumber: s.invoiceNumber,
                     description: `Sale Invoice – ${s.paymentStatus === "paid" ? "Paid" : s.paymentStatus === "partial" ? "Partial" : "Unpaid"}`,
-                    debit: s.grandTotal,
+                    debit: s.grandTotal * multiplier,
                     credit: 0,
                 })
                 const upfrontPaid = s.amountPaid - (paidViaPaymentByInvoice.get(s.id) || 0)
@@ -172,7 +177,7 @@ export async function getPartyLedger(
                     referenceNumber: r.creditNoteNumber,
                     description: "Sale Return",
                     debit: 0,
-                    credit: r.grandTotal,
+                    credit: r.grandTotal * multiplier,
                 })
             }
         } else {
@@ -311,6 +316,9 @@ export async function getPartyLedgerSummary(
         })
         if (!party) throw new Error("Party not found")
 
+        // See getPartyLedger — Without-GST amounts reflect the party's real price here.
+        const multiplier = scope === "sales" && isGst === false ? (party.priceMultiplier || 1) : 1
+
         const openingBalance = applyOpeningBalance
             ? (party.balanceType === "debit" ? party.openingBalance : -party.openingBalance)
             : 0
@@ -339,12 +347,12 @@ export async function getPartyLedgerSummary(
                 orderBy: { creditNoteDate: "desc" },
             })
 
-            const totalSales = sales.reduce((s, i) => s + i.grandTotal, 0)
+            const totalSales = sales.reduce((s, i) => s + i.grandTotal * multiplier, 0)
             // invoice.amountPaid already includes every Payment recorded against it
             // (createPaymentIn keeps them in sync), so this alone is the true total —
             // adding the Payment rows' own sum on top would double-count them.
             const totalPaymentsIn = sales.reduce((s, i) => s + i.amountPaid, 0)
-            const totalReturns = returns.reduce((s, r) => s + r.grandTotal, 0)
+            const totalReturns = returns.reduce((s, r) => s + r.grandTotal * multiplier, 0)
 
             const net = openingBalance + totalSales - totalPaymentsIn - totalReturns
 
@@ -357,7 +365,7 @@ export async function getPartyLedgerSummary(
                 const diffDays = Math.floor(
                     (now.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24)
                 )
-                const outstanding = s.balanceDue
+                const outstanding = s.grandTotal * multiplier - s.amountPaid
                 if (diffDays <= 30) { ageBuckets[0].amount += outstanding; ageBuckets[0].invoiceCount++ }
                 else if (diffDays <= 60) { ageBuckets[1].amount += outstanding; ageBuckets[1].invoiceCount++ }
                 else if (diffDays <= 90) { ageBuckets[2].amount += outstanding; ageBuckets[2].invoiceCount++ }
