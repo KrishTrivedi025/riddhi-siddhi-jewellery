@@ -68,6 +68,7 @@ export function InvoiceForm({ nextInvoiceNumber, parties, items, businessProfile
         d.setDate(d.getDate() + 45)
         return d.toISOString().split("T")[0]
     })
+    const [invoiceNumber, setInvoiceNumber] = useState(initialData?.invoiceNumber || nextInvoiceNumber)
     const [partyId, setPartyId] = useState(initialData?.partyId || "")
     const [placeOfSupply, setPlaceOfSupply] = useState(initialData?.placeOfSupply || businessProfile?.state || "")
     const [shipToAddress, setShipToAddress] = useState(initialData?.shipToAddress || "")
@@ -158,6 +159,10 @@ export function InvoiceForm({ nextInvoiceNumber, parties, items, businessProfile
         setError("")
 
         // Validation
+        if (isEdit && !invoiceNumber.trim()) {
+            setError("Invoice number cannot be empty")
+            return
+        }
         if (!partyId) {
             setError("Please select a customer")
             return
@@ -175,6 +180,7 @@ export function InvoiceForm({ nextInvoiceNumber, parties, items, businessProfile
         setLoading(true)
         try {
             const payload = {
+                ...(isEdit && { invoiceNumber: invoiceNumber.trim() }),
                 invoiceDate: new Date(invoiceDate),
                 dueDate: dueDate ? new Date(dueDate) : null,
                 partyId,
@@ -224,7 +230,19 @@ export function InvoiceForm({ nextInvoiceNumber, parties, items, businessProfile
                                 <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-500 border border-amber-500/30">WITHOUT GST</span>
                             )}
                         </div>
-                        <p className="text-sm text-muted-foreground">Invoice Number: <span className="text-primary font-medium">{nextInvoiceNumber}</span></p>
+                        {isEdit ? (
+                            <div className="flex items-center gap-2 mt-1">
+                                <Label className="text-sm text-muted-foreground shrink-0">Invoice Number:</Label>
+                                <Input
+                                    value={invoiceNumber}
+                                    onChange={(e) => setInvoiceNumber(e.target.value)}
+                                    title="Only affects this invoice — future invoices keep numbering from your settings"
+                                    className="h-7 w-40 bg-background border-border text-primary font-medium text-sm px-2"
+                                />
+                            </div>
+                        ) : (
+                            <p className="text-sm text-muted-foreground">Invoice Number: <span className="text-primary font-medium">{nextInvoiceNumber}</span></p>
+                        )}
                     </div>
                 </div>
                 <Button

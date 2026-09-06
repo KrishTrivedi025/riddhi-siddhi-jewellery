@@ -28,6 +28,7 @@ export type SaleInvoiceItemFormValues = z.infer<typeof saleInvoiceItemSchema>
 // ─── Sale Invoice Schema ─────────────────────────────────────────────────────
 
 export const saleInvoiceSchema = z.object({
+    invoiceNumber: z.string().optional(),
     invoiceDate: z.coerce.date(),
     dueDate: z.coerce.date().optional().nullable(),
     partyId: z.string().min(1, "Customer is required"),

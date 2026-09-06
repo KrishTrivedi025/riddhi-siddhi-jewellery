@@ -416,6 +416,12 @@ export async function updateSaleInvoice(id: string, data: SaleInvoiceFormValues 
             return { success: false, error: "Only unpaid invoices can be edited. Cancel and reissue instead." }
         }
 
+        const invoiceNumber = data.invoiceNumber?.trim() || existing.invoiceNumber
+        if (invoiceNumber !== existing.invoiceNumber) {
+            const clash = await prisma.saleInvoice.findFirst({ where: { invoiceNumber, id: { not: id } } })
+            if (clash) return { success: false, error: `Invoice number "${invoiceNumber}" is already in use` }
+        }
+
         const isGst = data.isGst !== false
 
         const result = await prisma.$transaction(async (tx) => {
@@ -525,6 +531,7 @@ export async function updateSaleInvoice(id: string, data: SaleInvoiceFormValues 
             const invoice = await tx.saleInvoice.update({
                 where: { id },
                 data: {
+                    invoiceNumber,
                     invoiceDate: data.invoiceDate,
                     dueDate: data.dueDate || null,
                     partyId: data.partyId,
