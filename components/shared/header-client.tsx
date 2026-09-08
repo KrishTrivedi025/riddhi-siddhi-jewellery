@@ -1,7 +1,7 @@
 "use client"
 
 import { motion } from "framer-motion"
-import { Menu } from "lucide-react"
+import { Menu, RefreshCw } from "lucide-react"
 import { ThemeToggle } from "./theme-toggle"
 import { LanguageToggle } from "./language-toggle"
 import { headerVariants } from "@/lib/animations"
@@ -42,6 +42,15 @@ export function HeaderClient({ email, signOutAction }: HeaderClientProps) {
 
       {/* Right — controls */}
       <div className="flex items-center gap-3">
+        <button
+          onClick={() => window.location.reload()}
+          className="p-2 rounded-lg text-muted-foreground
+                     hover:text-foreground hover:bg-muted transition-colors"
+          aria-label="Refresh"
+          title="Refresh"
+        >
+          <RefreshCw size={18} />
+        </button>
         <LanguageToggle />
         <ThemeToggle />
       </div>

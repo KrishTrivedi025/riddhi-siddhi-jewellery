@@ -5,6 +5,7 @@ import { ThemeProvider } from "@/components/theme-provider"
 import { ConfirmProvider } from "@/components/shared/confirm-provider"
 import { UnsavedChangesProvider } from "@/lib/hooks/use-unsaved-changes"
 import { SplashHider } from "@/components/shared/splash-hider"
+import { AppResumeReload } from "@/components/shared/app-resume-reload"
 import { Toaster } from "sonner"
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" })
@@ -50,6 +51,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <UnsavedChangesProvider>
             <ConfirmProvider>
               <SplashHider />
+              <AppResumeReload />
               {children}
             </ConfirmProvider>
           </UnsavedChangesProvider>
