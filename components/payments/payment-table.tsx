@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { useRouter } from "next/navigation"
 import { format } from "date-fns"
 import { Search, FileText } from "lucide-react"
 import { Input } from "@/components/ui/input"
@@ -19,6 +20,7 @@ interface PaymentTableProps {
 
 export function PaymentTable({ payments, type }: PaymentTableProps) {
     const [search, setSearch] = useState("")
+    const router = useRouter()
 
     const filtered = payments.filter((p) => {
         if (!search) return true
@@ -70,7 +72,11 @@ export function PaymentTable({ payments, type }: PaymentTableProps) {
                             </TableRow>
                         ) : (
                             filtered.map((p) => (
-                                <TableRow key={p.id} className="border-border hover:bg-card/50 transition-colors">
+                                <TableRow
+                                    key={p.id}
+                                    onClick={() => type === "IN" && router.push(`/dashboard/payments/in/${p.id}/edit`)}
+                                    className={`border-border hover:bg-card/50 transition-colors ${type === "IN" ? "cursor-pointer" : ""}`}
+                                >
                                     <TableCell className="font-medium text-foreground text-xs">
                                         <span title={p.id}>{p.id.slice(0, 8)}...</span>
                                     </TableCell>

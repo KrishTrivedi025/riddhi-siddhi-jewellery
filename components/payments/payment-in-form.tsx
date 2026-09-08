@@ -7,34 +7,52 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
+import { Badge } from "@/components/ui/badge"
 import {
     Select, SelectContent, SelectItem,
     SelectTrigger, SelectValue,
 } from "@/components/ui/select"
-import { createPaymentIn } from "@/lib/actions/payments-in"
+import { createPaymentIn, updatePaymentIn } from "@/lib/actions/payments-in"
 import { PaymentModeSelector, PaymentModeLine } from "./payment-mode-selector"
 import { useTrackDirty } from "@/lib/hooks/use-unsaved-changes"
 
 interface PaymentInFormProps {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     customers: any[]
+    paymentId?: string
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    initialData?: any
 }
 
-export function PaymentInForm({ customers }: PaymentInFormProps) {
+export function PaymentInForm({ customers, paymentId, initialData }: PaymentInFormProps) {
     const router = useRouter()
+    const isEdit = !!paymentId
+    const isTiedToInvoice = !!initialData?.saleInvoiceId
 
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState("")
 
     // Form State
-    const [partyId, setPartyId] = useState("")
-    const [isGst, setIsGst] = useState(true)
-    const [paymentDate, setPaymentDate] = useState(new Date().toISOString().split("T")[0])
-    const [modes, setModes] = useState<PaymentModeLine[]>([
-        { mode: "cash", amount: 0 }
-    ])
-    const [notes, setNotes] = useState("")
-    const [totalAmount, setTotalAmount] = useState<number>(0)
+    const [partyId, setPartyId] = useState(initialData?.partyId || "")
+    const [isGst, setIsGst] = useState(
+        isTiedToInvoice ? !!initialData?.saleInvoice?.isGst : (initialData?.isGst ?? true)
+    )
+    const [paymentDate, setPaymentDate] = useState(
+        initialData ? new Date(initialData.paymentDate).toISOString().split("T")[0] : new Date().toISOString().split("T")[0]
+    )
+    const [modes, setModes] = useState<PaymentModeLine[]>(
+        initialData?.paymentModes?.length
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            ? initialData.paymentModes.map((m: any) => ({
+                mode: m.mode,
+                amount: m.amount,
+                reference: m.reference || "",
+                bankAccountId: m.bankAccountId || undefined,
+            }))
+            : [{ mode: "cash", amount: 0 }]
+    )
+    const [notes, setNotes] = useState(initialData?.notes || "")
+    const [totalAmount, setTotalAmount] = useState<number>(initialData?.totalAmount || 0)
 
     useTrackDirty(!!partyId || modes.some((m) => m.amount > 0) || notes.trim() !== "")
 
@@ -60,19 +78,22 @@ export function PaymentInForm({ customers }: PaymentInFormProps) {
 
         setLoading(true)
         try {
-            const result = await createPaymentIn({
+            const payload = {
                 partyId,
                 isGst,
                 paymentDate: new Date(paymentDate),
                 totalAmount,
                 modes,
                 notes: notes || undefined,
-            })
+            }
+            const result = isEdit
+                ? await updatePaymentIn(paymentId!, payload)
+                : await createPaymentIn(payload)
 
             if (result.success) {
                 router.push("/dashboard/payments")
             } else {
-                setError(result.error || "Failed to record payment.")
+                setError(result.error || `Failed to ${isEdit ? "update" : "record"} payment.`)
             }
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (err: any) {
@@ -97,7 +118,7 @@ export function PaymentInForm({ customers }: PaymentInFormProps) {
                     <div className="min-w-0">
                         <h1 className="text-lg font-bold text-foreground flex items-center gap-2 leading-tight">
                             <CreditCard size={18} className="text-emerald-400 flex-shrink-0" />
-                            Record Payment Received
+                            {isEdit ? "Edit Payment Received" : "Record Payment Received"}
                         </h1>
                         <p className="text-xs text-muted-foreground">Log money received from a customer</p>
                     </div>
@@ -108,9 +129,9 @@ export function PaymentInForm({ customers }: PaymentInFormProps) {
                     className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold h-11"
                 >
                     {loading ? (
-                        <><Loader2 size={16} className="mr-2 animate-spin" /> Saving...</>
+                        <><Loader2 size={16} className="mr-2 animate-spin" /> {isEdit ? "Updating..." : "Saving..."}</>
                     ) : (
-                        <><Save size={16} className="mr-2" /> Save Payment</>
+                        <><Save size={16} className="mr-2" /> {isEdit ? "Update Payment" : "Save Payment"}</>
                     )}
                 </Button>
             </div>
@@ -127,49 +148,65 @@ export function PaymentInForm({ customers }: PaymentInFormProps) {
 
                 <div className="space-y-2">
                     <Label className="text-xs text-muted-foreground">Customer *</Label>
-                    <Select value={partyId} onValueChange={setPartyId}>
-                        <SelectTrigger className="bg-background border-border text-foreground">
-                            <SelectValue placeholder="Select Customer" />
-                        </SelectTrigger>
-                        <SelectContent className="bg-card border-border text-foreground max-h-[300px]">
-                            {customers.length === 0 && (
-                                <div className="p-2 text-sm text-muted-foreground text-center">No outstanding debts found</div>
-                            )}
-                            {customers.map((c) => (
-                                <SelectItem key={c.id} value={c.id}>
-                                    {c.name}
-                                </SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
+                    {isEdit ? (
+                        <div className="h-10 flex items-center px-3 rounded-lg bg-muted border border-border text-foreground text-sm">
+                            {initialData?.party?.name}
+                        </div>
+                    ) : (
+                        <Select value={partyId} onValueChange={setPartyId}>
+                            <SelectTrigger className="bg-background border-border text-foreground">
+                                <SelectValue placeholder="Select Customer" />
+                            </SelectTrigger>
+                            <SelectContent className="bg-card border-border text-foreground max-h-[300px]">
+                                {customers.length === 0 && (
+                                    <div className="p-2 text-sm text-muted-foreground text-center">No outstanding debts found</div>
+                                )}
+                                {customers.map((c) => (
+                                    <SelectItem key={c.id} value={c.id}>
+                                        {c.name}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    )}
                 </div>
 
                 <div className="space-y-2">
                     <Label className="text-xs text-muted-foreground">Ledger *</Label>
-                    <div className="flex gap-2">
-                        <button
-                            type="button"
-                            onClick={() => setIsGst(true)}
-                            className={`flex-1 h-9 rounded-lg text-xs font-bold border transition-colors ${
-                                isGst
-                                    ? "bg-emerald-500/15 text-emerald-500 border-emerald-500/30"
-                                    : "bg-background text-muted-foreground border-border"
-                            }`}
-                        >
-                            With GST
-                        </button>
-                        <button
-                            type="button"
-                            onClick={() => setIsGst(false)}
-                            className={`flex-1 h-9 rounded-lg text-xs font-bold border transition-colors ${
-                                !isGst
-                                    ? "bg-amber-500/15 text-amber-500 border-amber-500/30"
-                                    : "bg-background text-muted-foreground border-border"
-                            }`}
-                        >
-                            Without GST
-                        </button>
-                    </div>
+                    {isTiedToInvoice ? (
+                        <div className="flex items-center gap-2 h-9 px-3 rounded-lg bg-muted border border-border">
+                            <span className="text-xs text-muted-foreground">Tied to invoice</span>
+                            <Badge variant="outline" className="border-border text-muted-foreground">
+                                {initialData?.saleInvoice?.invoiceNumber}
+                            </Badge>
+                            <span className="text-xs text-muted-foreground ml-auto">{isGst ? "With GST" : "Without GST"}</span>
+                        </div>
+                    ) : (
+                        <div className="flex gap-2">
+                            <button
+                                type="button"
+                                onClick={() => setIsGst(true)}
+                                className={`flex-1 h-9 rounded-lg text-xs font-bold border transition-colors ${
+                                    isGst
+                                        ? "bg-emerald-500/15 text-emerald-500 border-emerald-500/30"
+                                        : "bg-background text-muted-foreground border-border"
+                                }`}
+                            >
+                                With GST
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setIsGst(false)}
+                                className={`flex-1 h-9 rounded-lg text-xs font-bold border transition-colors ${
+                                    !isGst
+                                        ? "bg-amber-500/15 text-amber-500 border-amber-500/30"
+                                        : "bg-background text-muted-foreground border-border"
+                                }`}
+                            >
+                                Without GST
+                            </button>
+                        </div>
+                    )}
                 </div>
 
                 <div className="space-y-2">
