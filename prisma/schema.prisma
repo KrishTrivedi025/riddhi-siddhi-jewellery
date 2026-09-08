@@ -311,6 +311,9 @@ model Payment {
   partyId           String
   saleInvoiceId     String?
   purchaseInvoiceId String?
+  /// Only meaningful for paymentType "IN" payments not tied to a saleInvoiceId — which
+  /// party ledger (With GST / Without GST) an unallocated payment counts against.
+  isGst             Boolean?
   paymentDate       DateTime
   totalAmount       Float
   notes             String?

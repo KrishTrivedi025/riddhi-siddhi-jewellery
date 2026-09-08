@@ -107,12 +107,19 @@ export async function getPartyLedger(
                 orderBy: { invoiceDate: "asc" },
             })
 
+            // A payment either targets one invoice (saleInvoiceId set, legacy allocated
+            // payments) or is unallocated against the party overall (saleInvoiceId null,
+            // classified by its own isGst) — both count toward this scope when isGst matches.
             const payments = await prisma.payment.findMany({
                 where: {
                     partyId, deletedAt: null, paymentType: "IN",
-                    saleInvoiceId: { not: null },
-                    ...(isGst !== undefined && { saleInvoice: { isGst } }),
                     ...(hasDateFilter && { paymentDate: dateFilter }),
+                    ...(isGst !== undefined && {
+                        OR: [
+                            { saleInvoiceId: { not: null }, saleInvoice: { isGst } },
+                            { saleInvoiceId: null, isGst },
+                        ],
+                    }),
                 },
                 orderBy: { paymentDate: "asc" },
             })
@@ -331,11 +338,16 @@ export async function getPartyLedgerSummary(
                 },
                 orderBy: { invoiceDate: "desc" },
             })
+            // See getPartyLedger — includes both invoice-allocated and unallocated payments.
             const payments = await prisma.payment.findMany({
                 where: {
                     partyId, deletedAt: null, paymentType: "IN",
-                    saleInvoiceId: { not: null },
-                    ...(isGst !== undefined && { saleInvoice: { isGst } }),
+                    ...(isGst !== undefined && {
+                        OR: [
+                            { saleInvoiceId: { not: null }, saleInvoice: { isGst } },
+                            { saleInvoiceId: null, isGst },
+                        ],
+                    }),
                 },
                 orderBy: { paymentDate: "desc" },
             })
@@ -348,10 +360,12 @@ export async function getPartyLedgerSummary(
             })
 
             const totalSales = sales.reduce((s, i) => s + i.grandTotal * multiplier, 0)
-            // invoice.amountPaid already includes every Payment recorded against it
-            // (createPaymentIn keeps them in sync), so this alone is the true total —
-            // adding the Payment rows' own sum on top would double-count them.
-            const totalPaymentsIn = sales.reduce((s, i) => s + i.amountPaid, 0)
+            // invoice.amountPaid already includes every invoice-allocated Payment
+            // (createPaymentIn keeps them in sync), so summing it alone covers those —
+            // add unallocated payments (saleInvoiceId null) on top without double-counting.
+            const totalPaymentsIn =
+                sales.reduce((s, i) => s + i.amountPaid, 0) +
+                payments.filter((p) => !p.saleInvoiceId).reduce((s, p) => s + p.totalAmount, 0)
             const totalReturns = returns.reduce((s, r) => s + r.grandTotal * multiplier, 0)
 
             const net = openingBalance + totalSales - totalPaymentsIn - totalReturns

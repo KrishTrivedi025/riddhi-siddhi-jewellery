@@ -37,36 +37,6 @@ export async function getCustomersWithBalances() {
     }
 }
 
-// ─── Get Outstanding Invoices for a specific Customer ────────────────────────
-
-export async function getCustomerOutstandingInvoices(partyId: string) {
-    try {
-        const userId = await requireUserId()
-        const invoices = await prisma.saleInvoice.findMany({
-            where: {
-                userId,
-                partyId,
-                balanceDue: { gt: 0 },
-                status: "active",
-                deletedAt: null,
-            },
-            select: {
-                id: true,
-                invoiceNumber: true,
-                invoiceDate: true,
-                grandTotal: true,
-                amountPaid: true,
-                balanceDue: true,
-            },
-            orderBy: { invoiceDate: "asc" }, // Oldest first
-        })
-        return invoices
-    } catch (error) {
-        console.error("Error fetching outstanding invoices:", error)
-        throw new Error("Failed to fetch invoices")
-    }
-}
-
 // ─── Get Recent Received Payments List ───────────────────────────────────────
 
 export async function getPaymentsIn() {
@@ -97,81 +67,55 @@ export async function getPaymentsIn() {
 export async function createPaymentIn(data: PaymentInFormValues) {
     try {
         const userId = await requireUserId()
+
+        const modesTotal = data.modes.reduce((sum, m) => sum + m.amount, 0)
+        if (Math.abs(modesTotal - data.totalAmount) > 0.01) {
+            return { success: false, error: `Payment methods (₹${modesTotal}) don't add up to the total received (₹${data.totalAmount})` }
+        }
+
         const result = await prisma.$transaction(async (tx) => {
-            // Validate that the math checks out perfectly to guarantee stability.
-            const totalAllocated = data.allocations.reduce((sum, alloc) => sum + alloc.amountApplied, 0)
-            const totalRecieved = data.totalAmount
-            const createdPayments = []
+            // A single, unallocated payment — not tied to any specific invoice. The
+            // client receives payments randomly, not against particular bills, so this
+            // only records money received against the party overall (see the party
+            // ledger, which folds isGst-matching unallocated payments into Outstanding).
+            const payment = await tx.payment.create({
+                data: {
+                    userId,
+                    paymentType: "IN",
+                    partyId: data.partyId,
+                    isGst: data.isGst,
+                    paymentDate: data.paymentDate,
+                    totalAmount: data.totalAmount,
+                    notes: data.notes || null,
+                },
+            })
 
-            for (const alloc of data.allocations) {
-                const invoice = await tx.saleInvoice.findUnique({ where: { id: alloc.invoiceId } })
-                if (!invoice) throw new Error(`Invoice ID ${alloc.invoiceId} not found`)
+            for (const mode of data.modes) {
+                if (mode.amount <= 0) continue
 
-                // Basic validation constraint
-                if (alloc.amountApplied > invoice.balanceDue + 0.01) {
-                    throw new Error(`Cannot over-pay invoice ${invoice.invoiceNumber}`)
-                }
-
-                // 1. Create the Payment Voucher link for this specific invoice
-                const payment = await tx.payment.create({
+                await tx.paymentMode.create({
                     data: {
-                        userId,
-                        paymentType: "IN",
-                        partyId: data.partyId,
-                        saleInvoiceId: invoice.id,
-                        paymentDate: data.paymentDate,
-                        totalAmount: alloc.amountApplied,
-                        notes: data.notes || `Received payment against ${invoice.invoiceNumber}`,
+                        paymentId: payment.id,
+                        mode: mode.mode,
+                        amount: mode.amount,
+                        reference: mode.reference,
+                        bankAccountId: mode.bankAccountId,
                     },
                 })
 
-                // 2. Proportional Split Logic for Payment Modes
-                // Weight of this specific invoice allocation in the total payment voucher
-                const weight = alloc.amountApplied / totalRecieved
-
-                for (const mode of data.modes) {
-                    const modeShare = mode.amount * weight
-                    await tx.paymentMode.create({
-                        data: {
-                            paymentId: payment.id,
-                            mode: mode.mode,
-                            amount: modeShare,
-                            reference: mode.reference,
-                            bankAccountId: mode.bankAccountId,
-                        },
+                if (mode.bankAccountId) {
+                    await tx.bankAccount.update({
+                        where: { id: mode.bankAccountId },
+                        data: { currentBalance: { increment: mode.amount } },
                     })
-
-                    // 4. Update Bank Account Balance
-                    if (mode.bankAccountId) {
-                        await tx.bankAccount.update({
-                            where: { id: mode.bankAccountId },
-                            data: { currentBalance: { increment: modeShare } }
-                        })
-                    }
                 }
-
-                // 3. Update Invoice Balances
-                const newAmountPaid = invoice.amountPaid + alloc.amountApplied
-                const newBalanceDue = Math.max(0, invoice.grandTotal - newAmountPaid)
-                const newStatus = newBalanceDue <= 0.01 ? "paid" : "partial"
-
-                await tx.saleInvoice.update({
-                    where: { id: invoice.id },
-                    data: {
-                        amountPaid: newAmountPaid,
-                        balanceDue: newBalanceDue,
-                        paymentStatus: newStatus,
-                    },
-                })
-
-                createdPayments.push(payment)
             }
 
-            return createdPayments
+            return payment
         })
 
         revalidatePath("/dashboard/payments")
-        revalidatePath("/dashboard/sales")
+        revalidatePath("/dashboard/parties")
         return { success: true, data: result }
     } catch (error: any) {
         console.error("Error creating payment in:", error)
