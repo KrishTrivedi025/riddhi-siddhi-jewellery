@@ -35,18 +35,24 @@ export async function getBusinessProfile() {
 
 // ─── Invoice Number Generation ───────────────────────────────────────────────
 
+// If the prefix already ends in its own separator (e.g. "RS/"), don't add another "-".
+function formatInvoiceNumber(prefix: string, counter: number): string {
+    const separator = /[/-]$/.test(prefix) ? "" : "-"
+    return `${prefix}${separator}${String(counter).padStart(3, "0")}`
+}
+
 export async function getNextInvoiceNumber(isGst: boolean = true): Promise<string> {
     const userId = await requireUserId()
     const profile = await prisma.businessProfile.findFirst({ where: { userId } })
     if (isGst) {
         const prefix = profile?.invoicePrefix || "INV"
         const counter = profile?.invoiceCounter || 1
-        return `${prefix}-${String(counter).padStart(3, "0")}`
+        return formatInvoiceNumber(prefix, counter)
     } else {
         const p = profile as unknown as { noGstInvoicePrefix?: string; noGstInvoiceCounter?: number }
         const prefix = p?.noGstInvoicePrefix || "BILL"
         const counter = p?.noGstInvoiceCounter || 1
-        return `${prefix}-${String(counter).padStart(3, "0")}`
+        return formatInvoiceNumber(prefix, counter)
     }
 }
 
@@ -157,8 +163,8 @@ export async function createSaleInvoice(data: SaleInvoiceFormValues & { isGst?: 
             // 2. Generate invoice number based on GST type
             const profileExt = profile as unknown as { noGstInvoicePrefix?: string; noGstInvoiceCounter?: number }
             const invoiceNumber = isGst
-                ? `${profile.invoicePrefix}-${String(profile.invoiceCounter).padStart(3, "0")}`
-                : `${profileExt.noGstInvoicePrefix || "BILL"}-${String(profileExt.noGstInvoiceCounter || 1).padStart(3, "0")}`
+                ? formatInvoiceNumber(profile.invoicePrefix, profile.invoiceCounter)
+                : formatInvoiceNumber(profileExt.noGstInvoicePrefix || "BILL", profileExt.noGstInvoiceCounter || 1)
 
             // 3. Calculate totals for each line item
             let subtotal = 0

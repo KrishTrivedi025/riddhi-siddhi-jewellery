@@ -510,6 +510,13 @@ interface PartyStatementExportProps {
     summary: PartyLedgerSummary
     fromDate?: Date
     toDate?: Date
+    // Current GST/non-GST invoice prefix in effect for this ledger, used to name the shared PDF.
+    prefix?: string
+}
+
+// Filenames can't contain "/", so a prefix like "RS/" becomes "RS" instead of "RS-".
+function sanitizeForFilename(value: string): string {
+    return value.replace(/[\\/]+$/, "").replace(/[^a-zA-Z0-9-]+/g, "_")
 }
 
 export function PartyStatementExport({
@@ -518,9 +525,11 @@ export function PartyStatementExport({
     summary,
     fromDate,
     toDate,
+    prefix = "LEDGER",
 }: PartyStatementExportProps) {
     const [isGenerating, setIsGenerating] = useState(false)
     const businessName = "Riddhi Siddhi Jewellery"
+    const pdfFilename = `${sanitizeForFilename(party.name.replace(/\s+/g, "_"))}_${sanitizeForFilename(prefix)}_${format(new Date(), "dd-MM-yyyy")}.pdf`
 
     const generatePDF = async () => {
         setIsGenerating(true)
@@ -537,7 +546,7 @@ export function PartyStatementExport({
                 />
             )
             const blob = await pdf(doc).toBlob()
-            await downloadOrSharePdf(blob, `Statement_${party.name.replace(/\s+/g, "_")}_${format(new Date(), "yyyy-MM-dd")}.pdf`)
+            await downloadOrSharePdf(blob, pdfFilename)
         } catch (err) {
             console.error("PDF generation error:", err)
         } finally {
@@ -561,7 +570,7 @@ export function PartyStatementExport({
                 />
             )
             const blob = await pdf(doc).toBlob()
-            await downloadOrSharePdf(blob, `Statement_${party.name.replace(/\s+/g, "_")}_${format(new Date(), "yyyy-MM-dd")}.pdf`)
+            await downloadOrSharePdf(blob, pdfFilename)
 
             // Build WhatsApp message with statement summary
             const closingBalance =

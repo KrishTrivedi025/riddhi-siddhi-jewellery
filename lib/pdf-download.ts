@@ -15,14 +15,16 @@ export async function downloadOrSharePdf(blob: Blob, filename: string) {
 
         const base64 = await blobToBase64(blob)
 
-        // Use unique filename with timestamp to avoid URI caching issues on Android
+        // Keep the real filename intact for the share sheet/recipient, but write it inside a
+        // unique per-share subfolder so the URI never collides with a stale Android cache entry.
         const safeName = filename.replace(/[^a-zA-Z0-9._-]/g, "_")
-        const uniqueName = `${Date.now()}_${safeName}`
+        const uniquePath = `share_${Date.now()}/${safeName}`
 
         const saved = await Filesystem.writeFile({
-            path: uniqueName,
+            path: uniquePath,
             data: base64,
             directory: Directory.Cache,
+            recursive: true,
         })
 
         // Convert file:// URI to Capacitor-compatible URL for sharing

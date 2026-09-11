@@ -29,6 +29,7 @@ export function InvoicePDF({ invoice, businessProfile }: InvoicePDFProps) {
             const dark = "#1A1A1A"
             const black = "#000000"
             const border = "#2A2A2A"
+            const estimateRed = "#DC2626"
 
             const S = StyleSheet.create({
                 page: { padding: 28, fontSize: 8, fontFamily: "Helvetica", color: black, backgroundColor: "#FFFFFF" },
@@ -179,7 +180,9 @@ export function InvoicePDF({ invoice, businessProfile }: InvoicePDFProps) {
                         </View>
 
                         {/* INVOICE TITLE */}
-                        <Text style={S.taxInvoiceTitle}>{invoice.isGst === false ? "ESTIMATE/ON APPROVAL" : "TAX INVOICE"}</Text>
+                        <Text style={[S.taxInvoiceTitle, invoice.isGst === false ? { color: estimateRed } : {}]}>
+                            {invoice.isGst === false ? "ESTIMATE/ON APPROVAL" : "TAX INVOICE"}
+                        </Text>
 
                         {/* PARTY TABLE */}
                         <View style={S.partyTable}>

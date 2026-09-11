@@ -17,6 +17,8 @@ interface PartyGstLedgerTabsProps {
     gstSummary: PartyLedgerSummary
     nogstLedger: LedgerEntry[]
     nogstSummary: PartyLedgerSummary
+    invoicePrefix: string
+    noGstInvoicePrefix: string
 }
 
 export function PartyGstLedgerTabs({
@@ -26,11 +28,14 @@ export function PartyGstLedgerTabs({
     gstSummary,
     nogstLedger,
     nogstSummary,
+    invoicePrefix,
+    noGstInvoicePrefix,
 }: PartyGstLedgerTabsProps) {
     const [activeTab, setActiveTab] = useState<"gst" | "nogst">("gst")
 
     const ledger = activeTab === "gst" ? gstLedger : nogstLedger
     const summary = activeTab === "gst" ? gstSummary : nogstSummary
+    const prefix = activeTab === "gst" ? invoicePrefix : noGstInvoicePrefix
 
     return (
         <div className="space-y-4">
@@ -67,6 +72,7 @@ export function PartyGstLedgerTabs({
                         party={party}
                         entries={ledger}
                         summary={summary}
+                        prefix={prefix}
                     />
                 </div>
 

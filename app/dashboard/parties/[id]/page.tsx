@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation"
 import { Suspense } from "react"
 import { getPartyById, getPartyLedger, getPartyLedgerSummary } from "@/lib/actions/party-ledger"
+import { getBusinessProfile } from "@/lib/actions/sales"
 import { PartyHeader } from "@/components/parties/party-header"
 import { PartyBalanceCards } from "@/components/parties/party-balance-cards"
 import { PartyGstLedgerTabs } from "@/components/parties/party-gst-ledger-tabs"
@@ -42,13 +43,14 @@ async function PartyLedgerContent({ id }: { id: string }) {
     const isCustomerFacing = party.partyType === "CUSTOMER"
     const isVendorFacing = party.partyType === "SUPPLIER"
 
-    const [gstLedger, gstSummary, nogstLedger, nogstSummary, purchaseLedger, purchaseSummary] = await Promise.all([
+    const [gstLedger, gstSummary, nogstLedger, nogstSummary, purchaseLedger, purchaseSummary, businessProfile] = await Promise.all([
         isCustomerFacing ? getPartyLedger(id, "sales", { isGst: true, applyOpeningBalance: false }) : Promise.resolve([]),
         isCustomerFacing ? getPartyLedgerSummary(id, "sales", { isGst: true, applyOpeningBalance: false }) : Promise.resolve(null),
         isCustomerFacing ? getPartyLedger(id, "sales", { isGst: false, applyOpeningBalance: true }) : Promise.resolve([]),
         isCustomerFacing ? getPartyLedgerSummary(id, "sales", { isGst: false, applyOpeningBalance: true }) : Promise.resolve(null),
         isVendorFacing ? getPartyLedger(id, "purchase", { applyOpeningBalance: true }) : Promise.resolve([]),
         isVendorFacing ? getPartyLedgerSummary(id, "purchase", { applyOpeningBalance: true }) : Promise.resolve(null),
+        isCustomerFacing ? getBusinessProfile() : Promise.resolve(null),
     ])
 
     return (
@@ -65,6 +67,8 @@ async function PartyLedgerContent({ id }: { id: string }) {
                     gstSummary={gstSummary}
                     nogstLedger={nogstLedger}
                     nogstSummary={nogstSummary}
+                    invoicePrefix={businessProfile?.invoicePrefix || "INV"}
+                    noGstInvoicePrefix={businessProfile?.noGstInvoicePrefix || "BILL"}
                 />
             )}
 
