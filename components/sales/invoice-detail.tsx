@@ -18,7 +18,8 @@ import { formatCurrency } from "@/lib/gst-utils"
 import { formatItemDisplayName } from "@/lib/utils"
 import { numberToWords } from "@/lib/amount-in-words"
 import { markInvoiceAsPaid, voidInvoice } from "@/lib/actions/sales"
-import { InvoicePDF } from "./invoice-pdf"
+import { InvoicePDF, buildInvoicePdfBlob, getInvoiceShareFilename } from "./invoice-pdf"
+import { downloadOrSharePdf } from "@/lib/pdf-download"
 import { toast } from "sonner"
 import { useConfirm } from "@/components/shared/confirm-provider"
 
@@ -33,6 +34,7 @@ export function InvoiceDetail({ invoice, businessProfile }: InvoiceDetailProps) 
     const router = useRouter()
     const [loading, setLoading] = useState("")
     const [showPdf, setShowPdf] = useState(false)
+    const [sharingWA, setSharingWA] = useState(false)
     const confirm = useConfirm()
 
     const handleMarkPaid = async () => {
@@ -58,9 +60,26 @@ export function InvoiceDetail({ invoice, businessProfile }: InvoiceDetailProps) 
         else toast.error(result.error)
     }
 
-    const handleWhatsAppShare = () => {
-        const text = `Invoice ${invoice.invoiceNumber}\nAmount: ${formatCurrency(invoice.grandTotal)}\nCustomer: ${invoice.party?.name}\nDate: ${format(new Date(invoice.invoiceDate), "dd MMM yyyy")}`
-        window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank")
+    const handleWhatsAppShare = async () => {
+        setSharingWA(true)
+        try {
+            // Build and hand off the same PDF as the Download button, so WhatsApp's share
+            // sheet / attach picker has the file ready — no separate manual download step.
+            const blob = await buildInvoicePdfBlob(invoice, businessProfile)
+            await downloadOrSharePdf(blob, getInvoiceShareFilename(invoice))
+
+            const text = `Invoice ${invoice.invoiceNumber}\nAmount: ${formatCurrency(invoice.grandTotal)}\nCustomer: ${invoice.party?.name}\nDate: ${format(new Date(invoice.invoiceDate), "dd MMM yyyy")}`
+            const waPhone = invoice.party?.phone ? String(invoice.party.phone).replace(/[^0-9]/g, "") : ""
+            const waUrl = waPhone
+                ? `https://wa.me/91${waPhone}?text=${encodeURIComponent(text)}`
+                : `https://wa.me/?text=${encodeURIComponent(text)}`
+            window.open(waUrl, "_blank")
+        } catch (err) {
+            console.error("WhatsApp share error:", err)
+            toast.error("Failed to prepare invoice PDF for WhatsApp")
+        } finally {
+            setSharingWA(false)
+        }
     }
 
     const isInterState = invoice.igst > 0
@@ -93,9 +112,13 @@ export function InvoiceDetail({ invoice, businessProfile }: InvoiceDetailProps) 
                     variant="ghost"
                     size="sm"
                     onClick={handleWhatsAppShare}
+                    disabled={sharingWA}
                     className="text-emerald-400 hover:bg-emerald-400/10 border border-emerald-400/20 h-9 px-3 text-xs font-semibold"
                 >
-                    <Share2 size={14} className="mr-1.5" /> WA
+                    {sharingWA
+                        ? <Loader2 size={14} className="mr-1.5 animate-spin" />
+                        : <Share2 size={14} className="mr-1.5" />
+                    } WA
                 </Button>
                 <Button
                     variant="ghost"

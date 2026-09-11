@@ -1,3 +1,17 @@
+import { format } from "date-fns"
+
+// Filenames can't contain "/" (or other path separators) — strip a trailing one and collapse
+// anything else non-alphanumeric into "_" so a prefix like "RS/" or "RS/306" stays readable.
+export function sanitizeForFilename(value: string): string {
+    return value.replace(/[\\/]+$/, "").replace(/[^a-zA-Z0-9-]+/g, "_")
+}
+
+// Shared "PartyName_Prefix_DD-MM-YYYY.pdf" naming convention for every party/invoice PDF that
+// gets downloaded or shared (ledger statements, tax invoices, estimates).
+export function buildShareFilename(partyName: string, prefix: string): string {
+    return `${sanitizeForFilename(partyName.replace(/\s+/g, "_"))}_${sanitizeForFilename(prefix)}_${format(new Date(), "dd-MM-yyyy")}.pdf`
+}
+
 /**
  * Download or share a PDF blob.
  * 1. Capacitor native (Filesystem + Share) — works in APK

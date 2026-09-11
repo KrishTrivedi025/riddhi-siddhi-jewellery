@@ -19,7 +19,7 @@ import {
 } from "@react-pdf/renderer"
 import type { LedgerEntry, PartyLedgerSummary } from "@/lib/actions/party-ledger"
 import { format } from "date-fns"
-import { downloadOrSharePdf } from "@/lib/pdf-download"
+import { downloadOrSharePdf, buildShareFilename } from "@/lib/pdf-download"
 
 // ─── PDF Styles ─────────────────────────────────────────────────────────────
 
@@ -514,11 +514,6 @@ interface PartyStatementExportProps {
     prefix?: string
 }
 
-// Filenames can't contain "/", so a prefix like "RS/" becomes "RS" instead of "RS-".
-function sanitizeForFilename(value: string): string {
-    return value.replace(/[\\/]+$/, "").replace(/[^a-zA-Z0-9-]+/g, "_")
-}
-
 export function PartyStatementExport({
     party,
     entries,
@@ -529,7 +524,7 @@ export function PartyStatementExport({
 }: PartyStatementExportProps) {
     const [isGenerating, setIsGenerating] = useState(false)
     const businessName = "Riddhi Siddhi Jewellery"
-    const pdfFilename = `${sanitizeForFilename(party.name.replace(/\s+/g, "_"))}_${sanitizeForFilename(prefix)}_${format(new Date(), "dd-MM-yyyy")}.pdf`
+    const pdfFilename = buildShareFilename(party.name, prefix)
 
     const generatePDF = async () => {
         setIsGenerating(true)
