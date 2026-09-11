@@ -29,16 +29,16 @@ export async function downloadOrSharePdf(blob: Blob, filename: string) {
 
         const base64 = await blobToBase64(blob)
 
-        // Keep the real filename intact for the share sheet/recipient, but write it inside a
-        // unique per-share subfolder so the URI never collides with a stale Android cache entry.
+        // Write directly under Cache with the real filename (no timestamp prefix, no subfolder).
+        // A nested/prefixed path was tried here and broke WhatsApp's PDF thumbnail preview
+        // (it fell back to a generic file icon) — writeFile already overwrites in place, so a
+        // flat path is both the simplest and the one confirmed to render previews correctly.
         const safeName = filename.replace(/[^a-zA-Z0-9._-]/g, "_")
-        const uniquePath = `share_${Date.now()}/${safeName}`
 
         const saved = await Filesystem.writeFile({
-            path: uniquePath,
+            path: safeName,
             data: base64,
             directory: Directory.Cache,
-            recursive: true,
         })
 
         // Convert file:// URI to Capacitor-compatible URL for sharing
