@@ -19,7 +19,8 @@ import {
 } from "@react-pdf/renderer"
 import type { LedgerEntry, PartyLedgerSummary } from "@/lib/actions/party-ledger"
 import { format } from "date-fns"
-import { downloadOrSharePdf, buildShareFilename } from "@/lib/pdf-download"
+import { downloadOrSharePdf, buildShareFilename, describeSharePdfResult } from "@/lib/pdf-download"
+import { toast } from "sonner"
 
 // ─── PDF Styles ─────────────────────────────────────────────────────────────
 
@@ -540,9 +541,15 @@ export function PartyStatementExport({
                 />
             )
             const blob = await pdf(doc).toBlob()
-            await downloadOrSharePdf(blob, pdfFilename)
+            const result = await downloadOrSharePdf(blob, pdfFilename)
+            const diag = describeSharePdfResult(result)
+            if (diag) {
+                if (diag.type === "error") toast.error(diag.message)
+                else toast.info(diag.message)
+            }
         } catch (err) {
             console.error("PDF generation error:", err)
+            toast.error("Failed to generate PDF")
         } finally {
             setIsGenerating(false)
         }
@@ -564,7 +571,12 @@ export function PartyStatementExport({
                 />
             )
             const blob = await pdf(doc).toBlob()
-            await downloadOrSharePdf(blob, pdfFilename)
+            const result = await downloadOrSharePdf(blob, pdfFilename)
+            const diag = describeSharePdfResult(result)
+            if (diag) {
+                if (diag.type === "error") toast.error(diag.message)
+                else toast.info(diag.message)
+            }
 
             // Build WhatsApp message with statement summary
             const closingBalance =
@@ -603,6 +615,7 @@ export function PartyStatementExport({
             window.open(waUrl, "_blank")
         } catch (err) {
             console.error("WhatsApp share error:", err)
+            toast.error("Failed to share statement on WhatsApp")
         } finally {
             setIsGenerating(false)
         }

@@ -19,7 +19,7 @@ import { formatItemDisplayName } from "@/lib/utils"
 import { numberToWords } from "@/lib/amount-in-words"
 import { markInvoiceAsPaid, voidInvoice } from "@/lib/actions/sales"
 import { InvoicePDF, buildInvoicePdfBlob, getInvoiceShareFilename } from "./invoice-pdf"
-import { downloadOrSharePdf } from "@/lib/pdf-download"
+import { downloadOrSharePdf, describeSharePdfResult } from "@/lib/pdf-download"
 import { toast } from "sonner"
 import { useConfirm } from "@/components/shared/confirm-provider"
 
@@ -66,7 +66,12 @@ export function InvoiceDetail({ invoice, businessProfile }: InvoiceDetailProps) 
             // Build and hand off the same PDF as the Download button, so WhatsApp's share
             // sheet / attach picker has the file ready — no separate manual download step.
             const blob = await buildInvoicePdfBlob(invoice, businessProfile)
-            await downloadOrSharePdf(blob, getInvoiceShareFilename(invoice))
+            const result = await downloadOrSharePdf(blob, getInvoiceShareFilename(invoice))
+            const diag = describeSharePdfResult(result)
+            if (diag) {
+                if (diag.type === "error") toast.error(diag.message)
+                else toast.info(diag.message)
+            }
 
             const text = `Invoice ${invoice.invoiceNumber}\nAmount: ${formatCurrency(invoice.grandTotal)}\nCustomer: ${invoice.party?.name}\nDate: ${format(new Date(invoice.invoiceDate), "dd MMM yyyy")}`
             const waPhone = invoice.party?.phone ? String(invoice.party.phone).replace(/[^0-9]/g, "") : ""
