@@ -510,8 +510,6 @@ interface PartyStatementExportProps {
     summary: PartyLedgerSummary
     fromDate?: Date
     toDate?: Date
-    // Current GST/non-GST invoice prefix in effect for this ledger, used to name the shared PDF.
-    prefix?: string
 }
 
 export function PartyStatementExport({
@@ -520,11 +518,12 @@ export function PartyStatementExport({
     summary,
     fromDate,
     toDate,
-    prefix = "LEDGER",
 }: PartyStatementExportProps) {
     const [isGenerating, setIsGenerating] = useState(false)
     const businessName = "Riddhi Siddhi Jewellery"
-    const pdfFilename = buildShareFilename(party.name, prefix)
+    // Ledger PDFs are named PartyName_Ledger_Date.pdf — no GST/non-GST invoice prefix, since a
+    // statement spans many invoices and no single prefix applies to it (unlike a single bill).
+    const pdfFilename = buildShareFilename(party.name, "Ledger")
 
     const generatePDF = async () => {
         setIsGenerating(true)

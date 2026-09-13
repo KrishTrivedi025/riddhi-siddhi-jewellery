@@ -29,16 +29,20 @@ export async function downloadOrSharePdf(blob: Blob, filename: string) {
 
         const base64 = await blobToBase64(blob)
 
-        // Write directly under Cache with the real filename (no timestamp prefix, no subfolder).
-        // A nested/prefixed path was tried here and broke WhatsApp's PDF thumbnail preview
-        // (it fell back to a generic file icon) — writeFile already overwrites in place, so a
-        // flat path is both the simplest and the one confirmed to render previews correctly.
+        // Write into a fresh, per-share subfolder so re-sharing the same party/invoice on the
+        // same day never reuses a path WhatsApp/Android has already indexed (that's what caused
+        // shared PDFs to show a generic icon instead of a page-1 thumbnail: the same flat path
+        // getting overwritten repeatedly). The visible/attached filename stays clean regardless —
+        // FileProvider reports a file's display name as just its base name (`file.getName()`),
+        // never the folder it's nested in, so the subfolder never leaks into what the recipient sees.
         const safeName = filename.replace(/[^a-zA-Z0-9._-]/g, "_")
+        const uniquePath = `share_${Date.now()}/${safeName}`
 
         const saved = await Filesystem.writeFile({
-            path: safeName,
+            path: uniquePath,
             data: base64,
             directory: Directory.Cache,
+            recursive: true,
         })
 
         // Convert file:// URI to Capacitor-compatible URL for sharing
