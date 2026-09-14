@@ -1,38 +1,42 @@
 "use client"
 
 import { FileText } from "lucide-react"
+import { SupplierListReportDialog } from "./supplier-list-report-dialog"
+import type { SupplierKhataSummary as SupplierKhataSummaryData } from "@/lib/actions/supplier-transactions"
 
 interface SupplierKhataSummaryProps {
-    totalWillGive: number
-    totalWillGet: number
-    onReportClick: () => void
+    summary: SupplierKhataSummaryData
 }
 
-export function SupplierKhataSummary({ totalWillGive, totalWillGet, onReportClick }: SupplierKhataSummaryProps) {
+export function SupplierKhataSummary({ summary }: SupplierKhataSummaryProps) {
     return (
         <div className="flex items-stretch rounded-xl border border-border bg-card overflow-hidden">
             <div className="flex-1 px-4 py-3 text-center">
                 <p className="text-xs text-muted-foreground mb-1">You will give</p>
                 <p className="text-lg font-bold text-rose-500">
-                    ₹{totalWillGive.toLocaleString("en-IN")}
+                    ₹{summary.totalWillGive.toLocaleString("en-IN")}
                 </p>
             </div>
             <div className="w-px bg-border" />
             <div className="flex-1 px-4 py-3 text-center">
                 <p className="text-xs text-muted-foreground mb-1">You will get</p>
                 <p className="text-lg font-bold text-emerald-500">
-                    ₹{totalWillGet.toLocaleString("en-IN")}
+                    ₹{summary.totalWillGet.toLocaleString("en-IN")}
                 </p>
             </div>
             <div className="w-px bg-border" />
-            <button
-                type="button"
-                onClick={onReportClick}
-                className="flex flex-col items-center justify-center gap-1 px-4 text-primary text-[11px] font-semibold hover:bg-primary/5 transition-colors"
-            >
-                <FileText size={18} />
-                Report
-            </button>
+            <SupplierListReportDialog
+                summary={summary}
+                trigger={
+                    <button
+                        type="button"
+                        className="flex flex-col items-center justify-center gap-1 px-4 h-full text-primary text-[11px] font-semibold hover:bg-primary/5 transition-colors"
+                    >
+                        <FileText size={18} />
+                        Report
+                    </button>
+                }
+            />
         </div>
     )
 }

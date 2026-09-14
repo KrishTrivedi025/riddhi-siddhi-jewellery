@@ -9,6 +9,7 @@ import { SupplierKhataHeader } from "./supplier-khata-header"
 import { SupplierTransactionList } from "./supplier-transaction-list"
 import { SupplierTransactionForm } from "./supplier-transaction-form"
 import { SupplierTransactionSuccess } from "./supplier-transaction-success"
+import { SupplierReportSheet } from "./supplier-report-sheet"
 import type { SupplierTransactionType, SupplierTransactionWithBalance } from "@/lib/actions/supplier-transactions"
 
 interface SupplierKhataDetailProps {
@@ -51,11 +52,10 @@ export function SupplierKhataDetail({ party, transactions, netBalance }: Supplie
             <SupplierKhataHeader party={party} netBalance={netBalance} />
             <SupplierTransactionList transactions={transactions} onEdit={(t) => openForm(t.type, t)} />
 
-            <PartyFab
-                label="REPORT"
-                icon={<FileText size={18} />}
-                offset="raised"
-                onClick={() => toast.info("Supplier reports are coming soon")}
+            <SupplierReportSheet
+                party={party}
+                transactions={transactions}
+                trigger={<PartyFab label="REPORT" icon={<FileText size={18} />} offset="raised" />}
             />
 
             <div className="fixed bottom-[calc(58px+env(safe-area-inset-bottom,0px))] md:bottom-0 left-0 md:left-60 right-0 z-30 bg-card border-t border-border flex">

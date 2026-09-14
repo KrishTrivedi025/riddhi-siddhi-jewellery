@@ -11,10 +11,9 @@ import type { SupplierKhataSummary as SupplierKhataSummaryData } from "@/lib/act
 
 interface SupplierKhataListProps {
     summary: SupplierKhataSummaryData
-    onReportClick: () => void
 }
 
-export function SupplierKhataList({ summary, onReportClick }: SupplierKhataListProps) {
+export function SupplierKhataList({ summary }: SupplierKhataListProps) {
     const [search, setSearch] = useState("")
 
     const filtered = summary.suppliers.filter(
@@ -25,11 +24,7 @@ export function SupplierKhataList({ summary, onReportClick }: SupplierKhataListP
 
     return (
         <div className="space-y-4">
-            <SupplierKhataSummary
-                totalWillGive={summary.totalWillGive}
-                totalWillGet={summary.totalWillGet}
-                onReportClick={onReportClick}
-            />
+            <SupplierKhataSummary summary={summary} />
 
             <Input
                 placeholder="Search Supplier"

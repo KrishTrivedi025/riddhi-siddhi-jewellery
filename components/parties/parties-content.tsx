@@ -1,7 +1,6 @@
 "use client"
 
 import { useState } from "react"
-import { toast } from "sonner"
 import { PartyTable } from "./party-table"
 import { PartyDialog } from "./party-dialog"
 import { PartyFab } from "./party-fab"
@@ -66,10 +65,7 @@ export function PartiesContent({ customers, suppliers, supplierKhata }: PartiesC
                 </>
             ) : (
                 <>
-                    <SupplierKhataList
-                        summary={supplierKhata}
-                        onReportClick={() => toast.info("Supplier reports are coming soon")}
-                    />
+                    <SupplierKhataList summary={supplierKhata} />
                     <QuickSupplierDialog
                         trigger={<PartyFab label="ADD SUPPLIER" icon={<UserPlus size={18} />} />}
                     />

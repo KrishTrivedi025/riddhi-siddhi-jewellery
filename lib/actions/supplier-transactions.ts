@@ -275,6 +275,43 @@ export async function deleteSupplierTransaction(id: string) {
     }
 }
 
+export interface AllSupplierTransactionRow {
+    id: string
+    partyId: string
+    partyName: string
+    type: SupplierTransactionType
+    amount: number
+    details: string | null
+    date: Date
+    createdAt: Date
+}
+
+// Unfiltered — the report UI filters by date range/search client-side against this single fetch,
+// same pattern as getSupplierTransactions, to avoid a server round-trip per filter change.
+export async function getAllSupplierTransactions(): Promise<AllSupplierTransactionRow[]> {
+    try {
+        const userId = await requireUserId()
+        const rows = await prisma.supplierTransaction.findMany({
+            where: { userId, deletedAt: null, party: { deletedAt: null } },
+            include: { party: { select: { name: true } } },
+            orderBy: [{ date: "desc" }, { createdAt: "desc" }],
+        })
+        return rows.map((t) => ({
+            id: t.id,
+            partyId: t.partyId,
+            partyName: t.party.name,
+            type: t.type as SupplierTransactionType,
+            amount: t.amount,
+            details: t.details,
+            date: t.date,
+            createdAt: t.createdAt,
+        }))
+    } catch (error) {
+        console.error("Error fetching all supplier transactions:", error)
+        throw new Error("Failed to fetch supplier transactions")
+    }
+}
+
 export async function createQuickSupplier(data: QuickSupplierFormValues) {
     try {
         const userId = await requireUserId()
