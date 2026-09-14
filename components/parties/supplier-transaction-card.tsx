@@ -8,6 +8,7 @@ import { Edit, FileText, Loader2, Trash2 } from "lucide-react"
 import { useConfirm } from "@/components/shared/confirm-provider"
 import { deleteSupplierTransaction } from "@/lib/actions/supplier-transactions"
 import type { SupplierTransactionWithBalance } from "@/lib/actions/supplier-transactions"
+import { AttachmentLightbox } from "./attachment-lightbox"
 
 interface SupplierTransactionCardProps {
     transaction: SupplierTransactionWithBalance
@@ -16,6 +17,7 @@ interface SupplierTransactionCardProps {
 
 export function SupplierTransactionCard({ transaction, onEdit }: SupplierTransactionCardProps) {
     const [loading, setLoading] = useState(false)
+    const [previewIndex, setPreviewIndex] = useState<number | null>(null)
     const router = useRouter()
     const confirm = useConfirm()
 
@@ -67,12 +69,11 @@ export function SupplierTransactionCard({ transaction, onEdit }: SupplierTransac
                 )}
                 {transaction.attachments.length > 0 && (
                     <div className="flex gap-1.5 pt-1">
-                        {transaction.attachments.map((a) => (
-                            <a
+                        {transaction.attachments.map((a, i) => (
+                            <button
                                 key={a.id}
-                                href={a.url}
-                                target="_blank"
-                                rel="noopener noreferrer"
+                                type="button"
+                                onClick={() => setPreviewIndex(i)}
                                 className="h-10 w-10 rounded-lg border border-border overflow-hidden bg-muted flex items-center justify-center shrink-0"
                             >
                                 {a.fileType === "image" ? (
@@ -81,7 +82,7 @@ export function SupplierTransactionCard({ transaction, onEdit }: SupplierTransac
                                 ) : (
                                     <FileText size={16} className="text-muted-foreground" />
                                 )}
-                            </a>
+                            </button>
                         ))}
                     </div>
                 )}
@@ -119,6 +120,16 @@ export function SupplierTransactionCard({ transaction, onEdit }: SupplierTransac
                     </button>
                 </div>
             </div>
+
+            {previewIndex !== null && transaction.attachments[previewIndex] && (
+                <AttachmentLightbox
+                    open={previewIndex !== null}
+                    onOpenChange={(next) => !next && setPreviewIndex(null)}
+                    url={transaction.attachments[previewIndex].url}
+                    fileName={transaction.attachments[previewIndex].fileName}
+                    fileType={transaction.attachments[previewIndex].fileType as "image" | "pdf"}
+                />
+            )}
         </div>
     )
 }
