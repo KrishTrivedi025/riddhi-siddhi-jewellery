@@ -1,6 +1,7 @@
 import { Suspense } from "react"
 import { PageWrapper } from "@/components/shared/page-wrapper"
 import { getParties } from "@/lib/actions/parties"
+import { getSupplierKhataSummary } from "@/lib/actions/supplier-transactions"
 import { PartiesContent } from "@/components/parties/parties-content"
 import { Skeleton } from "@/components/ui/skeleton"
 
@@ -15,10 +16,13 @@ export default async function PartiesPage() {
 }
 
 async function PartiesData() {
-    const customers = await getParties("CUSTOMER")
-    const suppliers = await getParties("SUPPLIER")
+    const [customers, suppliers, supplierKhata] = await Promise.all([
+        getParties("CUSTOMER"),
+        getParties("SUPPLIER"),
+        getSupplierKhataSummary(),
+    ])
 
-    return <PartiesContent customers={customers} suppliers={suppliers} />
+    return <PartiesContent customers={customers} suppliers={suppliers} supplierKhata={supplierKhata} />
 }
 
 function PartiesListSkeleton() {
