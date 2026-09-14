@@ -4,7 +4,7 @@ import { prisma } from "@/lib/db"
 import { revalidatePath } from "next/cache"
 import { requireUserId } from "./auth-helper"
 import type { QuickSupplierFormValues, SupplierTransactionFormValues } from "../schemas/supplier-transaction-schema"
-import { startOfMonth, endOfMonth } from "date-fns"
+import { currentMonthStart, monthEndUTC } from "../date-utils"
 
 export type SupplierTransactionType = "GAVE" | "GOT"
 export type SupplierLedgerEntryType = SupplierTransactionType | "ABSENT"
@@ -70,8 +70,8 @@ export async function getSupplierKhataSummary(): Promise<SupplierKhataSummary> {
         // batch query for the applicable salary + one for this month's sums, not N+1.
         const workerBalanceMap = new Map<string, number>()
         if (workerIds.length > 0) {
-            const monthStart = startOfMonth(new Date())
-            const monthEnd = endOfMonth(new Date())
+            const monthStart = currentMonthStart()
+            const monthEnd = monthEndUTC(monthStart)
 
             const rates = await prisma.workerRate.findMany({
                 where: { partyId: { in: workerIds }, effectiveFrom: { lte: monthStart } },
@@ -395,7 +395,7 @@ export async function createQuickSupplier(data: QuickSupplierFormValues) {
                           partyId: created.id,
                           monthlySalary: data.monthlySalary!,
                           dailyDeduction: data.dailyDeduction!,
-                          effectiveFrom: startOfMonth(new Date()),
+                          effectiveFrom: currentMonthStart(),
                       },
                   })
                   return created

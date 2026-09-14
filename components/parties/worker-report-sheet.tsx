@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { addMonths, endOfMonth, format, isSameMonth, startOfMonth, subMonths } from "date-fns"
+import { addMonths, endOfMonth, format, isSameMonth, subMonths } from "date-fns"
 import { Dialog as DialogPrimitive } from "radix-ui"
 import { pdf } from "@react-pdf/renderer"
 import { toast } from "sonner"
@@ -49,7 +49,12 @@ function ReportBody({
     open: boolean
     onClose: () => void
 }) {
-    const [month, setMonth] = useState(() => startOfMonth(new Date()))
+    // Starts unresolved rather than computed from the browser's own `new Date()` —
+    // the client (IST) and server (UTC on Vercel) disagree on "the current month" for
+    // part of every day, so the server resolves it (see lib/date-utils.ts) and the
+    // client adopts that answer once. Every later navigation offsets from that
+    // server-confirmed anchor, which stays safe to manipulate locally.
+    const [month, setMonth] = useState<Date | null>(null)
     const [summary, setSummary] = useState<WorkerLedgerSummary | null>(null)
     const [transactions, setTransactions] = useState<SupplierTransactionWithBalance[]>([])
     const [loading, setLoading] = useState(false)
@@ -59,11 +64,12 @@ function ReportBody({
         if (!open) return
         let cancelled = false
         setLoading(true)
-        getWorkerLedger(party.id, month)
+        getWorkerLedger(party.id, month ?? undefined)
             .then((result) => {
                 if (cancelled) return
                 setSummary(result.summary)
                 setTransactions(result.transactions)
+                setMonth((prev) => prev ?? new Date(`${result.summary.month}-01T00:00:00.000Z`))
             })
             .catch(() => {
                 if (!cancelled) toast.error("Failed to load report")
@@ -77,10 +83,10 @@ function ReportBody({
     }, [open, month, party.id])
 
     const isGet = (summary?.netBalance ?? 0) > 0
-    const isCurrentMonth = isSameMonth(month, new Date())
+    const isCurrentMonth = month ? isSameMonth(month, new Date()) : true
 
     const handleDownload = async () => {
-        if (!summary) return
+        if (!summary || !month) return
         setDownloading(true)
         try {
             const doc = (
@@ -132,17 +138,20 @@ function ReportBody({
                     <div className="flex items-center justify-between">
                         <button
                             type="button"
-                            onClick={() => setMonth((m) => subMonths(m, 1))}
-                            className="p-2 rounded-lg border border-border text-foreground hover:bg-muted transition-colors"
+                            onClick={() => setMonth((m) => (m ? subMonths(m, 1) : m))}
+                            disabled={!month}
+                            className="p-2 rounded-lg border border-border text-foreground hover:bg-muted transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                             aria-label="Previous month"
                         >
                             <ChevronLeft size={16} />
                         </button>
-                        <p className="text-sm font-semibold text-foreground">{format(month, "MMMM yyyy")}</p>
+                        <p className="text-sm font-semibold text-foreground">
+                            {month ? format(month, "MMMM yyyy") : " "}
+                        </p>
                         <button
                             type="button"
-                            onClick={() => setMonth((m) => addMonths(m, 1))}
-                            disabled={isCurrentMonth}
+                            onClick={() => setMonth((m) => (m ? addMonths(m, 1) : m))}
+                            disabled={!month || isCurrentMonth}
                             className="p-2 rounded-lg border border-border text-foreground hover:bg-muted transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                             aria-label="Next month"
                         >

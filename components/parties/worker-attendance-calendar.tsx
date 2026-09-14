@@ -1,18 +1,29 @@
 "use client"
 
 import { eachDayOfInterval, endOfMonth, format, getDay, isAfter, isSameDay, startOfDay, startOfMonth } from "date-fns"
-import { Check, X } from "lucide-react"
+import { Check, Loader2, X } from "lucide-react"
+import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 
 interface WorkerAttendanceCalendarProps {
     month: Date
     stagedAbsentDates: Set<string>
     onToggleDate: (dateStr: string) => void
+    isDirty: boolean
+    saving: boolean
+    onSave: () => void
 }
 
 const WEEKDAY_LABELS = ["S", "M", "T", "W", "T", "F", "S"]
 
-export function WorkerAttendanceCalendar({ month, stagedAbsentDates, onToggleDate }: WorkerAttendanceCalendarProps) {
+export function WorkerAttendanceCalendar({
+    month,
+    stagedAbsentDates,
+    onToggleDate,
+    isDirty,
+    saving,
+    onSave,
+}: WorkerAttendanceCalendarProps) {
     const monthStart = startOfMonth(month)
     const days = eachDayOfInterval({ start: monthStart, end: endOfMonth(month) })
     const today = startOfDay(new Date())
@@ -62,6 +73,20 @@ export function WorkerAttendanceCalendar({ month, stagedAbsentDates, onToggleDat
             <p className="text-[11px] text-muted-foreground">
                 Tap a day to mark it absent. Unmarked days count as present automatically.
             </p>
+
+            {isDirty && (
+                <div className="flex justify-end">
+                    <Button
+                        type="button"
+                        onClick={onSave}
+                        disabled={saving}
+                        size="sm"
+                        className="h-8 rounded-full bg-rose-600 hover:bg-rose-600/90 text-white text-xs font-semibold gap-1.5 px-4"
+                    >
+                        {saving ? <Loader2 size={12} className="animate-spin" /> : "Mark Absent"}
+                    </Button>
+                </div>
+            )}
         </div>
     )
 }

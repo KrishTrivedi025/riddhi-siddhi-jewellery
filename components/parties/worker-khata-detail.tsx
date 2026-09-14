@@ -4,7 +4,7 @@ import { useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
 import { startOfMonth } from "date-fns"
 import { toast } from "sonner"
-import { FileText, Loader2 } from "lucide-react"
+import { FileText } from "lucide-react"
 import { PartyFab } from "./party-fab"
 import { WorkerAttendanceCalendar } from "./worker-attendance-calendar"
 import { WorkerRateDialog } from "./worker-rate-dialog"
@@ -12,7 +12,6 @@ import { SupplierTransactionList } from "./supplier-transaction-list"
 import { SupplierTransactionForm } from "./supplier-transaction-form"
 import { SupplierTransactionSuccess } from "./supplier-transaction-success"
 import { WorkerReportSheet } from "./worker-report-sheet"
-import { Button } from "@/components/ui/button"
 import { setWorkerAttendance, type WorkerLedgerSummary } from "@/lib/actions/workers"
 import type { SupplierTransactionType, SupplierTransactionWithBalance } from "@/lib/actions/supplier-transactions"
 import { cn } from "@/lib/utils"
@@ -52,7 +51,7 @@ export function WorkerKhataDetail({ party, transactions, summary }: WorkerKhataD
     const handleSaveAttendance = async () => {
         setSaving(true)
         try {
-            const result = await setWorkerAttendance(party.id, month, Array.from(stagedAbsent))
+            const result = await setWorkerAttendance(party.id, Array.from(stagedAbsent))
             if (result.success) {
                 toast.success("Attendance updated")
                 router.refresh()
@@ -129,6 +128,9 @@ export function WorkerKhataDetail({ party, transactions, summary }: WorkerKhataD
                 month={month}
                 stagedAbsentDates={stagedAbsent}
                 onToggleDate={toggleDate}
+                isDirty={isAttendanceDirty}
+                saving={saving}
+                onSave={handleSaveAttendance}
             />
 
             <SupplierTransactionList
@@ -138,19 +140,11 @@ export function WorkerKhataDetail({ party, transactions, summary }: WorkerKhataD
             />
 
             {/* Report FAB and the bottom bar share one fixed anchor, same pattern as the
-                plain-supplier detail page — the Save button (only while attendance is
-                staged) sits immediately to its left in the same row. */}
+                plain-supplier detail page. The attendance Save button lives on the
+                calendar card itself (bottom-right of that card) instead of here, since
+                it edits the calendar directly above it — not this bar. */}
             <div className="fixed bottom-[calc(58px+env(safe-area-inset-bottom,0px))] md:bottom-0 left-0 md:left-60 right-0 z-30">
                 <div className="absolute bottom-full right-4 mb-3 flex items-center gap-2">
-                    {isAttendanceDirty && (
-                        <Button
-                            onClick={handleSaveAttendance}
-                            disabled={saving}
-                            className="h-10 rounded-full bg-foreground text-background hover:bg-foreground/90 font-semibold gap-1.5 px-4 shadow-lg"
-                        >
-                            {saving ? <Loader2 size={16} className="animate-spin" /> : "SAVE"}
-                        </Button>
-                    )}
                     <WorkerReportSheet
                         party={party}
                         trigger={<PartyFab label="REPORT" icon={<FileText size={18} />} variant="inline" />}

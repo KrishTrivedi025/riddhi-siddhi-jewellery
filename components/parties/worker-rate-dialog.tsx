@@ -78,7 +78,7 @@ export function WorkerRateDialog({ partyId, monthlySalary, dailyDeduction, trigg
                         )}
                     </div>
                     <div className="space-y-1.5">
-                        <Label htmlFor="worker-deduction">Per-day Absence Deduction</Label>
+                        <Label htmlFor="worker-deduction">Absence Deduction</Label>
                         <Input
                             id="worker-deduction"
                             type="number"

@@ -2,8 +2,9 @@
 
 import { prisma } from "@/lib/db"
 import { revalidatePath } from "next/cache"
-import { startOfMonth, endOfMonth, format } from "date-fns"
+import { format } from "date-fns"
 import { requireUserId } from "./auth-helper"
+import { currentMonthStart, monthStartUTC, monthEndUTC } from "../date-utils"
 import type { WorkerRateFormValues } from "../schemas/worker-schema"
 import type {
     SupplierPaymentMode,
@@ -20,7 +21,7 @@ export interface WorkerRateInfo {
 export async function getWorkerRate(partyId: string, month?: Date): Promise<WorkerRateInfo | null> {
     try {
         const userId = await requireUserId()
-        const monthStart = startOfMonth(month ?? new Date())
+        const monthStart = month ? monthStartUTC(month) : currentMonthStart()
         const rate = await prisma.workerRate.findFirst({
             where: { userId, partyId, effectiveFrom: { lte: monthStart } },
             orderBy: { effectiveFrom: "desc" },
@@ -44,7 +45,7 @@ export async function setWorkerRate(partyId: string, data: WorkerRateFormValues)
         // showing whatever rate was in effect then. Upserting on (partyId, thisMonth)
         // is what makes "future months only" actually mean "current month onward":
         // editing again within the same month updates in place instead of stacking rows.
-        const monthStart = startOfMonth(new Date())
+        const monthStart = currentMonthStart()
         const existing = await prisma.workerRate.findFirst({
             where: { userId, partyId, effectiveFrom: monthStart },
         })
@@ -93,11 +94,10 @@ export interface WorkerLedgerResult {
 export async function getWorkerLedger(partyId: string, month?: Date): Promise<WorkerLedgerResult> {
     try {
         const userId = await requireUserId()
-        const target = month ?? new Date()
-        const monthStart = startOfMonth(target)
-        const monthEnd = endOfMonth(target)
+        const monthStart = month ? monthStartUTC(month) : currentMonthStart()
+        const monthEnd = monthEndUTC(monthStart)
 
-        const rate = await getWorkerRate(partyId, target)
+        const rate = await getWorkerRate(partyId, monthStart)
         const monthlySalary = rate?.monthlySalary ?? 0
         const dailyDeduction = rate?.dailyDeduction ?? 0
 
@@ -159,13 +159,17 @@ export async function getWorkerLedger(partyId: string, month?: Date): Promise<Wo
     }
 }
 
-export async function setWorkerAttendance(partyId: string, month: Date, absentDates: string[]) {
+// Always targets the current month — the attendance calendar only ever shows and
+// edits the current month, so "the month" is resolved here server-side rather than
+// trusted from the caller (a client-computed Date would carry the same IST/UTC
+// mismatch described in lib/date-utils.ts).
+export async function setWorkerAttendance(partyId: string, absentDates: string[]) {
     try {
         const userId = await requireUserId()
-        const monthStart = startOfMonth(month)
-        const monthEnd = endOfMonth(month)
+        const monthStart = currentMonthStart()
+        const monthEnd = monthEndUTC(monthStart)
 
-        const rate = await getWorkerRate(partyId, month)
+        const rate = await getWorkerRate(partyId, monthStart)
         if (!rate) return { success: false, error: "No salary rate set for this worker" }
 
         const existing = await prisma.supplierTransaction.findMany({

@@ -100,13 +100,13 @@ export function QuickSupplierDialog({ trigger }: QuickSupplierDialogProps) {
                             id="supplier-is-worker"
                             checked={isWorker}
                             onCheckedChange={(checked) => setValue("isWorker", checked, { shouldDirty: true })}
-                            className="data-unchecked:bg-white dark:data-unchecked:bg-white data-checked:bg-rose-600 dark:data-checked:bg-rose-600"
+                            className="data-[state=unchecked]:bg-white! data-[state=checked]:bg-rose-600!"
                         />
                     </div>
 
                     {isWorker && (
                         <div className="grid grid-cols-2 gap-3">
-                            <div className="space-y-1.5">
+                            <div className="flex flex-col justify-end gap-1.5">
                                 <Label htmlFor="worker-monthly-salary">Monthly Salary</Label>
                                 <Input
                                     id="worker-monthly-salary"
@@ -119,8 +119,8 @@ export function QuickSupplierDialog({ trigger }: QuickSupplierDialogProps) {
                                     <p className="text-xs text-destructive">{errors.monthlySalary.message}</p>
                                 )}
                             </div>
-                            <div className="space-y-1.5">
-                                <Label htmlFor="worker-daily-deduction">Per-day Absence Deduction</Label>
+                            <div className="flex flex-col justify-end gap-1.5">
+                                <Label htmlFor="worker-daily-deduction">Absence Deduction</Label>
                                 <Input
                                     id="worker-daily-deduction"
                                     type="number"
