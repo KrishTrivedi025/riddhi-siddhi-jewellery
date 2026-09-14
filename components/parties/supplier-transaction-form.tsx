@@ -198,7 +198,10 @@ function FormBody({
 
     return (
         <>
-            <div className="flex items-center gap-3 border-b border-border px-4 py-3 shrink-0">
+            <div
+                className="flex items-center gap-3 border-b border-border px-4 py-3 shrink-0"
+                style={{ paddingTop: "calc(0.75rem + env(safe-area-inset-top, 0px))" }}
+            >
                 <button
                     type="button"
                     onClick={requestClose}
@@ -211,15 +214,18 @@ function FormBody({
                 </h2>
             </div>
 
-            <form onSubmit={handleSubmit(onSubmit)} className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
+            <div className="flex-1 overflow-y-auto">
+            <form onSubmit={handleSubmit(onSubmit)} className="px-4 py-4 space-y-4">
                 <div className="rounded-xl border-2 border-border focus-within:border-primary bg-card px-4 py-3 flex items-center gap-2">
                     <span className="text-2xl font-bold text-muted-foreground">₹</span>
                     <input
-                        type="text"
+                        type="number"
                         inputMode="decimal"
+                        min="0"
+                        step="0.01"
                         placeholder="Enter amount"
                         autoFocus
-                        className="flex-1 bg-transparent text-2xl font-bold text-foreground outline-none placeholder:text-muted-foreground placeholder:font-normal placeholder:text-lg"
+                        className="flex-1 min-w-0 bg-transparent text-2xl font-bold text-foreground outline-none placeholder:text-muted-foreground placeholder:font-normal placeholder:text-lg [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                         {...register("amount", {
                             setValueAs: (v) => (v === "" || v === null || v === undefined ? NaN : parseFloat(v)),
                         })}
@@ -322,18 +328,22 @@ function FormBody({
                 </div>
             </form>
 
-            <div className="border-t border-border p-4 shrink-0">
-                <Button
-                    type="button"
-                    onClick={handleSubmit(onSubmit)}
-                    disabled={isSubmitting || uploading}
-                    className={cn(
-                        "w-full font-bold text-white",
-                        isGave ? "bg-rose-600 hover:bg-rose-600/90" : "bg-emerald-600 hover:bg-emerald-600/90"
-                    )}
+                <div
+                    className="px-4 pt-2"
+                    style={{ paddingBottom: "calc(1.5rem + env(safe-area-inset-bottom, 0px))" }}
                 >
-                    {isSubmitting ? <Loader2 size={16} className="animate-spin" /> : "SAVE"}
-                </Button>
+                    <Button
+                        type="button"
+                        onClick={handleSubmit(onSubmit)}
+                        disabled={isSubmitting || uploading}
+                        className={cn(
+                            "w-full font-bold text-white",
+                            isGave ? "bg-rose-600 hover:bg-rose-600/90" : "bg-emerald-600 hover:bg-emerald-600/90"
+                        )}
+                    >
+                        {isSubmitting ? <Loader2 size={16} className="animate-spin" /> : "SAVE"}
+                    </Button>
+                </div>
             </div>
         </>
     )

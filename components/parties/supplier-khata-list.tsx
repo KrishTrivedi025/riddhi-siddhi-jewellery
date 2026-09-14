@@ -6,15 +6,9 @@ import { useRouter } from "next/navigation"
 import { formatDistanceToNowStrict } from "date-fns"
 import { motion } from "framer-motion"
 import { toast } from "sonner"
-import { Loader2, MoreVertical, SearchX, Trash2, UserPlus, Users } from "lucide-react"
+import { Loader2, SearchX, Trash2, UserPlus, Users } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
 import { useConfirm } from "@/components/shared/confirm-provider"
 import { deleteParty } from "@/lib/actions/parties"
 import { containerFastVariants, itemVariants } from "@/lib/animations"
@@ -102,14 +96,12 @@ export function SupplierKhataList({ summary }: SupplierKhataListProps) {
                     className="space-y-2 pb-24 md:pb-4"
                 >
                     {filtered.map((supplier) => (
-                        <motion.div key={supplier.id} variants={itemVariants} className="relative">
-                            <Link
-                                href={`/dashboard/parties/${supplier.id}`}
-                                className="absolute inset-0 rounded-xl"
-                                aria-label={`View ${supplier.name}`}
-                            />
-                            <div className="pointer-events-none flex items-center justify-between gap-3 rounded-xl border border-border bg-card p-3.5 transition-colors">
-                                <div className="flex items-center gap-3 min-w-0">
+                        <motion.div key={supplier.id} variants={itemVariants}>
+                            <div className="flex items-center justify-between gap-3 rounded-xl border border-border bg-card p-3.5 hover:border-primary/40 transition-colors">
+                                <Link
+                                    href={`/dashboard/parties/${supplier.id}`}
+                                    className="flex items-center gap-3 min-w-0 flex-1"
+                                >
                                     <div className="h-10 w-10 shrink-0 rounded-full bg-muted flex items-center justify-center text-sm font-semibold text-foreground">
                                         {supplier.name.charAt(0).toUpperCase()}
                                     </div>
@@ -123,9 +115,10 @@ export function SupplierKhataList({ summary }: SupplierKhataListProps) {
                                                 : "No transactions yet"}
                                         </p>
                                     </div>
-                                </div>
-                                <div className="pointer-events-auto flex items-center gap-1 shrink-0">
-                                    <div
+                                </Link>
+                                <div className="flex items-center gap-2 shrink-0">
+                                    <Link
+                                        href={`/dashboard/parties/${supplier.id}`}
                                         className={`text-sm font-bold ${
                                             supplier.netBalance === 0
                                                 ? "text-muted-foreground"
@@ -135,31 +128,22 @@ export function SupplierKhataList({ summary }: SupplierKhataListProps) {
                                         }`}
                                     >
                                         ₹{Math.abs(supplier.netBalance).toLocaleString("en-IN")}
-                                    </div>
-                                    <DropdownMenu>
-                                        <DropdownMenuTrigger asChild>
-                                            <Button
-                                                variant="ghost"
-                                                size="icon-xs"
-                                                disabled={deletingId === supplier.id}
-                                                className="text-muted-foreground hover:text-foreground"
-                                            >
-                                                {deletingId === supplier.id ? (
-                                                    <Loader2 size={14} className="animate-spin" />
-                                                ) : (
-                                                    <MoreVertical size={14} />
-                                                )}
-                                            </Button>
-                                        </DropdownMenuTrigger>
-                                        <DropdownMenuContent align="end" className="bg-card border-border text-foreground">
-                                            <DropdownMenuItem
-                                                onClick={() => handleDelete(supplier.id, supplier.name)}
-                                                className="flex items-center gap-2 text-rose-500 cursor-pointer hover:bg-rose-500/10"
-                                            >
-                                                <Trash2 size={14} /> Delete
-                                            </DropdownMenuItem>
-                                        </DropdownMenuContent>
-                                    </DropdownMenu>
+                                    </Link>
+                                    {/* A single direct button — no dropdown/portal — so the tap
+                                        target can't be confused with navigating into the card. */}
+                                    <button
+                                        type="button"
+                                        onClick={() => handleDelete(supplier.id, supplier.name)}
+                                        disabled={deletingId === supplier.id}
+                                        className="p-1.5 rounded-lg text-muted-foreground hover:text-rose-500 hover:bg-rose-500/10 transition-colors disabled:opacity-50"
+                                        aria-label={`Delete ${supplier.name}`}
+                                    >
+                                        {deletingId === supplier.id ? (
+                                            <Loader2 size={14} className="animate-spin" />
+                                        ) : (
+                                            <Trash2 size={14} />
+                                        )}
+                                    </button>
                                 </div>
                             </div>
                         </motion.div>

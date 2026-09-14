@@ -55,11 +55,11 @@ export function SupplierTransactionList({ transactions, onEdit, onAddFirst }: Su
 
     return (
         <div className="space-y-4">
-            <div className="flex items-center justify-between px-1 text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">
+            <div className="flex items-center justify-between px-1 text-[10px] font-semibold text-muted-foreground uppercase">
                 <span>Entries</span>
-                <div className="flex gap-4">
-                    <span className="w-14 text-right">You gave</span>
-                    <span className="w-14 text-right">You got</span>
+                <div className="flex gap-2">
+                    <span className="w-20 text-right whitespace-nowrap">You Gave</span>
+                    <span className="w-20 text-right whitespace-nowrap">You Got</span>
                 </div>
             </div>
 

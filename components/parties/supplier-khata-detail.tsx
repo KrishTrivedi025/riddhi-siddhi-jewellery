@@ -56,27 +56,33 @@ export function SupplierKhataDetail({ party, transactions, netBalance }: Supplie
                 onAddFirst={() => openForm("GAVE")}
             />
 
-            <SupplierReportSheet
-                party={party}
-                transactions={transactions}
-                trigger={<PartyFab label="REPORT" icon={<FileText size={18} />} offset="raised" />}
-            />
-
-            <div className="fixed bottom-[calc(58px+env(safe-area-inset-bottom,0px))] md:bottom-0 left-0 md:left-60 right-0 z-30 bg-card border-t border-border flex">
-                <button
-                    type="button"
-                    onClick={() => openForm("GAVE")}
-                    className="flex-1 py-3.5 text-sm font-bold text-white bg-rose-600 hover:bg-rose-600/90 transition-colors"
-                >
-                    YOU GAVE ₹
-                </button>
-                <button
-                    type="button"
-                    onClick={() => openForm("GOT")}
-                    className="flex-1 py-3.5 text-sm font-bold text-white bg-emerald-600 hover:bg-emerald-600/90 transition-colors"
-                >
-                    YOU GOT ₹
-                </button>
+            {/* Report FAB and the bottom bar share one fixed anchor so the FAB sits a fixed
+                12px above the bar's actual top edge, instead of guessing a viewport-bottom
+                offset that has to account for the global bottom nav's safe-area height too. */}
+            <div className="fixed bottom-[calc(58px+env(safe-area-inset-bottom,0px))] md:bottom-0 left-0 md:left-60 right-0 z-30">
+                <div className="absolute bottom-full right-4 mb-3">
+                    <SupplierReportSheet
+                        party={party}
+                        transactions={transactions}
+                        trigger={<PartyFab label="REPORT" icon={<FileText size={18} />} variant="inline" />}
+                    />
+                </div>
+                <div className="bg-card border-t border-border flex">
+                    <button
+                        type="button"
+                        onClick={() => openForm("GAVE")}
+                        className="flex-1 py-3.5 text-sm font-bold text-white bg-rose-600 hover:bg-rose-600/90 transition-colors"
+                    >
+                        YOU GAVE ₹
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => openForm("GOT")}
+                        className="flex-1 py-3.5 text-sm font-bold text-white bg-emerald-600 hover:bg-emerald-600/90 transition-colors"
+                    >
+                        YOU GOT ₹
+                    </button>
+                </div>
             </div>
 
             <SupplierTransactionForm

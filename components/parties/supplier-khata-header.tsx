@@ -15,7 +15,7 @@ export function SupplierKhataHeader({ party, netBalance }: SupplierKhataHeaderPr
     return (
         <div className="space-y-4">
             <Link
-                href="/dashboard/parties"
+                href="/dashboard/parties?tab=suppliers"
                 className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors group"
             >
                 <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform" />

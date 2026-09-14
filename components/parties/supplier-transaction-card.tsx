@@ -4,14 +4,7 @@ import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { format } from "date-fns"
 import { toast } from "sonner"
-import { Edit, FileText, Loader2, MoreVertical, Trash2 } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+import { Edit, FileText, Loader2, Trash2 } from "lucide-react"
 import { useConfirm } from "@/components/shared/confirm-provider"
 import { deleteSupplierTransaction } from "@/lib/actions/supplier-transactions"
 import type { SupplierTransactionWithBalance } from "@/lib/actions/supplier-transactions"
@@ -59,7 +52,7 @@ export function SupplierTransactionCard({ transaction, onEdit }: SupplierTransac
     }
 
     return (
-        <div className="flex items-start justify-between gap-3 rounded-xl border border-border bg-card p-3.5">
+        <div className="flex items-start justify-between gap-2 rounded-xl border border-border bg-card p-3.5">
             <div className="min-w-0 flex-1 space-y-1">
                 <div className="flex items-center gap-2 flex-wrap">
                     <p className="text-xs text-muted-foreground">
@@ -94,41 +87,37 @@ export function SupplierTransactionCard({ transaction, onEdit }: SupplierTransac
                 )}
             </div>
 
-            <div className="flex items-start gap-1.5 shrink-0">
-                <div className="flex gap-4 text-sm font-semibold pt-0.5">
-                    <span className="w-14 text-right text-rose-500">
+            <div className="flex flex-col items-end gap-1.5 shrink-0">
+                <div className="flex gap-2 text-sm font-semibold">
+                    <span className="w-20 text-right text-rose-500">
                         {transaction.type === "GAVE" ? `₹${transaction.amount.toLocaleString("en-IN")}` : ""}
                     </span>
-                    <span className="w-14 text-right text-emerald-500">
+                    <span className="w-20 text-right text-emerald-500">
                         {transaction.type === "GOT" ? `₹${transaction.amount.toLocaleString("en-IN")}` : ""}
                     </span>
                 </div>
-                <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                        <Button
-                            variant="ghost"
-                            size="icon-xs"
-                            className="text-muted-foreground hover:text-foreground"
-                            disabled={loading}
-                        >
-                            {loading ? <Loader2 size={14} className="animate-spin" /> : <MoreVertical size={14} />}
-                        </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="bg-card border-border text-foreground">
-                        <DropdownMenuItem
-                            onClick={() => onEdit(transaction)}
-                            className="flex items-center gap-2 cursor-pointer hover:bg-border"
-                        >
-                            <Edit size={14} /> Edit
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                            onClick={handleDelete}
-                            className="flex items-center gap-2 text-rose-500 cursor-pointer hover:bg-rose-500/10"
-                        >
-                            <Trash2 size={14} /> Delete
-                        </DropdownMenuItem>
-                    </DropdownMenuContent>
-                </DropdownMenu>
+                {/* Direct, always-visible actions — a Radix dropdown here was unreliable on
+                    mobile (a tap could register as opening the menu and selecting its first
+                    item in the same gesture); two plain buttons have no such failure mode. */}
+                <div className="flex items-center gap-1">
+                    <button
+                        type="button"
+                        onClick={() => onEdit(transaction)}
+                        className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                        aria-label="Edit entry"
+                    >
+                        <Edit size={14} />
+                    </button>
+                    <button
+                        type="button"
+                        onClick={handleDelete}
+                        disabled={loading}
+                        className="p-1.5 rounded-lg text-muted-foreground hover:text-rose-500 hover:bg-rose-500/10 transition-colors disabled:opacity-50"
+                        aria-label="Delete entry"
+                    >
+                        {loading ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
+                    </button>
+                </div>
             </div>
         </div>
     )

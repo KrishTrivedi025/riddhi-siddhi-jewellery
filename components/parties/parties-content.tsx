@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { PartyTable } from "./party-table"
 import { PartyDialog } from "./party-dialog"
 import { PartyFab } from "./party-fab"
@@ -21,7 +21,22 @@ type TabKey = "customers" | "suppliers"
 
 export function PartiesContent({ customers, suppliers, supplierKhata }: PartiesContentProps) {
     const { t } = useT("parties")
-    const [activeTab, setActiveTab] = useState<TabKey>("customers")
+    const router = useRouter()
+    const pathname = usePathname()
+    const searchParams = useSearchParams()
+
+    // Driven by the URL (not local state) so it survives navigating into a supplier/customer
+    // and back — a plain useState here reset to "customers" on every fresh page load, forcing
+    // a re-switch to the Suppliers tab after every single visit to a supplier's detail page.
+    const activeTab: TabKey = searchParams.get("tab") === "suppliers" ? "suppliers" : "customers"
+
+    const setActiveTab = (tab: TabKey) => {
+        const params = new URLSearchParams(searchParams.toString())
+        if (tab === "suppliers") params.set("tab", "suppliers")
+        else params.delete("tab")
+        const qs = params.toString()
+        router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false })
+    }
 
     const tabs = [
         {
