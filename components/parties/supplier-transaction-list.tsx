@@ -55,7 +55,7 @@ export function SupplierTransactionList({ transactions, onEdit, onAddFirst }: Su
 
     return (
         <div className="space-y-4">
-            <div className="flex items-center justify-between px-1 text-[10px] font-semibold text-muted-foreground uppercase">
+            <div className="flex items-center justify-between px-1 pb-2.5 border-b border-border text-[10px] font-semibold text-muted-foreground uppercase">
                 <span>Entries</span>
                 <div className="flex gap-2">
                     <span className="w-20 text-right whitespace-nowrap">You Gave</span>

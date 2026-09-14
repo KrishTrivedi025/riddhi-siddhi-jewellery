@@ -201,25 +201,32 @@ export function SupplierTransactionsReportPage({
                                 <div className="py-14 text-center text-sm text-muted-foreground">Loading…</div>
                             ) : (
                                 <>
-                                    <div className="rounded-2xl border border-border bg-card p-5">
-                                        <p className="text-sm text-muted-foreground mb-1.5">Net Balance</p>
-                                        <p
+                                    <div className="flex items-center justify-between rounded-xl border border-border bg-card px-4 py-3">
+                                        <span className="text-sm font-medium text-muted-foreground">Net Balance</span>
+                                        <span
                                             className={cn(
-                                                "text-3xl font-bold",
+                                                "text-lg font-bold",
                                                 isGet ? "text-emerald-500" : "text-rose-500"
                                             )}
                                         >
                                             ₹{Math.abs(netBalance).toLocaleString("en-IN")}
-                                        </p>
+                                        </span>
                                     </div>
 
                                     <div className="flex items-center justify-between border-y border-border py-3">
-                                        <span className="text-sm text-muted-foreground">
-                                            Total: {filtered.length} Entries
-                                        </span>
-                                        <div className="flex gap-5 text-sm font-semibold">
-                                            <span className="text-rose-500">₹{totalGave.toLocaleString("en-IN")}</span>
-                                            <span className="text-emerald-500">₹{totalGot.toLocaleString("en-IN")}</span>
+                                        <div>
+                                            <p className="text-sm font-semibold text-foreground">Total</p>
+                                            <p className="text-xs text-muted-foreground">{filtered.length} Entries</p>
+                                        </div>
+                                        <div className="flex gap-5">
+                                            <div className="text-center">
+                                                <p className="text-[10px] font-semibold text-muted-foreground uppercase">You Gave</p>
+                                                <p className="text-sm font-bold text-rose-500">₹{totalGave.toLocaleString("en-IN")}</p>
+                                            </div>
+                                            <div className="text-center">
+                                                <p className="text-[10px] font-semibold text-muted-foreground uppercase">You Got</p>
+                                                <p className="text-sm font-bold text-emerald-500">₹{totalGot.toLocaleString("en-IN")}</p>
+                                            </div>
                                         </div>
                                     </div>
 
@@ -239,10 +246,17 @@ export function SupplierTransactionsReportPage({
                                                         <p className="font-semibold text-foreground text-sm truncate">
                                                             {t.partyName}
                                                         </p>
-                                                        <p className="text-xs text-muted-foreground">
-                                                            {format(t.date, "d MMM yy")} •{" "}
-                                                            {format(t.createdAt, "h:mm a")}
-                                                        </p>
+                                                        <div className="flex items-center gap-2 flex-wrap">
+                                                            <p className="text-xs text-muted-foreground">
+                                                                {format(t.date, "d MMM yy")} •{" "}
+                                                                {format(t.createdAt, "h:mm a")}
+                                                            </p>
+                                                            {t.paymentMode && (
+                                                                <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-muted text-muted-foreground">
+                                                                    {t.paymentMode === "CASH" ? "Cash" : "Online"}
+                                                                </span>
+                                                            )}
+                                                        </div>
                                                         {t.details && (
                                                             <p className="text-sm text-foreground">{t.details}</p>
                                                         )}
@@ -271,9 +285,9 @@ export function SupplierTransactionsReportPage({
                         <Button
                             onClick={handleDownload}
                             disabled={downloading || loading}
-                            className="mx-auto flex w-full max-w-2xl bg-primary hover:bg-primary/90 text-primary-foreground font-semibold gap-2"
+                            className="mx-auto flex w-full max-w-2xl h-12 bg-primary hover:bg-primary/90 text-primary-foreground text-base font-semibold gap-2"
                         >
-                            {downloading ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
+                            {downloading ? <Loader2 size={18} className="animate-spin" /> : <Download size={18} />}
                             {downloading ? "Generating..." : "Download"}
                         </Button>
                     </div>

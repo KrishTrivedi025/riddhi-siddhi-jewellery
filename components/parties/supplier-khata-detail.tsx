@@ -52,7 +52,7 @@ export function SupplierKhataDetail({ party, transactions, netBalance }: Supplie
             <SupplierKhataHeader party={party} netBalance={netBalance} />
             <SupplierTransactionList
                 transactions={transactions}
-                onEdit={(t) => openForm(t.type, t)}
+                onEdit={(t) => openForm(t.type as SupplierTransactionType, t)}
                 onAddFirst={() => openForm("GAVE")}
             />
 

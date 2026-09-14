@@ -100,6 +100,7 @@ function FormBody({
         register,
         handleSubmit,
         watch,
+        setValue,
         formState: { errors, isDirty, isSubmitting },
     } = useForm<SupplierTransactionFormValues>({
         resolver: zodResolver(supplierTransactionSchema),
@@ -111,9 +112,12 @@ function FormBody({
             date: (editing
                 ? format(editing.date, "yyyy-MM-dd")
                 : format(new Date(), "yyyy-MM-dd")) as unknown as Date,
+            paymentMode: editing?.paymentMode ?? null,
             attachments: [],
         },
     })
+
+    const paymentMode = watch("paymentMode")
 
     const attachmentsDirty =
         attachments.length !== initialAttachments.length ||
@@ -181,6 +185,7 @@ function FormBody({
             amount: values.amount,
             details: values.details || null,
             date: values.date,
+            paymentMode: values.paymentMode || null,
             attachments: attachments.map((a) => ({ url: a.url, fileName: a.fileName, fileType: a.fileType })),
         }
         const result = editing
@@ -248,6 +253,27 @@ function FormBody({
                         className="max-w-[180px] bg-background border-border text-foreground"
                         {...register("date" as any)}
                     />
+                </div>
+
+                <div className="space-y-1.5">
+                    <label className="text-xs text-muted-foreground">Payment Mode</label>
+                    <div className="flex gap-2">
+                        {(["CASH", "ONLINE"] as const).map((mode) => (
+                            <button
+                                key={mode}
+                                type="button"
+                                onClick={() => setValue("paymentMode", paymentMode === mode ? null : mode, { shouldDirty: true })}
+                                className={cn(
+                                    "flex-1 rounded-lg border py-2 text-sm font-semibold transition-colors",
+                                    paymentMode === mode
+                                        ? "border-primary bg-primary/10 text-primary"
+                                        : "border-border text-muted-foreground hover:bg-muted"
+                                )}
+                            >
+                                {mode === "CASH" ? "Cash" : "Online"}
+                            </button>
+                        ))}
+                    </div>
                 </div>
 
                 <div className="space-y-2">
@@ -337,11 +363,11 @@ function FormBody({
                         onClick={handleSubmit(onSubmit)}
                         disabled={isSubmitting || uploading}
                         className={cn(
-                            "w-full font-bold text-white",
+                            "w-full h-12 text-base font-bold text-white",
                             isGave ? "bg-rose-600 hover:bg-rose-600/90" : "bg-emerald-600 hover:bg-emerald-600/90"
                         )}
                     >
-                        {isSubmitting ? <Loader2 size={16} className="animate-spin" /> : "SAVE"}
+                        {isSubmitting ? <Loader2 size={18} className="animate-spin" /> : "SAVE"}
                     </Button>
                 </div>
             </div>

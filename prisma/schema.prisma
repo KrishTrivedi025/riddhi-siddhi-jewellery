@@ -27,6 +27,7 @@ model User {
   purchaseReturns  PurchaseReturn[]
   accountTransfers AccountTransfer[]
   supplierTransactions SupplierTransaction[]
+  workerRates      WorkerRate[]
 }
 
 model BusinessProfile {
@@ -88,6 +89,7 @@ model Party {
   paymentTerms       String?
   notes              String?
   priceMultiplier    Float             @default(1)
+  isWorker           Boolean           @default(false)
   deletedAt          DateTime?
   createdAt          DateTime          @default(now())
   updatedAt          DateTime          @updatedAt
@@ -97,6 +99,7 @@ model Party {
   saleInvoices       SaleInvoice[]
   saleReturns        SaleReturn[]
   supplierTransactions SupplierTransaction[]
+  workerRates        WorkerRate[]
 }
 
 model BankAccount {
@@ -465,10 +468,11 @@ model SupplierTransaction {
   user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   partyId     String
   party       Party     @relation(fields: [partyId], references: [id])
-  type        String    // "GAVE" | "GOT"
+  type        String    // "GAVE" | "GOT" | "ABSENT"
   amount      Float
   details     String?
   date        DateTime
+  paymentMode String?   // "CASH" | "ONLINE"
   deletedAt   DateTime?
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
@@ -477,6 +481,22 @@ model SupplierTransaction {
   @@index([partyId])
   @@index([userId])
   @@index([date])
+}
+
+model WorkerRate {
+  id             String   @id @default(cuid())
+  userId         String
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  partyId        String
+  party          Party    @relation(fields: [partyId], references: [id], onDelete: Cascade)
+  monthlySalary  Float
+  dailyDeduction Float
+  effectiveFrom  DateTime
+  createdAt      DateTime @default(now())
+
+  @@index([partyId])
+  @@index([partyId, effectiveFrom])
+  @@index([userId])
 }
 
 model SupplierTransactionAttachment {

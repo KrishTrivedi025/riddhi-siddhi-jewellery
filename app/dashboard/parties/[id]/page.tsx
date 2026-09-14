@@ -2,9 +2,11 @@ import { notFound } from "next/navigation"
 import { Suspense } from "react"
 import { getPartyById, getPartyLedger, getPartyLedgerSummary } from "@/lib/actions/party-ledger"
 import { getSupplierTransactions } from "@/lib/actions/supplier-transactions"
+import { getWorkerLedger } from "@/lib/actions/workers"
 import { PartyHeader } from "@/components/parties/party-header"
 import { PartyGstLedgerTabs } from "@/components/parties/party-gst-ledger-tabs"
 import { SupplierKhataDetail } from "@/components/parties/supplier-khata-detail"
+import { WorkerKhataDetail } from "@/components/parties/worker-khata-detail"
 import { Skeleton } from "@/components/ui/skeleton"
 
 interface PartyLedgerPageProps {
@@ -37,7 +39,21 @@ async function PartyLedgerContent({ id }: { id: string }) {
     if (!party) notFound()
 
     // Party is exclusively CUSTOMER or SUPPLIER (see lib/schemas/party-schema.ts) — never both.
+    // A SUPPLIER additionally branches on isWorker: a worker's ledger is scoped to the
+    // current calendar month and adds an attendance calendar, rather than the plain
+    // lifetime khata a regular supplier gets.
     if (party.partyType === "SUPPLIER") {
+        if (party.isWorker) {
+            const { transactions, summary } = await getWorkerLedger(id)
+            return (
+                <WorkerKhataDetail
+                    party={{ id: party.id, name: party.name, phone: party.phone }}
+                    transactions={transactions}
+                    summary={summary}
+                />
+            )
+        }
+
         const { transactions, summary } = await getSupplierTransactions(id)
         return (
             <SupplierKhataDetail

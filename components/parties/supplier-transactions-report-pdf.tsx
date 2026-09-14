@@ -143,7 +143,10 @@ export function SupplierTransactionsReportDocument({
                     <View key={t.id} style={styles.tableRow}>
                         <Text style={[styles.tableCell, styles.colDate]}>{format(t.date, "d MMM yy")}</Text>
                         <Text style={[styles.tableCell, styles.colName]}>{t.partyName}</Text>
-                        <Text style={[styles.tableCell, styles.colDetails]}>{t.details || "—"}</Text>
+                        <Text style={[styles.tableCell, styles.colDetails]}>
+                            {t.details || "—"}
+                            {t.paymentMode ? `  (${t.paymentMode === "CASH" ? "Cash" : "Online"})` : ""}
+                        </Text>
                         <Text style={[styles.tableCell, styles.colDebit, styles.redText]}>
                             {t.type === "GAVE" ? t.amount.toFixed(2) : ""}
                         </Text>

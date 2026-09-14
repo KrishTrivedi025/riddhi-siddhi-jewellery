@@ -4,13 +4,17 @@ import { prisma } from "@/lib/db"
 import { revalidatePath } from "next/cache"
 import { requireUserId } from "./auth-helper"
 import type { QuickSupplierFormValues, SupplierTransactionFormValues } from "../schemas/supplier-transaction-schema"
+import { startOfMonth, endOfMonth } from "date-fns"
 
 export type SupplierTransactionType = "GAVE" | "GOT"
+export type SupplierLedgerEntryType = SupplierTransactionType | "ABSENT"
+export type SupplierPaymentMode = "CASH" | "ONLINE"
 
 export interface SupplierKhataSummaryItem {
     id: string
     name: string
     phone: string | null
+    isWorker: boolean
     netBalance: number // positive = you will get, negative = you will give
     lastActivity: Date | null
 }
@@ -34,6 +38,7 @@ export async function getSupplierKhataSummary(): Promise<SupplierKhataSummary> {
         }
 
         const partyIds = suppliers.map((s) => s.id)
+        const workerIds = suppliers.filter((s) => s.isWorker).map((s) => s.id)
 
         const sums = await prisma.supplierTransaction.groupBy({
             by: ["partyId", "type"],
@@ -51,7 +56,7 @@ export async function getSupplierKhataSummary(): Promise<SupplierKhataSummary> {
         for (const s of sums) {
             const entry = balanceMap.get(s.partyId) || { gave: 0, got: 0 }
             if (s.type === "GAVE") entry.gave = s._sum.amount || 0
-            else entry.got = s._sum.amount || 0
+            else if (s.type === "GOT") entry.got = s._sum.amount || 0
             balanceMap.set(s.partyId, entry)
         }
 
@@ -60,12 +65,62 @@ export async function getSupplierKhataSummary(): Promise<SupplierKhataSummary> {
             if (l._max.createdAt) lastActivityMap.set(l.partyId, l._max.createdAt)
         }
 
+        // Worker balances are scoped to the current calendar month (the whole ledger
+        // resets monthly), not the lifetime sum used for a plain supplier — one bounded
+        // batch query for the applicable salary + one for this month's sums, not N+1.
+        const workerBalanceMap = new Map<string, number>()
+        if (workerIds.length > 0) {
+            const monthStart = startOfMonth(new Date())
+            const monthEnd = endOfMonth(new Date())
+
+            const rates = await prisma.workerRate.findMany({
+                where: { partyId: { in: workerIds }, effectiveFrom: { lte: monthStart } },
+                orderBy: { effectiveFrom: "desc" },
+            })
+            const salaryMap = new Map<string, number>()
+            for (const r of rates) {
+                if (!salaryMap.has(r.partyId)) salaryMap.set(r.partyId, r.monthlySalary)
+            }
+
+            const monthSums = await prisma.supplierTransaction.groupBy({
+                by: ["partyId", "type"],
+                where: {
+                    userId,
+                    deletedAt: null,
+                    partyId: { in: workerIds },
+                    date: { gte: monthStart, lte: monthEnd },
+                },
+                _sum: { amount: true },
+            })
+            const monthMap = new Map<string, { gave: number; got: number; absent: number }>()
+            for (const s of monthSums) {
+                const entry = monthMap.get(s.partyId) || { gave: 0, got: 0, absent: 0 }
+                if (s.type === "GAVE") entry.gave = s._sum.amount || 0
+                else if (s.type === "GOT") entry.got = s._sum.amount || 0
+                else if (s.type === "ABSENT") entry.absent = s._sum.amount || 0
+                monthMap.set(s.partyId, entry)
+            }
+
+            for (const workerId of workerIds) {
+                const salary = salaryMap.get(workerId) || 0
+                const { gave, got, absent } = monthMap.get(workerId) || { gave: 0, got: 0, absent: 0 }
+                // Opening balance is -salary (you owe the full salary); GAVE and ABSENT
+                // both reduce that debt, GOT increases it — see getWorkerLedger for the
+                // per-entry version of this same formula.
+                workerBalanceMap.set(workerId, -salary + gave + absent - got)
+            }
+        }
+
         let totalWillGive = 0
         let totalWillGet = 0
 
         const items: SupplierKhataSummaryItem[] = suppliers.map((supplier) => {
-            const { gave, got } = balanceMap.get(supplier.id) || { gave: 0, got: 0 }
-            const netBalance = gave - got
+            const netBalance = supplier.isWorker
+                ? workerBalanceMap.get(supplier.id) ?? 0
+                : (() => {
+                      const { gave, got } = balanceMap.get(supplier.id) || { gave: 0, got: 0 }
+                      return gave - got
+                  })()
             if (netBalance > 0) totalWillGet += netBalance
             else if (netBalance < 0) totalWillGive += Math.abs(netBalance)
 
@@ -73,6 +128,7 @@ export async function getSupplierKhataSummary(): Promise<SupplierKhataSummary> {
                 id: supplier.id,
                 name: supplier.name,
                 phone: supplier.phone,
+                isWorker: supplier.isWorker,
                 netBalance,
                 lastActivity: lastActivityMap.get(supplier.id) || null,
             }
@@ -94,11 +150,12 @@ export interface SupplierTransactionAttachmentOut {
 
 export interface SupplierTransactionWithBalance {
     id: string
-    type: SupplierTransactionType
+    type: SupplierLedgerEntryType
     amount: number
     details: string | null
     date: Date
     createdAt: Date
+    paymentMode: SupplierPaymentMode | null
     runningBalance: number
     attachments: SupplierTransactionAttachmentOut[]
 }
@@ -140,11 +197,12 @@ export async function getSupplierTransactions(
             runningBalance += t.type === "GAVE" ? t.amount : -t.amount
             return {
                 id: t.id,
-                type: t.type as SupplierTransactionType,
+                type: t.type as SupplierLedgerEntryType,
                 amount: t.amount,
                 details: t.details,
                 date: t.date,
                 createdAt: t.createdAt,
+                paymentMode: t.paymentMode as SupplierPaymentMode | null,
                 runningBalance,
                 attachments: t.attachments.map((a) => ({
                     id: a.id,
@@ -201,6 +259,7 @@ export async function createSupplierTransaction(data: SupplierTransactionFormVal
                 amount: data.amount,
                 details: data.details || null,
                 date: data.date,
+                paymentMode: data.paymentMode || null,
                 attachments: {
                     create: data.attachments.map((a) => ({
                         url: a.url,
@@ -235,6 +294,7 @@ export async function updateSupplierTransaction(id: string, data: SupplierTransa
                     amount: data.amount,
                     details: data.details || null,
                     date: data.date,
+                    paymentMode: data.paymentMode || null,
                     attachments: {
                         create: data.attachments.map((a) => ({
                             url: a.url,
@@ -279,11 +339,12 @@ export interface AllSupplierTransactionRow {
     id: string
     partyId: string
     partyName: string
-    type: SupplierTransactionType
+    type: SupplierLedgerEntryType
     amount: number
     details: string | null
     date: Date
     createdAt: Date
+    paymentMode: SupplierPaymentMode | null
 }
 
 // Unfiltered — the report UI filters by date range/search client-side against this single fetch,
@@ -300,11 +361,12 @@ export async function getAllSupplierTransactions(): Promise<AllSupplierTransacti
             id: t.id,
             partyId: t.partyId,
             partyName: t.party.name,
-            type: t.type as SupplierTransactionType,
+            type: t.type as SupplierLedgerEntryType,
             amount: t.amount,
             details: t.details,
             date: t.date,
             createdAt: t.createdAt,
+            paymentMode: t.paymentMode as SupplierPaymentMode | null,
         }))
     } catch (error) {
         console.error("Error fetching all supplier transactions:", error)
@@ -315,14 +377,38 @@ export async function getAllSupplierTransactions(): Promise<AllSupplierTransacti
 export async function createQuickSupplier(data: QuickSupplierFormValues) {
     try {
         const userId = await requireUserId()
-        const party = await prisma.party.create({
-            data: {
-                userId,
-                partyType: "SUPPLIER",
-                name: data.name,
-                phone: data.phone || null,
-            },
-        })
+
+        const party = data.isWorker
+            ? await prisma.$transaction(async (tx) => {
+                  const created = await tx.party.create({
+                      data: {
+                          userId,
+                          partyType: "SUPPLIER",
+                          name: data.name,
+                          phone: data.phone || null,
+                          isWorker: true,
+                      },
+                  })
+                  await tx.workerRate.create({
+                      data: {
+                          userId,
+                          partyId: created.id,
+                          monthlySalary: data.monthlySalary!,
+                          dailyDeduction: data.dailyDeduction!,
+                          effectiveFrom: startOfMonth(new Date()),
+                      },
+                  })
+                  return created
+              })
+            : await prisma.party.create({
+                  data: {
+                      userId,
+                      partyType: "SUPPLIER",
+                      name: data.name,
+                      phone: data.phone || null,
+                  },
+              })
+
         revalidatePath("/dashboard/parties")
         return { success: true, data: party }
     } catch (error) {

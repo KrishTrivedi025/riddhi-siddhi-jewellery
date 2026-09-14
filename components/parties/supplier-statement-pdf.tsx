@@ -181,7 +181,10 @@ export function SupplierStatementDocument({
                             )}
                             <View style={styles.tableRow}>
                                 <Text style={[styles.tableCell, styles.colDate]}>{format(t.date, "d MMM")}</Text>
-                                <Text style={[styles.tableCell, styles.colDetails]}>{t.details || "—"}</Text>
+                                <Text style={[styles.tableCell, styles.colDetails]}>
+                                    {t.details || "—"}
+                                    {t.paymentMode ? `  (${t.paymentMode === "CASH" ? "Cash" : "Online"})` : ""}
+                                </Text>
                                 <Text style={[styles.tableCell, styles.colDebit]}>
                                     {t.type === "GAVE" ? t.amount.toFixed(2) : ""}
                                 </Text>

@@ -106,9 +106,16 @@ export function SupplierKhataList({ summary }: SupplierKhataListProps) {
                                         {supplier.name.charAt(0).toUpperCase()}
                                     </div>
                                     <div className="min-w-0">
-                                        <p className="text-sm font-semibold text-foreground truncate">
-                                            {supplier.name}
-                                        </p>
+                                        <div className="flex items-center gap-1.5">
+                                            <p className="text-sm font-semibold text-foreground truncate">
+                                                {supplier.name}
+                                            </p>
+                                            {supplier.isWorker && (
+                                                <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-primary/10 text-primary shrink-0">
+                                                    Worker
+                                                </span>
+                                            )}
+                                        </div>
                                         <p className="text-xs text-muted-foreground">
                                             {supplier.lastActivity
                                                 ? `${formatDistanceToNowStrict(supplier.lastActivity)} ago`

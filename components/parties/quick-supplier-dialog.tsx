@@ -16,6 +16,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Switch } from "@/components/ui/switch"
 import { createQuickSupplier } from "@/lib/actions/supplier-transactions"
 import { quickSupplierSchema, type QuickSupplierFormValues } from "@/lib/schemas/supplier-transaction-schema"
 
@@ -29,20 +30,24 @@ export function QuickSupplierDialog({ trigger }: QuickSupplierDialogProps) {
 
     const form = useForm<QuickSupplierFormValues>({
         resolver: zodResolver(quickSupplierSchema),
-        defaultValues: { name: "", phone: "" },
+        defaultValues: { name: "", phone: "", isWorker: false },
     })
 
     const {
         register,
         handleSubmit,
         reset,
+        watch,
+        setValue,
         formState: { errors, isSubmitting },
     } = form
+
+    const isWorker = watch("isWorker")
 
     const onSubmit = async (values: QuickSupplierFormValues) => {
         const result = await createQuickSupplier(values)
         if (result.success) {
-            toast.success("Supplier added")
+            toast.success(values.isWorker ? "Worker added" : "Supplier added")
             reset()
             setOpen(false)
             router.refresh()
@@ -86,12 +91,61 @@ export function QuickSupplierDialog({ trigger }: QuickSupplierDialogProps) {
                             {...register("phone")}
                         />
                     </div>
+
+                    <div className="flex items-center justify-between rounded-lg border border-border px-3 py-2.5">
+                        <Label htmlFor="supplier-is-worker" className="cursor-pointer">
+                            This is a Worker
+                        </Label>
+                        <Switch
+                            id="supplier-is-worker"
+                            checked={isWorker}
+                            onCheckedChange={(checked) => setValue("isWorker", checked, { shouldDirty: true })}
+                        />
+                    </div>
+
+                    {isWorker && (
+                        <div className="grid grid-cols-2 gap-3">
+                            <div className="space-y-1.5">
+                                <Label htmlFor="worker-monthly-salary">Monthly Salary</Label>
+                                <Input
+                                    id="worker-monthly-salary"
+                                    type="number"
+                                    inputMode="decimal"
+                                    placeholder="e.g. 12000"
+                                    {...register("monthlySalary", { valueAsNumber: true })}
+                                />
+                                {errors.monthlySalary && (
+                                    <p className="text-xs text-destructive">{errors.monthlySalary.message}</p>
+                                )}
+                            </div>
+                            <div className="space-y-1.5">
+                                <Label htmlFor="worker-daily-deduction">Per-day Absence Deduction</Label>
+                                <Input
+                                    id="worker-daily-deduction"
+                                    type="number"
+                                    inputMode="decimal"
+                                    placeholder="e.g. 400"
+                                    {...register("dailyDeduction", { valueAsNumber: true })}
+                                />
+                                {errors.dailyDeduction && (
+                                    <p className="text-xs text-destructive">{errors.dailyDeduction.message}</p>
+                                )}
+                            </div>
+                        </div>
+                    )}
+
                     <Button
                         type="submit"
                         disabled={isSubmitting}
                         className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold"
                     >
-                        {isSubmitting ? <Loader2 size={16} className="animate-spin" /> : "ADD SUPPLIER"}
+                        {isSubmitting ? (
+                            <Loader2 size={16} className="animate-spin" />
+                        ) : isWorker ? (
+                            "ADD WORKER"
+                        ) : (
+                            "ADD SUPPLIER"
+                        )}
                     </Button>
                 </form>
             </DialogContent>

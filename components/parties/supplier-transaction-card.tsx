@@ -63,6 +63,11 @@ export function SupplierTransactionCard({ transaction, onEdit }: SupplierTransac
                     <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded bg-current/10 ${balanceColor}`}>
                         Bal. ₹{Math.abs(transaction.runningBalance).toLocaleString("en-IN")}
                     </span>
+                    {transaction.paymentMode && (
+                        <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-muted text-muted-foreground">
+                            {transaction.paymentMode === "CASH" ? "Cash" : "Online"}
+                        </span>
+                    )}
                 </div>
                 {transaction.details && (
                     <p className="text-sm text-foreground">{transaction.details}</p>
@@ -89,26 +94,36 @@ export function SupplierTransactionCard({ transaction, onEdit }: SupplierTransac
             </div>
 
             <div className="flex flex-col items-end gap-1.5 shrink-0">
-                <div className="flex gap-2 text-sm font-semibold">
-                    <span className="w-20 text-right text-rose-500">
-                        {transaction.type === "GAVE" ? `₹${transaction.amount.toLocaleString("en-IN")}` : ""}
+                {transaction.type === "ABSENT" ? (
+                    <span className="text-sm font-semibold text-muted-foreground">
+                        −₹{transaction.amount.toLocaleString("en-IN")}
                     </span>
-                    <span className="w-20 text-right text-emerald-500">
-                        {transaction.type === "GOT" ? `₹${transaction.amount.toLocaleString("en-IN")}` : ""}
-                    </span>
-                </div>
+                ) : (
+                    <div className="flex gap-2 text-sm font-semibold">
+                        <span className="w-20 text-right text-rose-500">
+                            {transaction.type === "GAVE" ? `₹${transaction.amount.toLocaleString("en-IN")}` : ""}
+                        </span>
+                        <span className="w-20 text-right text-emerald-500">
+                            {transaction.type === "GOT" ? `₹${transaction.amount.toLocaleString("en-IN")}` : ""}
+                        </span>
+                    </div>
+                )}
                 {/* Direct, always-visible actions — a Radix dropdown here was unreliable on
                     mobile (a tap could register as opening the menu and selecting its first
-                    item in the same gesture); two plain buttons have no such failure mode. */}
+                    item in the same gesture); two plain buttons have no such failure mode.
+                    An ABSENT row has no Edit — un-marking the day (calendar or Delete here)
+                    is the only way to change it. */}
                 <div className="flex items-center gap-1">
-                    <button
-                        type="button"
-                        onClick={() => onEdit(transaction)}
-                        className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-                        aria-label="Edit entry"
-                    >
-                        <Edit size={14} />
-                    </button>
+                    {transaction.type !== "ABSENT" && (
+                        <button
+                            type="button"
+                            onClick={() => onEdit(transaction)}
+                            className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                            aria-label="Edit entry"
+                        >
+                            <Edit size={14} />
+                        </button>
+                    )}
                     <button
                         type="button"
                         onClick={handleDelete}
