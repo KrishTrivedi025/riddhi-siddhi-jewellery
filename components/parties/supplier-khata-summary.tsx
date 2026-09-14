@@ -30,7 +30,7 @@ export function SupplierKhataSummary({ summary }: SupplierKhataSummaryProps) {
                 trigger={
                     <button
                         type="button"
-                        className="flex flex-col items-center justify-center gap-1 px-4 h-full text-primary text-[11px] font-semibold hover:bg-primary/5 transition-colors"
+                        className="flex flex-col items-center justify-center gap-1 px-4 text-primary text-[11px] font-semibold hover:bg-primary/5 transition-colors"
                     >
                         <FileText size={18} />
                         Report
