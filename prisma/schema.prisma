@@ -26,6 +26,7 @@ model User {
   saleReturns      SaleReturn[]
   purchaseReturns  PurchaseReturn[]
   accountTransfers AccountTransfer[]
+  supplierTransactions SupplierTransaction[]
 }
 
 model BusinessProfile {
@@ -95,6 +96,7 @@ model Party {
   purchaseReturns    PurchaseReturn[]
   saleInvoices       SaleInvoice[]
   saleReturns        SaleReturn[]
+  supplierTransactions SupplierTransaction[]
 }
 
 model BankAccount {
@@ -455,6 +457,36 @@ model PurchaseReturn {
   party             Party                @relation(fields: [partyId], references: [id])
   purchaseInvoice   PurchaseInvoice      @relation(fields: [purchaseInvoiceId], references: [id])
   items             PurchaseReturnItem[]
+}
+
+model SupplierTransaction {
+  id          String    @id @default(cuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  partyId     String
+  party       Party     @relation(fields: [partyId], references: [id])
+  type        String    // "GAVE" | "GOT"
+  amount      Float
+  details     String?
+  date        DateTime
+  deletedAt   DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  attachments SupplierTransactionAttachment[]
+
+  @@index([partyId])
+  @@index([userId])
+  @@index([date])
+}
+
+model SupplierTransactionAttachment {
+  id            String              @id @default(cuid())
+  transactionId String
+  transaction   SupplierTransaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+  url           String
+  fileName      String
+  fileType      String              // "image" | "pdf"
+  createdAt     DateTime            @default(now())
 }
 
 model PurchaseReturnItem {
