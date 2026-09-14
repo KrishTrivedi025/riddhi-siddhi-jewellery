@@ -73,18 +73,31 @@ async function PartyLedgerContent({ id }: { id: string }) {
     )
 }
 
+// Shape-neutral — this fallback shows before we know whether the party is a
+// customer (ledger tabs) or supplier (khata list), so it approximates both
+// with a header card + repeated rows rather than committing to either shape.
 function HeaderSkeleton() {
     return (
-        <div className="space-y-6">
+        <div className="space-y-4">
             <Skeleton className="h-4 w-28 bg-card" />
-            <Skeleton className="h-36 w-full bg-card rounded-xl" />
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                {[...Array(4)].map((_, i) => (
-                    <Skeleton key={i} className="h-24 bg-card rounded-xl" />
+            <div className="rounded-xl border border-border bg-card overflow-hidden">
+                <Skeleton className="h-1 w-full rounded-none" />
+                <div className="p-5 flex items-center gap-4">
+                    <Skeleton className="h-12 w-12 rounded-full shrink-0" />
+                    <div className="flex-1 space-y-2">
+                        <Skeleton className="h-4 w-36" />
+                        <Skeleton className="h-3 w-24" />
+                    </div>
+                </div>
+                <div className="border-t border-border px-5 py-3.5">
+                    <Skeleton className="h-5 w-32" />
+                </div>
+            </div>
+            <div className="space-y-2">
+                {[...Array(5)].map((_, i) => (
+                    <Skeleton key={i} className="h-16 w-full bg-card rounded-xl" />
                 ))}
             </div>
-            <Skeleton className="h-28 w-full bg-card rounded-xl" />
-            <Skeleton className="h-[420px] w-full bg-card rounded-xl" />
         </div>
     )
 }

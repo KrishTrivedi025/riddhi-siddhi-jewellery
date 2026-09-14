@@ -50,7 +50,11 @@ export function SupplierKhataDetail({ party, transactions, netBalance }: Supplie
     return (
         <div className="space-y-4 pb-40 md:pb-8">
             <SupplierKhataHeader party={party} netBalance={netBalance} />
-            <SupplierTransactionList transactions={transactions} onEdit={(t) => openForm(t.type, t)} />
+            <SupplierTransactionList
+                transactions={transactions}
+                onEdit={(t) => openForm(t.type, t)}
+                onAddFirst={() => openForm("GAVE")}
+            />
 
             <SupplierReportSheet
                 party={party}

@@ -4,9 +4,12 @@ import { useState } from "react"
 import Link from "next/link"
 import { formatDistanceToNowStrict } from "date-fns"
 import { motion } from "framer-motion"
+import { SearchX, UserPlus, Users } from "lucide-react"
 import { Input } from "@/components/ui/input"
+import { Button } from "@/components/ui/button"
 import { containerFastVariants, itemVariants } from "@/lib/animations"
 import { SupplierKhataSummary } from "./supplier-khata-summary"
+import { QuickSupplierDialog } from "./quick-supplier-dialog"
 import type { SupplierKhataSummary as SupplierKhataSummaryData } from "@/lib/actions/supplier-transactions"
 
 interface SupplierKhataListProps {
@@ -34,12 +37,25 @@ export function SupplierKhataList({ summary }: SupplierKhataListProps) {
             />
 
             {filtered.length === 0 ? (
-                <div className="border border-border rounded-xl p-12 text-center">
-                    <p className="text-muted-foreground italic">
-                        {summary.suppliers.length === 0
-                            ? "No suppliers yet — add your first one"
-                            : "No matching suppliers"}
-                    </p>
+                <div className="border border-border rounded-xl p-10 text-center space-y-3">
+                    {summary.suppliers.length === 0 ? (
+                        <>
+                            <Users size={28} className="mx-auto text-muted-foreground/50" />
+                            <p className="text-muted-foreground text-sm">No suppliers yet</p>
+                            <QuickSupplierDialog
+                                trigger={
+                                    <Button variant="outline" size="sm" className="gap-1.5">
+                                        <UserPlus size={14} /> Add your first supplier
+                                    </Button>
+                                }
+                            />
+                        </>
+                    ) : (
+                        <>
+                            <SearchX size={28} className="mx-auto text-muted-foreground/50" />
+                            <p className="text-muted-foreground text-sm">No matching suppliers</p>
+                        </>
+                    )}
                 </div>
             ) : (
                 <motion.div

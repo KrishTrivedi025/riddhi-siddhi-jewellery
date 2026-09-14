@@ -2,6 +2,8 @@
 
 import { isSameDay, isToday, isYesterday, format } from "date-fns"
 import { motion } from "framer-motion"
+import { Receipt } from "lucide-react"
+import { Button } from "@/components/ui/button"
 import { containerFastVariants, itemVariants } from "@/lib/animations"
 import { SupplierTransactionCard } from "./supplier-transaction-card"
 import type { SupplierTransactionWithBalance } from "@/lib/actions/supplier-transactions"
@@ -9,6 +11,7 @@ import type { SupplierTransactionWithBalance } from "@/lib/actions/supplier-tran
 interface SupplierTransactionListProps {
     transactions: SupplierTransactionWithBalance[]
     onEdit: (transaction: SupplierTransactionWithBalance) => void
+    onAddFirst: () => void
 }
 
 interface DateGroup {
@@ -35,11 +38,15 @@ function groupByDate(transactions: SupplierTransactionWithBalance[]): DateGroup[
     return groups
 }
 
-export function SupplierTransactionList({ transactions, onEdit }: SupplierTransactionListProps) {
+export function SupplierTransactionList({ transactions, onEdit, onAddFirst }: SupplierTransactionListProps) {
     if (transactions.length === 0) {
         return (
-            <div className="border border-border rounded-xl p-12 text-center">
-                <p className="text-muted-foreground italic">Record your first transaction</p>
+            <div className="border border-border rounded-xl p-10 text-center space-y-3">
+                <Receipt size={28} className="mx-auto text-muted-foreground/50" />
+                <p className="text-muted-foreground text-sm">No transactions yet</p>
+                <Button variant="outline" size="sm" onClick={onAddFirst}>
+                    Record your first transaction
+                </Button>
             </div>
         )
     }
