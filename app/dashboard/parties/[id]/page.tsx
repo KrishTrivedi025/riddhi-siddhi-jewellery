@@ -1,11 +1,10 @@
 import { notFound } from "next/navigation"
 import { Suspense } from "react"
 import { getPartyById, getPartyLedger, getPartyLedgerSummary } from "@/lib/actions/party-ledger"
+import { getSupplierTransactions } from "@/lib/actions/supplier-transactions"
 import { PartyHeader } from "@/components/parties/party-header"
-import { PartyBalanceCards } from "@/components/parties/party-balance-cards"
 import { PartyGstLedgerTabs } from "@/components/parties/party-gst-ledger-tabs"
-import { PartyLedgerTable } from "@/components/parties/party-ledger-table"
-import { PartyStatementExport } from "@/components/parties/party-statement-export"
+import { SupplierKhataDetail } from "@/components/parties/supplier-khata-detail"
 import { Skeleton } from "@/components/ui/skeleton"
 
 interface PartyLedgerPageProps {
@@ -37,18 +36,23 @@ async function PartyLedgerContent({ id }: { id: string }) {
     const party = await getPartyById(id)
     if (!party) notFound()
 
-    // Party is exclusively CUSTOMER or SUPPLIER (see lib/schemas/party-schema.ts) — never both,
-    // so opening balance always belongs cleanly to whichever single ledger applies here.
-    const isCustomerFacing = party.partyType === "CUSTOMER"
-    const isVendorFacing = party.partyType === "SUPPLIER"
+    // Party is exclusively CUSTOMER or SUPPLIER (see lib/schemas/party-schema.ts) — never both.
+    if (party.partyType === "SUPPLIER") {
+        const { transactions, summary } = await getSupplierTransactions(id)
+        return (
+            <SupplierKhataDetail
+                party={{ name: party.name, phone: party.phone }}
+                transactions={transactions}
+                netBalance={summary.netBalance}
+            />
+        )
+    }
 
-    const [gstLedger, gstSummary, nogstLedger, nogstSummary, purchaseLedger, purchaseSummary] = await Promise.all([
-        isCustomerFacing ? getPartyLedger(id, "sales", { isGst: true, applyOpeningBalance: false }) : Promise.resolve([]),
-        isCustomerFacing ? getPartyLedgerSummary(id, "sales", { isGst: true, applyOpeningBalance: false }) : Promise.resolve(null),
-        isCustomerFacing ? getPartyLedger(id, "sales", { isGst: false, applyOpeningBalance: true }) : Promise.resolve([]),
-        isCustomerFacing ? getPartyLedgerSummary(id, "sales", { isGst: false, applyOpeningBalance: true }) : Promise.resolve(null),
-        isVendorFacing ? getPartyLedger(id, "purchase", { applyOpeningBalance: true }) : Promise.resolve([]),
-        isVendorFacing ? getPartyLedgerSummary(id, "purchase", { applyOpeningBalance: true }) : Promise.resolve(null),
+    const [gstLedger, gstSummary, nogstLedger, nogstSummary] = await Promise.all([
+        getPartyLedger(id, "sales", { isGst: true, applyOpeningBalance: false }),
+        getPartyLedgerSummary(id, "sales", { isGst: true, applyOpeningBalance: false }),
+        getPartyLedger(id, "sales", { isGst: false, applyOpeningBalance: true }),
+        getPartyLedgerSummary(id, "sales", { isGst: false, applyOpeningBalance: true }),
     ])
 
     return (
@@ -57,44 +61,14 @@ async function PartyLedgerContent({ id }: { id: string }) {
             <PartyHeader party={party} />
 
             {/* Sales side — With GST / Without GST tabs */}
-            {isCustomerFacing && gstSummary && nogstSummary && (
-                <PartyGstLedgerTabs
-                    party={party}
-                    partyType={party.partyType}
-                    gstLedger={gstLedger}
-                    gstSummary={gstSummary}
-                    nogstLedger={nogstLedger}
-                    nogstSummary={nogstSummary}
-                />
-            )}
-
-            {/* Purchase side (supplier parties) */}
-            {isVendorFacing && purchaseSummary && (
-                <div className="space-y-4">
-                    <PartyBalanceCards summary={purchaseSummary} partyType={party.partyType} />
-                    <div className="space-y-3">
-                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                            <div>
-                                <h2 className="text-sm font-semibold text-foreground">
-                                    Transaction Ledger
-                                </h2>
-                                <p className="text-xs text-muted-foreground mt-0.5">
-                                    Full statement of account with running balance
-                                </p>
-                            </div>
-                            <PartyStatementExport
-                                party={party}
-                                entries={purchaseLedger}
-                                summary={purchaseSummary}
-                            />
-                        </div>
-                        <PartyLedgerTable
-                            entries={purchaseLedger}
-                            partyName={party.name}
-                        />
-                    </div>
-                </div>
-            )}
+            <PartyGstLedgerTabs
+                party={party}
+                partyType={party.partyType}
+                gstLedger={gstLedger}
+                gstSummary={gstSummary}
+                nogstLedger={nogstLedger}
+                nogstSummary={nogstSummary}
+            />
         </>
     )
 }
