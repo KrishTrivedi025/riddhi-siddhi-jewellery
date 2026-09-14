@@ -41,7 +41,7 @@ async function PartyLedgerContent({ id }: { id: string }) {
         const { transactions, summary } = await getSupplierTransactions(id)
         return (
             <SupplierKhataDetail
-                party={{ name: party.name, phone: party.phone }}
+                party={{ id: party.id, name: party.name, phone: party.phone }}
                 transactions={transactions}
                 netBalance={summary.netBalance}
             />

@@ -4,7 +4,7 @@ import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { format } from "date-fns"
 import { toast } from "sonner"
-import { FileText, Loader2, MoreVertical, Trash2 } from "lucide-react"
+import { Edit, FileText, Loader2, MoreVertical, Trash2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
     DropdownMenu,
@@ -18,9 +18,10 @@ import type { SupplierTransactionWithBalance } from "@/lib/actions/supplier-tran
 
 interface SupplierTransactionCardProps {
     transaction: SupplierTransactionWithBalance
+    onEdit: (transaction: SupplierTransactionWithBalance) => void
 }
 
-export function SupplierTransactionCard({ transaction }: SupplierTransactionCardProps) {
+export function SupplierTransactionCard({ transaction, onEdit }: SupplierTransactionCardProps) {
     const [loading, setLoading] = useState(false)
     const router = useRouter()
     const confirm = useConfirm()
@@ -114,6 +115,12 @@ export function SupplierTransactionCard({ transaction }: SupplierTransactionCard
                         </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" className="bg-card border-border text-foreground">
+                        <DropdownMenuItem
+                            onClick={() => onEdit(transaction)}
+                            className="flex items-center gap-2 cursor-pointer hover:bg-border"
+                        >
+                            <Edit size={14} /> Edit
+                        </DropdownMenuItem>
                         <DropdownMenuItem
                             onClick={handleDelete}
                             className="flex items-center gap-2 text-rose-500 cursor-pointer hover:bg-rose-500/10"

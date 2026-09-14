@@ -1,28 +1,55 @@
 "use client"
 
+import { useState } from "react"
+import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import { FileText } from "lucide-react"
 import { PartyFab } from "./party-fab"
 import { SupplierKhataHeader } from "./supplier-khata-header"
 import { SupplierTransactionList } from "./supplier-transaction-list"
-import type { SupplierTransactionWithBalance } from "@/lib/actions/supplier-transactions"
+import { SupplierTransactionForm } from "./supplier-transaction-form"
+import { SupplierTransactionSuccess } from "./supplier-transaction-success"
+import type { SupplierTransactionType, SupplierTransactionWithBalance } from "@/lib/actions/supplier-transactions"
 
 interface SupplierKhataDetailProps {
-    party: { name: string; phone: string | null }
+    party: { id: string; name: string; phone: string | null }
     transactions: SupplierTransactionWithBalance[]
     netBalance: number
 }
 
 export function SupplierKhataDetail({ party, transactions, netBalance }: SupplierKhataDetailProps) {
-    // Wired to a placeholder for now — the real transaction entry overlay lands in the next phase.
-    const openForm = (type: "GAVE" | "GOT") => {
-        toast.info(`Recording what ${type === "GAVE" ? "you gave" : "you got"} is coming very soon`)
+    const router = useRouter()
+    const [formOpen, setFormOpen] = useState(false)
+    const [formType, setFormType] = useState<SupplierTransactionType>("GAVE")
+    const [editing, setEditing] = useState<SupplierTransactionWithBalance | null>(null)
+    const [success, setSuccess] = useState<{ amount: number } | null>(null)
+
+    const openForm = (type: SupplierTransactionType, editTransaction?: SupplierTransactionWithBalance) => {
+        setFormType(type)
+        setEditing(editTransaction ?? null)
+        setFormOpen(true)
+    }
+
+    const handleSaved = ({ amount, isEdit }: { type: SupplierTransactionType; amount: number; isEdit: boolean }) => {
+        setFormOpen(false)
+        setEditing(null)
+        router.refresh()
+        if (isEdit) {
+            toast.success("Entry updated")
+        } else {
+            setSuccess({ amount })
+        }
+    }
+
+    const handleAddAnother = (type: SupplierTransactionType) => {
+        setSuccess(null)
+        openForm(type)
     }
 
     return (
         <div className="space-y-4 pb-40 md:pb-8">
             <SupplierKhataHeader party={party} netBalance={netBalance} />
-            <SupplierTransactionList transactions={transactions} />
+            <SupplierTransactionList transactions={transactions} onEdit={(t) => openForm(t.type, t)} />
 
             <PartyFab
                 label="REPORT"
@@ -47,6 +74,27 @@ export function SupplierKhataDetail({ party, transactions, netBalance }: Supplie
                     YOU GOT ₹
                 </button>
             </div>
+
+            <SupplierTransactionForm
+                open={formOpen}
+                onOpenChange={(next) => {
+                    setFormOpen(next)
+                    if (!next) setEditing(null)
+                }}
+                partyId={party.id}
+                partyName={party.name}
+                type={formType}
+                editing={editing}
+                onSaved={handleSaved}
+            />
+
+            <SupplierTransactionSuccess
+                open={!!success}
+                partyName={party.name}
+                amount={success?.amount ?? 0}
+                onAddAnother={handleAddAnother}
+                onDone={() => setSuccess(null)}
+            />
         </div>
     )
 }
