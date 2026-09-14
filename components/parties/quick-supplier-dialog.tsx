@@ -100,6 +100,7 @@ export function QuickSupplierDialog({ trigger }: QuickSupplierDialogProps) {
                             id="supplier-is-worker"
                             checked={isWorker}
                             onCheckedChange={(checked) => setValue("isWorker", checked, { shouldDirty: true })}
+                            className="data-unchecked:bg-white dark:data-unchecked:bg-white data-checked:bg-rose-600 dark:data-checked:bg-rose-600"
                         />
                     </div>
 
