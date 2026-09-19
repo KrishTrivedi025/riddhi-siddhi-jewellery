@@ -12,8 +12,9 @@ import {
     Select, SelectContent, SelectItem,
     SelectTrigger, SelectValue,
 } from "@/components/ui/select"
+import { AmountInput } from "@/components/shared/amount-input"
 import { createPaymentIn, updatePaymentIn } from "@/lib/actions/payments-in"
-import { PaymentModeSelector, PaymentModeLine } from "./payment-mode-selector"
+import { PaymentModeSelector, PaymentModeLine, syncSingleMode } from "./payment-mode-selector"
 import { useTrackDirty } from "@/lib/hooks/use-unsaved-changes"
 
 interface PaymentInFormProps {
@@ -55,6 +56,11 @@ export function PaymentInForm({ customers, paymentId, initialData }: PaymentInFo
     const [totalAmount, setTotalAmount] = useState<number>(initialData?.totalAmount || 0)
 
     useTrackDirty(!!partyId || modes.some((m) => m.amount > 0) || notes.trim() !== "")
+
+    const handleTotalChange = (value: number) => {
+        setTotalAmount(value)
+        setModes((prev) => syncSingleMode(prev, value))
+    }
 
     // Submit handler
     const handleSubmit = async () => {
@@ -148,10 +154,15 @@ export function PaymentInForm({ customers, paymentId, initialData }: PaymentInFo
 
                 <div className="space-y-2">
                     <Label className="text-xs text-muted-foreground">Customer *</Label>
-                    {isEdit ? (
-                        <div className="h-10 flex items-center px-3 rounded-lg bg-muted border border-border text-foreground text-sm">
-                            {initialData?.party?.name}
-                        </div>
+                    {isTiedToInvoice ? (
+                        <>
+                            <div className="h-10 flex items-center px-3 rounded-lg bg-muted border border-border text-foreground text-sm">
+                                {initialData?.party?.name}
+                            </div>
+                            <p className="text-[11px] text-muted-foreground">
+                                Linked to an invoice, so the customer can&apos;t be changed.
+                            </p>
+                        </>
                     ) : (
                         <Select value={partyId} onValueChange={setPartyId}>
                             <SelectTrigger className="bg-background border-border text-foreground">
@@ -211,15 +222,9 @@ export function PaymentInForm({ customers, paymentId, initialData }: PaymentInFo
 
                 <div className="space-y-2">
                     <Label className="text-xs text-muted-foreground">Total Amount Received (₹) *</Label>
-                    <Input
-                        type="text"
-                        value={totalAmount >= 10 ? totalAmount : (totalAmount || 0).toString().padStart(2, '0')}
-                        onFocus={(e) => { if (parseFloat(e.target.value) === 0) e.target.value = "" }}
-                        onBlur={(e) => {
-                            if (e.target.value === "") setTotalAmount(0)
-                            else setTotalAmount(parseFloat(e.target.value) || 0)
-                        }}
-                        onChange={(e) => setTotalAmount(parseFloat(e.target.value) || 0)}
+                    <AmountInput
+                        value={totalAmount}
+                        onValueChange={handleTotalChange}
                         className="bg-background border-border text-foreground text-lg font-bold h-12 text-emerald-500 focus:border-primary transition-all"
                         placeholder="0.00"
                     />

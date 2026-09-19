@@ -1,6 +1,7 @@
 "use server"
 
 import { prisma } from "@/lib/db"
+import { paymentModeLabel } from "@/lib/payment-modes"
 import { requireUserId } from "./auth-helper"
 
 export interface LedgerEntry {
@@ -12,6 +13,13 @@ export interface LedgerEntry {
     debit: number
     credit: number
     runningBalance: number
+    /** Human-readable modes a payment was made in (e.g. ["Cash", "UPI"] for a split). Payments only. */
+    paymentModes?: string[]
+}
+
+// A split payment can repeat a mode across lines — show each mode once.
+function modeLabels(paymentModes: { mode: string }[]): string[] {
+    return [...new Set(paymentModes.map((m) => paymentModeLabel(m.mode)))]
 }
 
 export interface AgingBucket {
@@ -94,6 +102,7 @@ export async function getPartyLedger(
             debit: number
             credit: number
             id: string
+            paymentModes?: string[]
         }
         const rawEntries: RawEntry[] = []
 
@@ -121,6 +130,7 @@ export async function getPartyLedger(
                         ],
                     }),
                 },
+                include: { paymentModes: { select: { mode: true } } },
                 orderBy: { paymentDate: "asc" },
             })
             // Payment.totalAmount already increments SaleInvoice.amountPaid when recorded
@@ -165,6 +175,7 @@ export async function getPartyLedger(
                     description: "Payment Received",
                     debit: 0,
                     credit: pm.totalAmount,
+                    paymentModes: modeLabels(pm.paymentModes),
                 })
             }
 
@@ -201,6 +212,7 @@ export async function getPartyLedger(
                     partyId, deletedAt: null, paymentType: "OUT",
                     ...(hasDateFilter && { paymentDate: dateFilter }),
                 },
+                include: { paymentModes: { select: { mode: true } } },
                 orderBy: { paymentDate: "asc" },
             })
             // Same reconciliation as the sales side: createPurchaseInvoice/
@@ -245,6 +257,7 @@ export async function getPartyLedger(
                     description: "Payment Made",
                     debit: pm.totalAmount,
                     credit: 0,
+                    paymentModes: modeLabels(pm.paymentModes),
                 })
             }
 

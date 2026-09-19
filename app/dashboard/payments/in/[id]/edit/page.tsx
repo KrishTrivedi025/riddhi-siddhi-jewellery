@@ -1,6 +1,7 @@
 import { Suspense } from "react"
 import { notFound } from "next/navigation"
 import { getPaymentInById } from "@/lib/actions/payments-in"
+import { getParties } from "@/lib/actions/parties"
 import { PaymentInForm } from "@/components/payments/payment-in-form"
 import { Skeleton } from "@/components/ui/skeleton"
 
@@ -18,10 +19,16 @@ export default async function EditPaymentInPage({ params }: EditPaymentInPagePro
 }
 
 async function EditPaymentInData({ id }: { id: string }) {
-    const payment = await getPaymentInById(id)
+    const [payment, parties] = await Promise.all([getPaymentInById(id), getParties("CUSTOMER")])
     if (!payment) notFound()
 
-    return <PaymentInForm customers={[]} paymentId={payment.id} initialData={payment} />
+    const customers = parties.map((p) => ({ id: p.id, name: p.name }))
+    // A since-deleted customer wouldn't be in the live list, but the payment still points at it.
+    if (!customers.some((c) => c.id === payment.partyId)) {
+        customers.unshift({ id: payment.partyId, name: payment.party.name })
+    }
+
+    return <PaymentInForm customers={customers} paymentId={payment.id} initialData={payment} />
 }
 
 function FormSkeleton() {

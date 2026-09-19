@@ -18,7 +18,8 @@ import {
 import { formatCurrency } from "@/lib/gst-utils"
 import { getSupplierOutstandingInvoices, createPaymentOut } from "@/lib/actions/payments-out"
 import { format } from "date-fns"
-import { PaymentModeSelector, PaymentModeLine } from "./payment-mode-selector"
+import { AmountInput } from "@/components/shared/amount-input"
+import { PaymentModeSelector, PaymentModeLine, syncSingleMode } from "./payment-mode-selector"
 import { useTrackDirty } from "@/lib/hooks/use-unsaved-changes"
 
 interface PaymentOutFormProps {
@@ -56,6 +57,11 @@ export function PaymentOutForm({ suppliers }: PaymentOutFormProps) {
     const [invoices, setInvoices] = useState<AllocatableInvoice[]>([])
 
     useTrackDirty(!!partyId || modes.some((m) => m.amount > 0) || notes.trim() !== "")
+
+    const handleTotalChange = (value: number) => {
+        setTotalAmount(value)
+        setModes((prev) => syncSingleMode(prev, value))
+    }
 
     // Load Invoices when Supplier changes
     const handleSupplierChange = async (id: string) => {
@@ -250,15 +256,9 @@ export function PaymentOutForm({ suppliers }: PaymentOutFormProps) {
 
                         <div className="space-y-1">
                             <Label className="text-xs text-muted-foreground">Total Amount Paid (₹) *</Label>
-                            <Input
-                                type="text"
-                                value={totalAmount >= 10 ? totalAmount : (totalAmount || 0).toString().padStart(2, '0')}
-                                onFocus={(e) => { if (parseFloat(e.target.value) === 0) e.target.value = "" }}
-                                onBlur={(e) => {
-                                    if (e.target.value === "") setTotalAmount(0)
-                                    else setTotalAmount(parseFloat(e.target.value) || 0)
-                                }}
-                                onChange={(e) => setTotalAmount(parseFloat(e.target.value) || 0)}
+                            <AmountInput
+                                value={totalAmount}
+                                onValueChange={handleTotalChange}
                                 className="bg-background border-border text-foreground text-lg font-bold h-12 text-rose-500 focus:border-primary transition-all"
                                 placeholder="0.00"
                             />

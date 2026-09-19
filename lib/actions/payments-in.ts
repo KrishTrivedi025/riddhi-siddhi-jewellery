@@ -154,12 +154,25 @@ export async function updatePaymentIn(id: string, data: PaymentInFormValues) {
             return { success: false, error: `Payment methods (₹${modesTotal}) don't add up to the total received (₹${data.totalAmount})` }
         }
 
-        await prisma.$transaction(async (tx) => {
+        const { oldPartyId, newPartyId } = await prisma.$transaction(async (tx) => {
             const existing = await tx.payment.findFirst({
                 where: { id, userId, paymentType: "IN" },
                 include: { paymentModes: true },
             })
             if (!existing) throw new Error("Payment not found")
+
+            // A payment tied to one specific invoice belongs to that invoice's customer, so
+            // its party can't move. An unallocated payment can be reassigned — but only to
+            // one of this user's own live customers.
+            let partyId = existing.partyId
+            if (!existing.saleInvoiceId && data.partyId !== existing.partyId) {
+                const party = await tx.party.findFirst({
+                    where: { id: data.partyId, userId, partyType: "CUSTOMER", deletedAt: null },
+                    select: { id: true },
+                })
+                if (!party) throw new Error("Selected customer not found")
+                partyId = party.id
+            }
 
             // Reverse the old mode amounts from bank balances before applying the new ones
             for (const mode of existing.paymentModes) {
@@ -191,6 +204,7 @@ export async function updatePaymentIn(id: string, data: PaymentInFormValues) {
             await tx.payment.update({
                 where: { id },
                 data: {
+                    partyId,
                     isGst: existing.saleInvoiceId ? existing.isGst : data.isGst,
                     paymentDate: data.paymentDate,
                     totalAmount: data.totalAmount,
@@ -218,10 +232,14 @@ export async function updatePaymentIn(id: string, data: PaymentInFormValues) {
                     })
                 }
             }
+
+            return { oldPartyId: existing.partyId, newPartyId: partyId }
         })
 
         revalidatePath("/dashboard/payments")
         revalidatePath("/dashboard/parties")
+        revalidatePath(`/dashboard/parties/${oldPartyId}`)
+        if (newPartyId !== oldPartyId) revalidatePath(`/dashboard/parties/${newPartyId}`)
         revalidatePath("/dashboard/sales")
         return { success: true }
     } catch (error: any) {

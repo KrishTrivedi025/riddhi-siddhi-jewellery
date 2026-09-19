@@ -9,22 +9,23 @@ import {
     Select, SelectContent, SelectItem,
     SelectTrigger, SelectValue,
 } from "@/components/ui/select"
+import { AmountInput } from "@/components/shared/amount-input"
 import { getBankAccounts } from "@/lib/actions/banks"
+import { PAYMENT_MODES } from "@/lib/payment-modes"
 import { toast } from "sonner"
-
-export const PAYMENT_MODES = [
-    { value: "cash", label: "Cash" },
-    { value: "bank", label: "Bank Transfer" },
-    { value: "upi", label: "UPI" },
-    { value: "cheque", label: "Cheque" },
-    { value: "card", label: "Credit/Debit Card" },
-]
 
 export interface PaymentModeLine {
     mode: string
     amount: number
     reference?: string
     bankAccountId?: string
+}
+
+// With a single payment mode its amount is always the whole total, so it mirrors the
+// Total box instead of asking the user to type the same number twice. Once split into
+// 2+ modes the amounts are the user's to divide.
+export function syncSingleMode(modes: PaymentModeLine[], totalAmount: number): PaymentModeLine[] {
+    return modes.length === 1 ? [{ ...modes[0], amount: totalAmount }] : modes
 }
 
 interface PaymentModeSelectorProps {
@@ -60,7 +61,7 @@ export function PaymentModeSelector({ modes, onChange, totalAmount }: PaymentMod
         if (modes.length <= 1) return
         const newModes = [...modes]
         newModes.splice(index, 1)
-        onChange(newModes)
+        onChange(syncSingleMode(newModes, totalAmount))
     }
 
     const updateMode = (index: number, updates: Partial<PaymentModeLine>) => {
@@ -139,16 +140,11 @@ export function PaymentModeSelector({ modes, onChange, totalAmount }: PaymentMod
 
                             <div className="space-y-1.5">
                                 <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">Amount (₹)</Label>
-                                <Input
-                                    type="text"
-                                    value={m.amount === 0 ? "0.00" : m.amount.toString().padStart(2, '0')}
-                                    onFocus={(e) => { if (parseFloat(e.target.value) === 0) e.target.value = "" }}
-                                    onBlur={(e) => { 
-                                        if (e.target.value === "") updateMode(idx, { amount: 0 });
-                                        else updateMode(idx, { amount: parseFloat(e.target.value) || 0 });
-                                    }}
-                                    onChange={(e) => updateMode(idx, { amount: parseFloat(e.target.value) || 0 })}
-                                    className="h-8 bg-background border-border text-xs font-bold text-emerald-500 focus:border-primary focus:ring-primary/20 transition-all"
+                                <AmountInput
+                                    value={m.amount}
+                                    onValueChange={(amount) => updateMode(idx, { amount })}
+                                    readOnly={modes.length === 1}
+                                    className={`h-8 bg-background border-border text-xs font-bold text-emerald-500 focus:border-primary focus:ring-primary/20 transition-all ${modes.length === 1 ? "bg-muted/40" : ""}`}
                                     placeholder="0.00"
                                 />
                             </div>
@@ -194,9 +190,15 @@ export function PaymentModeSelector({ modes, onChange, totalAmount }: PaymentMod
                 ))}
             </div>
 
+            {modes.length === 1 && (
+                <p className="text-[10px] text-muted-foreground">
+                    Amount fills in from the total. Tap &quot;Add Mode (Split)&quot; to divide it across payment modes.
+                </p>
+            )}
+
             {isUnbalanced && totalAmount > 0 && (
                 <div className="p-2 bg-rose-500/10 border border-rose-500/20 rounded-md text-[10px] text-rose-400 font-medium">
-                    Warning: Mode amounts (₹{currentSum}) don't match Total Amount (₹{totalAmount}).
+                    Warning: Mode amounts (₹{currentSum.toLocaleString("en-IN")}) don&apos;t match Total Amount (₹{totalAmount.toLocaleString("en-IN")}).
                 </div>
             )}
         </div>

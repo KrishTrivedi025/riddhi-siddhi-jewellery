@@ -165,14 +165,29 @@ const styles = StyleSheet.create({
         color: "#F5F5F5",
         fontFamily: "Helvetica-Bold",
     },
+    // Payment-mode tag
+    modeTag: {
+        alignSelf: "flex-start",
+        backgroundColor: "#FFF3D6",
+        borderRadius: 3,
+        paddingVertical: 1.5,
+        paddingHorizontal: 4,
+        marginBottom: 2,
+    },
+    modeTagText: {
+        fontSize: 6.5,
+        color: "#8A6508",
+        fontFamily: "Helvetica-Bold",
+    },
     // Widths
-    colDate: { width: "12%" },
-    colType: { width: "10%" },
-    colRef: { width: "14%" },
-    colDesc: { width: "32%" },
-    colDebit: { width: "11%", textAlign: "right" },
-    colCredit: { width: "11%", textAlign: "right" },
-    colBalance: { width: "10%", textAlign: "right" },
+    colDate: { width: "10%" },
+    colType: { width: "9%" },
+    colRef: { width: "12%" },
+    colDesc: { width: "18%" },
+    colMode: { width: "14%" },
+    colDebit: { width: "12%", textAlign: "right" },
+    colCredit: { width: "12%", textAlign: "right" },
+    colBalance: { width: "13%", textAlign: "right" },
     // Page footer
     pageFooter: {
         position: "absolute",
@@ -375,6 +390,9 @@ function StatementPDF({
                     <Text style={[styles.tableHeaderCell, styles.colDesc]}>
                         Description
                     </Text>
+                    <Text style={[styles.tableHeaderCell, styles.colMode]}>
+                        Mode
+                    </Text>
                     <Text style={[styles.tableHeaderCell, styles.colDebit]}>
                         Debit
                     </Text>
@@ -423,6 +441,17 @@ function StatementPDF({
                             <Text style={[styles.tableCell, styles.colDesc]}>
                                 {entry.description}
                             </Text>
+                            <View style={styles.colMode}>
+                                {entry.paymentModes && entry.paymentModes.length > 0 ? (
+                                    entry.paymentModes.map((label) => (
+                                        <View key={label} style={styles.modeTag}>
+                                            <Text style={styles.modeTagText}>{label}</Text>
+                                        </View>
+                                    ))
+                                ) : (
+                                    <Text style={styles.tableCell}>—</Text>
+                                )}
+                            </View>
                             <Text style={[styles.tableCell, styles.colDebit]}>
                                 {entry.debit > 0
                                     ? `Rs.${entry.debit.toLocaleString("en-IN")}`
@@ -456,6 +485,7 @@ function StatementPDF({
                         <Text style={[styles.tableFooterCell, styles.colDesc]}>
                             CLOSING BALANCE
                         </Text>
+                        <Text style={[styles.tableFooterCell, styles.colMode]} />
                         <Text style={[styles.tableFooterCell, styles.colDebit]}>
                             Rs.
                             {entries
