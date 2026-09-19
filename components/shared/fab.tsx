@@ -5,7 +5,7 @@ import { motion, type HTMLMotionProps } from "framer-motion"
 import { spring, tapScale } from "@/lib/animations"
 import { cn } from "@/lib/utils"
 
-interface PartyFabProps extends Omit<HTMLMotionProps<"button">, "children"> {
+interface FabProps extends Omit<HTMLMotionProps<"button">, "children"> {
     label: string
     icon: React.ReactNode
     /**
@@ -17,7 +17,7 @@ interface PartyFabProps extends Omit<HTMLMotionProps<"button">, "children"> {
     variant?: "standalone" | "inline"
 }
 
-export const PartyFab = forwardRef<HTMLButtonElement, PartyFabProps>(
+export const Fab = forwardRef<HTMLButtonElement, FabProps>(
     ({ label, icon, variant = "standalone", className, ...props }, ref) => {
         return (
             <motion.button
@@ -43,4 +43,4 @@ export const PartyFab = forwardRef<HTMLButtonElement, PartyFabProps>(
         )
     }
 )
-PartyFab.displayName = "PartyFab"
+Fab.displayName = "Fab"

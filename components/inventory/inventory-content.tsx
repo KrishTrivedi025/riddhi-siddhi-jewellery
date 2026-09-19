@@ -6,10 +6,11 @@ import { ItemDialog } from "./item-dialog"
 import { CategoryDialog } from "./category-dialog"
 import { StockSummaryCards } from "./stock-summary-cards"
 import { useT } from "@/lib/i18n/client"
-import { Package, AlertTriangle, XCircle, Search } from "lucide-react"
+import { Package, AlertTriangle, XCircle, Search, Plus } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { AnimatedTabs } from "@/components/shared/animated-tabs"
+import { Fab } from "@/components/shared/fab"
 
 interface InventoryContentProps {
     items: any[]
@@ -91,10 +92,7 @@ export function InventoryContent({ items, categories }: InventoryContentProps) {
                     <h1 className="text-2xl font-semibold text-foreground">{t("title")}</h1>
                     <p className="text-muted-foreground mt-1 text-sm">{t("subtitle")}</p>
                 </div>
-                <div className="flex items-center gap-3">
-                    <CategoryDialog categories={categories} />
-                    <ItemDialog categories={categories} />
-                </div>
+                <CategoryDialog categories={categories} />
             </div>
 
             {/* KPI Cards */}
@@ -134,6 +132,14 @@ export function InventoryContent({ items, categories }: InventoryContentProps) {
 
             {/* Table */}
             <ItemTable data={displayItems} categories={categories} />
+
+            {/* Keeps the last table row clear of the floating button */}
+            <div className="h-24" aria-hidden="true" />
+
+            <ItemDialog
+                categories={categories}
+                trigger={<Fab label="ADD ITEM" icon={<Plus size={18} />} />}
+            />
         </>
     )
 }

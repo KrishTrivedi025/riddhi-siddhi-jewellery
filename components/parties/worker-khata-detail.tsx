@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation"
 import { startOfMonth } from "date-fns"
 import { toast } from "sonner"
 import { FileText } from "lucide-react"
-import { PartyFab } from "./party-fab"
+import { Fab } from "@/components/shared/fab"
 import { WorkerAttendanceCalendar } from "./worker-attendance-calendar"
 import { WorkerRateDialog } from "./worker-rate-dialog"
 import { SupplierTransactionList } from "./supplier-transaction-list"
@@ -147,7 +147,7 @@ export function WorkerKhataDetail({ party, transactions, summary }: WorkerKhataD
                 <div className="absolute bottom-full right-4 mb-3 flex items-center gap-2">
                     <WorkerReportSheet
                         party={party}
-                        trigger={<PartyFab label="REPORT" icon={<FileText size={18} />} variant="inline" />}
+                        trigger={<Fab label="REPORT" icon={<FileText size={18} />} variant="inline" />}
                     />
                 </div>
                 <div className="bg-card border-t border-border flex">

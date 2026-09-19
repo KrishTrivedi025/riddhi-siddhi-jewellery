@@ -4,7 +4,7 @@ import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import { FileText } from "lucide-react"
-import { PartyFab } from "./party-fab"
+import { Fab } from "@/components/shared/fab"
 import { SupplierKhataHeader } from "./supplier-khata-header"
 import { SupplierTransactionList } from "./supplier-transaction-list"
 import { SupplierTransactionForm } from "./supplier-transaction-form"
@@ -64,7 +64,7 @@ export function SupplierKhataDetail({ party, transactions, netBalance }: Supplie
                     <SupplierReportSheet
                         party={party}
                         transactions={transactions}
-                        trigger={<PartyFab label="REPORT" icon={<FileText size={18} />} variant="inline" />}
+                        trigger={<Fab label="REPORT" icon={<FileText size={18} />} variant="inline" />}
                     />
                 </div>
                 <div className="bg-card border-t border-border flex">

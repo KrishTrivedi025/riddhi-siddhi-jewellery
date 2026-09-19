@@ -3,7 +3,7 @@
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { PartyTable } from "./party-table"
 import { PartyDialog } from "./party-dialog"
-import { PartyFab } from "./party-fab"
+import { Fab } from "@/components/shared/fab"
 import { QuickSupplierDialog } from "./quick-supplier-dialog"
 import { SupplierKhataList } from "./supplier-khata-list"
 import { Users, ShoppingCart, UserPlus } from "lucide-react"
@@ -75,14 +75,14 @@ export function PartiesContent({ customers, suppliers, supplierKhata }: PartiesC
                 <>
                     <PartyTable data={customers} />
                     <PartyDialog
-                        trigger={<PartyFab label="ADD CUSTOMER" icon={<UserPlus size={18} />} />}
+                        trigger={<Fab label="ADD CUSTOMER" icon={<UserPlus size={18} />} />}
                     />
                 </>
             ) : (
                 <>
                     <SupplierKhataList summary={supplierKhata} />
                     <QuickSupplierDialog
-                        trigger={<PartyFab label="ADD SUPPLIER" icon={<UserPlus size={18} />} />}
+                        trigger={<Fab label="ADD SUPPLIER" icon={<UserPlus size={18} />} />}
                     />
                 </>
             )}

@@ -37,10 +37,7 @@ function InventorySkeleton() {
                     <Skeleton className="h-8 w-40 bg-muted" />
                     <Skeleton className="h-4 w-60 mt-2 bg-muted" />
                 </div>
-                <div className="flex gap-3">
-                    <Skeleton className="h-10 w-28 bg-muted" />
-                    <Skeleton className="h-10 w-28 bg-muted" />
-                </div>
+                <Skeleton className="h-10 w-28 bg-muted" />
             </div>
             <div className="grid grid-cols-4 gap-4">
                 <Skeleton className="h-24 bg-muted rounded-xl" />

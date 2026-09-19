@@ -3,10 +3,10 @@
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { Plus, FileText, RotateCcw, X, Receipt, FileX } from "lucide-react"
-import { Button } from "@/components/ui/button"
 import { InvoiceTable } from "./invoice-table"
 import { ReturnTable } from "./return-table"
 import { AnimatedTabs } from "@/components/shared/animated-tabs"
+import { Fab } from "@/components/shared/fab"
 import { useT } from "@/lib/i18n/client"
 
 interface SalesContentProps {
@@ -42,22 +42,13 @@ export function SalesContent({ invoices, returns }: SalesContentProps) {
     }
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-6 pb-24">
             {/* Header */}
-            <div className="flex items-center justify-between">
-                <div>
-                    <h1 className="text-2xl font-bold text-foreground">{t("title")}</h1>
-                    <p className="text-sm text-muted-foreground mt-1">
-                        {t("subtitle")}
-                    </p>
-                </div>
-                <Button
-                    onClick={handleNewInvoice}
-                    className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold"
-                >
-                    <Plus size={16} className="mr-2" />
-                    {activeTab === "returns" ? t("creditNote") : t("newInvoice")}
-                </Button>
+            <div>
+                <h1 className="text-2xl font-bold text-foreground">{t("title")}</h1>
+                <p className="text-sm text-muted-foreground mt-1">
+                    {t("subtitle")}
+                </p>
             </div>
 
             {/* Tabs */}
@@ -76,6 +67,12 @@ export function SalesContent({ invoices, returns }: SalesContentProps) {
             {activeTab === "gst" && <InvoiceTable key="gst" invoices={gstInvoices} />}
             {activeTab === "nogst" && <InvoiceTable key="nogst" invoices={noGstInvoices} />}
             {activeTab === "returns" && <ReturnTable returns={returns} />}
+
+            <Fab
+                label={(activeTab === "returns" ? t("creditNote") : t("newInvoice")).toUpperCase()}
+                icon={<Plus size={18} />}
+                onClick={handleNewInvoice}
+            />
 
             {/* Bill Type Modal */}
             {showModal && (
