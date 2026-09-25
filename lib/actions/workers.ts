@@ -4,8 +4,8 @@ import { prisma } from "@/lib/db"
 import { revalidatePath } from "next/cache"
 import { format, eachDayOfInterval, getDaysInMonth } from "date-fns"
 import { requireUserId } from "./auth-helper"
-import { currentMonthStart, monthStartUTC, monthEndUTC, todayIST } from "../date-utils"
-import { dailyRateForMonth } from "../worker-utils"
+import { currentMonthStart, monthStartUTC, monthEndUTC, monthKeyToUTC, todayIST, type MonthKey } from "../date-utils"
+import { dailyRateForMonth, halfDayAmount } from "../worker-utils"
 import type { WorkerRateFormValues } from "../schemas/worker-schema"
 import type {
     SupplierPaymentMode,
@@ -14,6 +14,7 @@ import type {
 } from "./supplier-transactions"
 
 export type WorkerDayStatus = "ABSENT" | "HALF_DAY"
+export type { MonthKey } from "../date-utils"
 
 export interface WorkerRateInfo {
     monthlySalary: number
@@ -157,18 +158,18 @@ export async function getWorkerCarriedBalance(userId: string, partyId: string, t
             else if (t.type === "GOT") got += t.amount
         }
         const presentDays = Math.max(0, daysInMonth - absentDays - halfDays)
-        const accrued = presentDays * dailyDeduction + halfDays * (dailyDeduction / 2)
-        balance += -accrued + gave - got
+        const accrued = presentDays * dailyDeduction + halfDays * halfDayAmount(dailyDeduction)
+        balance = Math.round(balance - accrued + gave - got)
 
         cursor = new Date(Date.UTC(cursor.getUTCFullYear(), cursor.getUTCMonth() + 1, 1))
     }
     return balance
 }
 
-export async function getWorkerLedger(partyId: string, month?: Date): Promise<WorkerLedgerResult> {
+export async function getWorkerLedger(partyId: string, monthKey?: MonthKey): Promise<WorkerLedgerResult> {
     try {
         const userId = await requireUserId()
-        const monthStart = month ? monthStartUTC(month) : currentMonthStart()
+        const monthStart = monthKey ? monthKeyToUTC(monthKey) : currentMonthStart()
         const monthEnd = monthEndUTC(monthStart)
         // Last day of the month, at UTC midnight — eachDayOfInterval below walks whole
         // calendar days, not the 23:59:59.999 end-of-day monthEnd used for DB range queries.
@@ -211,13 +212,13 @@ export async function getWorkerLedger(partyId: string, month?: Date): Promise<Wo
             const dateStr = format(day, "yyyy-MM-dd")
             if (day.getTime() <= lastElapsedDay.getTime()) {
                 const status = dayStatusMap.get(dateStr)
-                const dayPay = status === "ABSENT" ? 0 : status === "HALF_DAY" ? dailyDeduction / 2 : dailyDeduction
-                runningBalance -= dayPay
+                const dayPay = status === "ABSENT" ? 0 : status === "HALF_DAY" ? halfDayAmount(dailyDeduction) : dailyDeduction
+                runningBalance = Math.round(runningBalance - dayPay)
             }
             const dayRows = (rowsByDate.get(dateStr) ?? []).slice().sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime())
             for (const t of dayRows) {
-                if (t.type === "GAVE") runningBalance += t.amount
-                else if (t.type === "GOT") runningBalance -= t.amount
+                if (t.type === "GAVE") runningBalance = Math.round(runningBalance + t.amount)
+                else if (t.type === "GOT") runningBalance = Math.round(runningBalance - t.amount)
                 // ABSENT/HALF_DAY's own effect is the dayPay accrual above — don't double-apply.
                 balanceByRowId.set(t.id, runningBalance)
             }
@@ -242,6 +243,25 @@ export async function getWorkerLedger(partyId: string, month?: Date): Promise<Wo
                 })),
             }
         })
+
+        // A visible "Opening Balance" line on the 1st of the month, carrying forward
+        // whatever was still owed at the end of the previous month — not a real DB row
+        // (can't be edited or deleted), so it's synthesized here rather than stored.
+        // Placed first in this still-chronological array so it lands last (oldest) after
+        // the newest-first reverse below.
+        if (openingBalance !== 0) {
+            transactions.unshift({
+                id: "opening-balance",
+                type: "OPENING",
+                amount: Math.abs(openingBalance),
+                details: "Opening Balance",
+                date: monthStart,
+                createdAt: monthStart,
+                paymentMode: null,
+                runningBalance: openingBalance,
+                attachments: [],
+            })
+        }
 
         const totalGave = transactions.reduce((s, t) => s + (t.type === "GAVE" ? t.amount : 0), 0)
         const totalGot = transactions.reduce((s, t) => s + (t.type === "GOT" ? t.amount : 0), 0)
@@ -275,17 +295,19 @@ export async function getWorkerLedger(partyId: string, month?: Date): Promise<Wo
 }
 
 // The calendar is now navigable to past months (see worker-attendance-calendar.tsx), so
-// month is whichever month is on screen — normalized here rather than trusted as-is, to
-// stay clear of the client/server IST/UTC mismatch described in lib/date-utils.ts.
+// month is whichever month is on screen — passed as a MonthKey (plain {year, month}, no
+// Date) rather than trusted as a client Date, since a Date built from date-fns's *local*
+// startOfMonth/addMonths/subMonths reads back wrong here on an IST client — see MonthKey
+// in lib/date-utils.ts for the full explanation.
 //
 // dayStatus is the full desired ABSENT/HALF_DAY map for that month (a date missing from
 // it is present) — called with the whole map on every single-day tap, same diff-against-
 // existing-rows approach as before, just generalized from a plain absent/present toggle
 // to the three-state ABSENT/HALF_DAY/present one.
-export async function setWorkerAttendance(partyId: string, month: Date, dayStatus: Record<string, WorkerDayStatus>) {
+export async function setWorkerAttendance(partyId: string, monthKey: MonthKey, dayStatus: Record<string, WorkerDayStatus>) {
     try {
         const userId = await requireUserId()
-        const monthStart = monthStartUTC(month)
+        const monthStart = monthKeyToUTC(monthKey)
         const monthEnd = monthEndUTC(monthStart)
 
         const rate = await getWorkerRate(partyId, monthStart)
@@ -311,7 +333,7 @@ export async function setWorkerAttendance(partyId: string, month: Date, dayStatu
             return { success: true }
         }
 
-        const amountFor = (status: WorkerDayStatus) => (status === "HALF_DAY" ? rate.dailyDeduction / 2 : rate.dailyDeduction)
+        const amountFor = (status: WorkerDayStatus) => (status === "HALF_DAY" ? halfDayAmount(rate.dailyDeduction) : rate.dailyDeduction)
         const detailsFor = (status: WorkerDayStatus) => (status === "HALF_DAY" ? "Half Day" : "Absent")
 
         await prisma.$transaction([

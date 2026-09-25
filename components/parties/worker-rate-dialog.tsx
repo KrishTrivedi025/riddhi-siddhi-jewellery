@@ -78,7 +78,7 @@ export function WorkerRateDialog({ partyId, monthlySalary, dailyDeduction, trigg
                         )}
                     </div>
                     <p className="text-xs text-muted-foreground">
-                        Per-day rate (currently ₹{dailyDeduction.toLocaleString("en-IN", { maximumFractionDigits: 2 })}/day)
+                        Per-day rate (currently ₹{Math.round(dailyDeduction).toLocaleString("en-IN")}/day)
                         is calculated automatically — salary ÷ days in that month. Changes apply from this month
                         onward; past months keep their original rate.
                     </p>

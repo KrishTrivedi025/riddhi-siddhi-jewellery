@@ -32,3 +32,23 @@ export function todayIST(): Date {
     const istNow = new Date(Date.now() + IST_OFFSET_MS)
     return new Date(Date.UTC(istNow.getUTCFullYear(), istNow.getUTCMonth(), istNow.getUTCDate()))
 }
+
+// A plain, timezone-proof "which calendar month" — the fix for a bug class this file's
+// own comments already warned about and got hit by anyway: a client component that
+// tracks "the viewed month" as a Date (via date-fns's *local* startOfMonth/addMonths/
+// subMonths, correct for on-screen display) and then hands that same Date to a server
+// action is not safe. On an IST client those local-midnight instants land on the
+// *previous* UTC calendar day, so reading them back with the UTC getters this file's
+// other helpers use silently resolves to the wrong month. A MonthKey carries no
+// timezone at all — build one from a client Date with its LOCAL getters
+// (date.getFullYear()/getMonth(), matching what's on screen), pass the two plain
+// numbers across the server action boundary, and reconstruct the UTC month-start from
+// them directly with monthKeyToUTC — never by re-reading a Date's own UTC fields.
+export interface MonthKey {
+    year: number
+    month: number // 0-indexed, matching Date.getMonth()/Date.UTC()
+}
+
+export function monthKeyToUTC({ year, month }: MonthKey): Date {
+    return new Date(Date.UTC(year, month, 1))
+}

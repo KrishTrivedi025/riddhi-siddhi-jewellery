@@ -63,7 +63,7 @@ export function SupplierTransactionCard({ transaction, onEdit, onDeleted }: Supp
                         {format(transaction.date, "d MMM yy")} • {format(transaction.createdAt, "h:mm a")}
                     </p>
                     <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded bg-current/10 ${balanceColor}`}>
-                        Bal. ₹{Math.abs(transaction.runningBalance).toLocaleString("en-IN")}
+                        Bal. ₹{Math.round(Math.abs(transaction.runningBalance)).toLocaleString("en-IN")}
                     </span>
                     {transaction.paymentMode && (
                         <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-muted text-muted-foreground">
@@ -102,15 +102,19 @@ export function SupplierTransactionCard({ transaction, onEdit, onDeleted }: Supp
                             transaction.type === "HALF_DAY" ? "text-amber-500" : "text-muted-foreground"
                         }`}
                     >
-                        −₹{transaction.amount.toLocaleString("en-IN")}
+                        −₹{Math.round(transaction.amount).toLocaleString("en-IN")}
+                    </span>
+                ) : transaction.type === "OPENING" ? (
+                    <span className="text-sm font-semibold text-emerald-500">
+                        ₹{Math.round(transaction.amount).toLocaleString("en-IN")}
                     </span>
                 ) : (
                     <div className="flex gap-2 text-sm font-semibold">
                         <span className="w-20 text-right text-rose-500">
-                            {transaction.type === "GAVE" ? `₹${transaction.amount.toLocaleString("en-IN")}` : ""}
+                            {transaction.type === "GAVE" ? `₹${Math.round(transaction.amount).toLocaleString("en-IN")}` : ""}
                         </span>
                         <span className="w-20 text-right text-emerald-500">
-                            {transaction.type === "GOT" ? `₹${transaction.amount.toLocaleString("en-IN")}` : ""}
+                            {transaction.type === "GOT" ? `₹${Math.round(transaction.amount).toLocaleString("en-IN")}` : ""}
                         </span>
                     </div>
                 )}
@@ -118,28 +122,31 @@ export function SupplierTransactionCard({ transaction, onEdit, onDeleted }: Supp
                     mobile (a tap could register as opening the menu and selecting its first
                     item in the same gesture); two plain buttons have no such failure mode.
                     An ABSENT/HALF_DAY row has no Edit — un-marking the day (calendar or
-                    Delete here) is the only way to change it. */}
-                <div className="flex items-center gap-1">
-                    {transaction.type !== "ABSENT" && transaction.type !== "HALF_DAY" && (
+                    Delete here) is the only way to change it. OPENING is synthetic (not a
+                    real row, see getWorkerLedger) — no Edit or Delete at all. */}
+                {transaction.type !== "OPENING" && (
+                    <div className="flex items-center gap-1">
+                        {transaction.type !== "ABSENT" && transaction.type !== "HALF_DAY" && (
+                            <button
+                                type="button"
+                                onClick={() => onEdit(transaction)}
+                                className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                                aria-label="Edit entry"
+                            >
+                                <Edit size={14} />
+                            </button>
+                        )}
                         <button
                             type="button"
-                            onClick={() => onEdit(transaction)}
-                            className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-                            aria-label="Edit entry"
+                            onClick={handleDelete}
+                            disabled={loading}
+                            className="p-1.5 rounded-lg text-muted-foreground hover:text-rose-500 hover:bg-rose-500/10 transition-colors disabled:opacity-50"
+                            aria-label="Delete entry"
                         >
-                            <Edit size={14} />
+                            {loading ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
                         </button>
-                    )}
-                    <button
-                        type="button"
-                        onClick={handleDelete}
-                        disabled={loading}
-                        className="p-1.5 rounded-lg text-muted-foreground hover:text-rose-500 hover:bg-rose-500/10 transition-colors disabled:opacity-50"
-                        aria-label="Delete entry"
-                    >
-                        {loading ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
-                    </button>
-                </div>
+                    </div>
+                )}
             </div>
 
             {previewIndex !== null && transaction.attachments[previewIndex] && (

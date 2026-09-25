@@ -12,7 +12,7 @@ import { SupplierTransactionList } from "./supplier-transaction-list"
 import { SupplierTransactionForm } from "./supplier-transaction-form"
 import { SupplierTransactionSuccess } from "./supplier-transaction-success"
 import { WorkerReportSheet } from "./worker-report-sheet"
-import { getWorkerLedger, setWorkerAttendance, type WorkerDayStatus, type WorkerLedgerResult } from "@/lib/actions/workers"
+import { getWorkerLedger, setWorkerAttendance, type MonthKey, type WorkerDayStatus, type WorkerLedgerResult } from "@/lib/actions/workers"
 import type { SupplierTransactionType, SupplierTransactionWithBalance } from "@/lib/actions/supplier-transactions"
 import { cn } from "@/lib/utils"
 
@@ -20,6 +20,14 @@ interface WorkerKhataDetailProps {
     party: { id: string; name: string; phone: string | null }
     transactions: SupplierTransactionWithBalance[]
     summary: WorkerLedgerResult["summary"]
+}
+
+// A client Date's LOCAL getters (matches what's on screen) — never its UTC getters,
+// which is what date-fns's own startOfMonth/addMonths/subMonths would read back wrong
+// on an IST client once the Date crosses to a server action. See MonthKey in
+// lib/date-utils.ts.
+function toMonthKey(date: Date): MonthKey {
+    return { year: date.getFullYear(), month: date.getMonth() }
 }
 
 export function WorkerKhataDetail({ party, transactions, summary }: WorkerKhataDetailProps) {
@@ -51,7 +59,7 @@ export function WorkerKhataDetail({ party, transactions, summary }: WorkerKhataD
         const requestId = ++requestIdRef.current
         setLoadingMonth(true)
         try {
-            const result = await getWorkerLedger(party.id, targetMonth)
+            const result = await getWorkerLedger(party.id, toMonthKey(targetMonth))
             if (requestId !== requestIdRef.current) return // superseded by a newer request
             setLedger(result)
             setDayStatus(result.summary.dayStatus)
@@ -87,7 +95,7 @@ export function WorkerKhataDetail({ party, transactions, summary }: WorkerKhataD
         setDayStatus(next)
         setSavingDate(dateStr)
         try {
-            const result = await setWorkerAttendance(party.id, month, next)
+            const result = await setWorkerAttendance(party.id, toMonthKey(month), next)
             if (result.success) {
                 toast.success(
                     status === "PRESENT" ? "Marked present" : status === "HALF_DAY" ? "Marked half day" : "Marked absent"
@@ -149,15 +157,15 @@ export function WorkerKhataDetail({ party, transactions, summary }: WorkerKhataD
                         </p>
                     </div>
                     <p className={cn("text-lg font-bold shrink-0", isGet ? "text-emerald-500" : "text-rose-500")}>
-                        ₹{Math.abs(viewSummary.netBalance).toLocaleString("en-IN")}
+                        ₹{Math.round(Math.abs(viewSummary.netBalance)).toLocaleString("en-IN")}
                     </p>
                 </div>
                 <div className="flex items-center justify-between border-t border-border pt-3">
                     <p className="text-xs text-muted-foreground">
-                        Salary ₹{viewSummary.monthlySalary.toLocaleString("en-IN")} • Deduction ₹
-                        {viewSummary.dailyDeduction.toLocaleString("en-IN", { maximumFractionDigits: 2 })}/day
+                        Salary ₹{Math.round(viewSummary.monthlySalary).toLocaleString("en-IN")} • Deduction ₹
+                        {Math.round(viewSummary.dailyDeduction).toLocaleString("en-IN")}/day
                         {viewSummary.openingBalance !== 0 && (
-                            <> • Opening ₹{Math.abs(viewSummary.openingBalance).toLocaleString("en-IN")}</>
+                            <> • Opening ₹{Math.round(Math.abs(viewSummary.openingBalance)).toLocaleString("en-IN")}</>
                         )}
                     </p>
                     <WorkerRateDialog

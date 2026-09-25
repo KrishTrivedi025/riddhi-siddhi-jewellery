@@ -9,13 +9,19 @@ import { ChevronLeft, ChevronRight, Download, Loader2, Receipt } from "lucide-re
 import { Button } from "@/components/ui/button"
 import { downloadOrSharePdf, buildShareFilename, describeSharePdfResult } from "@/lib/pdf-download"
 import { SupplierStatementDocument } from "./supplier-statement-pdf"
-import { getWorkerLedger, type WorkerLedgerSummary } from "@/lib/actions/workers"
+import { getWorkerLedger, type MonthKey, type WorkerLedgerSummary } from "@/lib/actions/workers"
 import type { SupplierTransactionWithBalance } from "@/lib/actions/supplier-transactions"
 import { cn } from "@/lib/utils"
 
 interface WorkerReportSheetProps {
     party: { id: string; name: string }
     trigger: React.ReactNode
+}
+
+// A client Date's LOCAL getters (matches what's on screen) — never its UTC getters. See
+// MonthKey in lib/date-utils.ts for why a Date can't be handed to a server action as-is.
+function toMonthKey(date: Date): MonthKey {
+    return { year: date.getFullYear(), month: date.getMonth() }
 }
 
 export function WorkerReportSheet({ party, trigger }: WorkerReportSheetProps) {
@@ -64,7 +70,7 @@ function ReportBody({
         if (!open) return
         let cancelled = false
         setLoading(true)
-        getWorkerLedger(party.id, month ?? undefined)
+        getWorkerLedger(party.id, month ? toMonthKey(month) : undefined)
             .then((result) => {
                 if (cancelled) return
                 setSummary(result.summary)
@@ -93,7 +99,10 @@ function ReportBody({
                 <SupplierStatementDocument
                     businessName="Riddhi Siddhi Jewellery"
                     partyName={party.name}
-                    transactions={transactions}
+                    // The synthetic "Opening Balance" row is for the app's own on-screen
+                    // list — the PDF already has a dedicated Opening Balance box, so
+                    // including the row too would show it twice.
+                    transactions={transactions.filter((t) => t.type !== "OPENING")}
                     openingBalance={summary.openingBalance}
                     netBalance={summary.netBalance}
                     fromDate={month}
@@ -167,7 +176,7 @@ function ReportBody({
                             <div className="flex items-center justify-between rounded-xl border border-border bg-card px-4 py-3">
                                 <span className="text-sm font-medium text-muted-foreground">Net Balance</span>
                                 <span className={cn("text-lg font-bold", isGet ? "text-emerald-500" : "text-rose-500")}>
-                                    ₹{Math.abs(summary.netBalance).toLocaleString("en-IN")}
+                                    ₹{Math.round(Math.abs(summary.netBalance)).toLocaleString("en-IN")}
                                 </span>
                             </div>
 
@@ -175,13 +184,13 @@ function ReportBody({
                                 <div className="rounded-lg border border-border p-3">
                                     <p className="text-xs text-muted-foreground">Monthly Salary</p>
                                     <p className="text-sm font-semibold text-foreground mt-0.5">
-                                        ₹{summary.monthlySalary.toLocaleString("en-IN")}
+                                        ₹{Math.round(summary.monthlySalary).toLocaleString("en-IN")}
                                     </p>
                                 </div>
                                 <div className="rounded-lg border border-border p-3">
                                     <p className="text-xs text-muted-foreground">Absent Days</p>
                                     <p className="text-sm font-semibold text-foreground mt-0.5">
-                                        {summary.absentDays} (−₹{summary.totalAbsentDeduction.toLocaleString("en-IN")})
+                                        {summary.absentDays} (−₹{Math.round(summary.totalAbsentDeduction).toLocaleString("en-IN")})
                                     </p>
                                     {summary.halfDays > 0 && (
                                         <p className="text-xs text-amber-500 mt-0.5">{summary.halfDays} half day{summary.halfDays > 1 ? "s" : ""}</p>
@@ -198,13 +207,13 @@ function ReportBody({
                                     <div className="text-center">
                                         <p className="text-[10px] font-semibold text-muted-foreground uppercase">You Gave</p>
                                         <p className="text-sm font-bold text-rose-500">
-                                            ₹{summary.totalGave.toLocaleString("en-IN")}
+                                            ₹{Math.round(summary.totalGave).toLocaleString("en-IN")}
                                         </p>
                                     </div>
                                     <div className="text-center">
                                         <p className="text-[10px] font-semibold text-muted-foreground uppercase">You Got</p>
                                         <p className="text-sm font-bold text-emerald-500">
-                                            ₹{summary.totalGot.toLocaleString("en-IN")}
+                                            ₹{Math.round(summary.totalGot).toLocaleString("en-IN")}
                                         </p>
                                     </div>
                                 </div>
@@ -227,6 +236,7 @@ function ReportBody({
                                                 : "text-rose-500"
                                         const isAbsent = t.type === "ABSENT"
                                         const isHalfDay = t.type === "HALF_DAY"
+                                        const isOpening = t.type === "OPENING"
                                         return (
                                             <div
                                                 key={t.id}
@@ -243,7 +253,7 @@ function ReportBody({
                                                                 balColor
                                                             )}
                                                         >
-                                                            Bal. ₹{Math.abs(t.runningBalance).toLocaleString("en-IN")}
+                                                            Bal. ₹{Math.round(Math.abs(t.runningBalance)).toLocaleString("en-IN")}
                                                         </span>
                                                         {t.paymentMode && (
                                                             <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-muted text-muted-foreground">
@@ -260,12 +270,14 @@ function ReportBody({
                                                             ? "text-muted-foreground"
                                                             : isHalfDay
                                                             ? "text-amber-500"
+                                                            : isOpening
+                                                            ? "text-emerald-500"
                                                             : t.type === "GAVE"
                                                             ? "text-rose-500"
                                                             : "text-emerald-500"
                                                     )}
                                                 >
-                                                    {isAbsent || isHalfDay ? "−" : ""}₹{t.amount.toLocaleString("en-IN")}
+                                                    {isAbsent || isHalfDay ? "−" : ""}₹{Math.round(t.amount).toLocaleString("en-IN")}
                                                 </span>
                                             </div>
                                         )

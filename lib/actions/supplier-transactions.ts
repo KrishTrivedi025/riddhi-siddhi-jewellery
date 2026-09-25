@@ -9,7 +9,7 @@ import { dailyRateForMonth } from "../worker-utils"
 import { getWorkerCarriedBalance } from "./workers"
 
 export type SupplierTransactionType = "GAVE" | "GOT"
-export type SupplierLedgerEntryType = SupplierTransactionType | "ABSENT" | "HALF_DAY"
+export type SupplierLedgerEntryType = SupplierTransactionType | "ABSENT" | "HALF_DAY" | "OPENING"
 export type SupplierPaymentMode = "CASH" | "ONLINE"
 
 export interface SupplierKhataSummaryItem {
