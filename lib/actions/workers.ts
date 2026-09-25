@@ -2,7 +2,7 @@
 
 import { prisma } from "@/lib/db"
 import { revalidatePath } from "next/cache"
-import { format, eachDayOfInterval } from "date-fns"
+import { format, eachDayOfInterval, getDaysInMonth } from "date-fns"
 import { requireUserId } from "./auth-helper"
 import { currentMonthStart, monthStartUTC, monthEndUTC, todayIST } from "../date-utils"
 import type { WorkerRateFormValues } from "../schemas/worker-schema"
@@ -13,6 +13,13 @@ import type {
 } from "./supplier-transactions"
 
 export type WorkerDayStatus = "ABSENT" | "HALF_DAY"
+
+// The per-day rate is never stored — it's always today's monthly salary spread across
+// however many days the given month actually has (30 in September, 31 in October, ...),
+// recomputed wherever it's needed instead of trusted from a saved column.
+export function dailyRateForMonth(monthlySalary: number, monthStart: Date): number {
+    return monthlySalary / getDaysInMonth(monthStart)
+}
 
 export interface WorkerRateInfo {
     monthlySalary: number
@@ -31,7 +38,10 @@ export async function getWorkerRate(partyId: string, month?: Date): Promise<Work
         if (!rate) return null
         return {
             monthlySalary: rate.monthlySalary,
-            dailyDeduction: rate.dailyDeduction,
+            // Always derived from monthlySalary + this month's day count — never the
+            // stored WorkerRate.dailyDeduction column, which only exists to satisfy the
+            // (legacy) NOT NULL constraint. See dailyRateForMonth.
+            dailyDeduction: dailyRateForMonth(rate.monthlySalary, monthStart),
             effectiveFrom: rate.effectiveFrom,
         }
     } catch (error) {
@@ -48,13 +58,16 @@ export async function setWorkerRate(partyId: string, data: WorkerRateFormValues)
         // is what makes "future months only" actually mean "current month onward":
         // editing again within the same month updates in place instead of stacking rows.
         const monthStart = currentMonthStart()
+        // dailyDeduction is written here only to satisfy the DB column; every real read
+        // (getWorkerRate) recomputes it per month instead of trusting this value.
+        const dailyDeduction = dailyRateForMonth(data.monthlySalary, monthStart)
         const existing = await prisma.workerRate.findFirst({
             where: { userId, partyId, effectiveFrom: monthStart },
         })
         if (existing) {
             await prisma.workerRate.update({
                 where: { id: existing.id },
-                data: { monthlySalary: data.monthlySalary, dailyDeduction: data.dailyDeduction },
+                data: { monthlySalary: data.monthlySalary, dailyDeduction },
             })
         } else {
             await prisma.workerRate.create({
@@ -62,7 +75,7 @@ export async function setWorkerRate(partyId: string, data: WorkerRateFormValues)
                     userId,
                     partyId,
                     monthlySalary: data.monthlySalary,
-                    dailyDeduction: data.dailyDeduction,
+                    dailyDeduction,
                     effectiveFrom: monthStart,
                 },
             })
@@ -79,6 +92,7 @@ export async function setWorkerRate(partyId: string, data: WorkerRateFormValues)
 export interface WorkerLedgerSummary {
     monthlySalary: number
     dailyDeduction: number
+    openingBalance: number // carried forward from every earlier month, negative = owed
     totalGave: number
     totalGot: number
     totalAbsentDeduction: number
@@ -94,6 +108,58 @@ export interface WorkerLedgerResult {
     summary: WorkerLedgerSummary
 }
 
+// Folds every fully-elapsed month from the worker's first WorkerRate up to (but not
+// including) targetMonthStart into a single balance — this becomes targetMonthStart's
+// opening balance, so "12,000 still owed at the end of August" carries into September
+// instead of September resetting to 0. One rates query + one transactions query cover
+// the whole span, then the fold happens in memory (each month needs its own day count
+// and its own effective rate, so it can't be reduced to a single groupBy).
+export async function getWorkerCarriedBalance(userId: string, partyId: string, targetMonthStart: Date): Promise<number> {
+    const earliestRate = await prisma.workerRate.findFirst({
+        where: { userId, partyId },
+        orderBy: { effectiveFrom: "asc" },
+    })
+    if (!earliestRate) return 0
+    const startMonth = monthStartUTC(earliestRate.effectiveFrom)
+    if (startMonth.getTime() >= targetMonthStart.getTime()) return 0
+
+    const rates = await prisma.workerRate.findMany({
+        where: { userId, partyId, effectiveFrom: { lt: targetMonthStart } },
+        orderBy: { effectiveFrom: "asc" },
+    })
+    const rows = await prisma.supplierTransaction.findMany({
+        where: { userId, partyId, deletedAt: null, date: { gte: startMonth, lt: targetMonthStart } },
+        select: { type: true, amount: true, date: true },
+    })
+
+    let balance = 0
+    let cursor = startMonth
+    while (cursor.getTime() < targetMonthStart.getTime()) {
+        const cursorEnd = monthEndUTC(cursor)
+        const rateForMonth = rates.filter((r) => r.effectiveFrom.getTime() <= cursor.getTime()).pop()
+        const dailyDeduction = rateForMonth ? dailyRateForMonth(rateForMonth.monthlySalary, cursor) : 0
+        const daysInMonth = getDaysInMonth(cursor)
+
+        let absentDays = 0
+        let halfDays = 0
+        let gave = 0
+        let got = 0
+        for (const t of rows) {
+            if (t.date < cursor || t.date > cursorEnd) continue
+            if (t.type === "ABSENT") absentDays++
+            else if (t.type === "HALF_DAY") halfDays++
+            else if (t.type === "GAVE") gave += t.amount
+            else if (t.type === "GOT") got += t.amount
+        }
+        const presentDays = Math.max(0, daysInMonth - absentDays - halfDays)
+        const accrued = presentDays * dailyDeduction + halfDays * (dailyDeduction / 2)
+        balance += -accrued + gave - got
+
+        cursor = new Date(Date.UTC(cursor.getUTCFullYear(), cursor.getUTCMonth() + 1, 1))
+    }
+    return balance
+}
+
 export async function getWorkerLedger(partyId: string, month?: Date): Promise<WorkerLedgerResult> {
     try {
         const userId = await requireUserId()
@@ -107,6 +173,7 @@ export async function getWorkerLedger(partyId: string, month?: Date): Promise<Wo
         const rate = await getWorkerRate(partyId, monthStart)
         const monthlySalary = rate?.monthlySalary ?? 0
         const dailyDeduction = rate?.dailyDeduction ?? 0
+        const openingBalance = await getWorkerCarriedBalance(userId, partyId, monthStart)
 
         const rows = await prisma.supplierTransaction.findMany({
             where: { userId, partyId, deletedAt: null, date: { gte: monthStart, lte: monthEnd } },
@@ -126,12 +193,13 @@ export async function getWorkerLedger(partyId: string, month?: Date): Promise<Wo
             else rowsByDate.set(key, [t])
         }
 
-        // Walk the month day by day: the balance starts at 0 and, for each day that has
-        // already elapsed, grows by a full day's pay (present, the default), half a day's
-        // pay (HALF_DAY), or nothing (ABSENT). That day's own GAVE/GOT/ABSENT/HALF_DAY rows
-        // are then applied in the same pass, so every row's running balance already
-        // includes every earlier day's accrual — not just the earlier rows' amounts.
-        let runningBalance = 0
+        // Walk the month day by day: the balance starts at the carried-forward opening
+        // balance (not 0 — see getWorkerCarriedBalance) and, for each day that has already
+        // elapsed, grows by a full day's pay (present, the default), half a day's pay
+        // (HALF_DAY), or nothing (ABSENT). That day's own GAVE/GOT/ABSENT/HALF_DAY rows are
+        // then applied in the same pass, so every row's running balance already includes
+        // every earlier day's accrual — not just the earlier rows' amounts.
+        let runningBalance = openingBalance
         const balanceByRowId = new Map<string, number>()
         const allDays = eachDayOfInterval({ start: monthStart, end: monthEndMidnight })
         for (const day of allDays) {
@@ -184,6 +252,7 @@ export async function getWorkerLedger(partyId: string, month?: Date): Promise<Wo
             summary: {
                 monthlySalary,
                 dailyDeduction,
+                openingBalance,
                 totalGave,
                 totalGot,
                 totalAbsentDeduction,
@@ -200,19 +269,18 @@ export async function getWorkerLedger(partyId: string, month?: Date): Promise<Wo
     }
 }
 
-// Always targets the current month — the attendance calendar only ever shows and
-// edits the current month, so "the month" is resolved here server-side rather than
-// trusted from the caller (a client-computed Date would carry the same IST/UTC
-// mismatch described in lib/date-utils.ts).
+// The calendar is now navigable to past months (see worker-attendance-calendar.tsx), so
+// month is whichever month is on screen — normalized here rather than trusted as-is, to
+// stay clear of the client/server IST/UTC mismatch described in lib/date-utils.ts.
 //
-// dayStatus is the full desired ABSENT/HALF_DAY map for the month (a date missing from
+// dayStatus is the full desired ABSENT/HALF_DAY map for that month (a date missing from
 // it is present) — called with the whole map on every single-day tap, same diff-against-
 // existing-rows approach as before, just generalized from a plain absent/present toggle
 // to the three-state ABSENT/HALF_DAY/present one.
-export async function setWorkerAttendance(partyId: string, dayStatus: Record<string, WorkerDayStatus>) {
+export async function setWorkerAttendance(partyId: string, month: Date, dayStatus: Record<string, WorkerDayStatus>) {
     try {
         const userId = await requireUserId()
-        const monthStart = currentMonthStart()
+        const monthStart = monthStartUTC(month)
         const monthEnd = monthEndUTC(monthStart)
 
         const rate = await getWorkerRate(partyId, monthStart)

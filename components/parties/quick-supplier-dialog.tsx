@@ -105,33 +105,21 @@ export function QuickSupplierDialog({ trigger }: QuickSupplierDialogProps) {
                     </div>
 
                     {isWorker && (
-                        <div className="grid grid-cols-2 gap-3">
-                            <div className="flex flex-col justify-end gap-1.5">
-                                <Label htmlFor="worker-monthly-salary">Monthly Salary</Label>
-                                <Input
-                                    id="worker-monthly-salary"
-                                    type="number"
-                                    inputMode="decimal"
-                                    placeholder="e.g. 12000"
-                                    {...register("monthlySalary", { valueAsNumber: true })}
-                                />
-                                {errors.monthlySalary && (
-                                    <p className="text-xs text-destructive">{errors.monthlySalary.message}</p>
-                                )}
-                            </div>
-                            <div className="flex flex-col justify-end gap-1.5">
-                                <Label htmlFor="worker-daily-deduction">Absence Deduction</Label>
-                                <Input
-                                    id="worker-daily-deduction"
-                                    type="number"
-                                    inputMode="decimal"
-                                    placeholder="e.g. 400"
-                                    {...register("dailyDeduction", { valueAsNumber: true })}
-                                />
-                                {errors.dailyDeduction && (
-                                    <p className="text-xs text-destructive">{errors.dailyDeduction.message}</p>
-                                )}
-                            </div>
+                        <div className="space-y-1.5">
+                            <Label htmlFor="worker-monthly-salary">Monthly Salary</Label>
+                            <Input
+                                id="worker-monthly-salary"
+                                type="number"
+                                inputMode="decimal"
+                                placeholder="e.g. 12000"
+                                {...register("monthlySalary", { valueAsNumber: true })}
+                            />
+                            {errors.monthlySalary && (
+                                <p className="text-xs text-destructive">{errors.monthlySalary.message}</p>
+                            )}
+                            <p className="text-xs text-muted-foreground">
+                                Per-day rate is calculated automatically — salary ÷ days in the month.
+                            </p>
                         </div>
                     )}
 

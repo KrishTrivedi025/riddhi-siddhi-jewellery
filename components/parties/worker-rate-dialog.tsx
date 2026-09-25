@@ -37,7 +37,7 @@ export function WorkerRateDialog({ partyId, monthlySalary, dailyDeduction, trigg
         formState: { errors, isSubmitting },
     } = useForm<WorkerRateFormValues>({
         resolver: zodResolver(workerRateSchema),
-        defaultValues: { monthlySalary, dailyDeduction },
+        defaultValues: { monthlySalary },
     })
 
     const onSubmit = async (values: WorkerRateFormValues) => {
@@ -56,13 +56,13 @@ export function WorkerRateDialog({ partyId, monthlySalary, dailyDeduction, trigg
             open={open}
             onOpenChange={(next) => {
                 setOpen(next)
-                if (!next) reset({ monthlySalary, dailyDeduction })
+                if (!next) reset({ monthlySalary })
             }}
         >
             <DialogTrigger asChild>{trigger}</DialogTrigger>
             <DialogContent className="bg-card border-border text-foreground w-[95vw] max-w-sm rounded-2xl">
                 <DialogHeader>
-                    <DialogTitle className="text-lg font-bold">Edit Salary &amp; Deduction</DialogTitle>
+                    <DialogTitle className="text-lg font-bold">Edit Monthly Salary</DialogTitle>
                 </DialogHeader>
                 <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
                     <div className="space-y-1.5">
@@ -77,20 +77,10 @@ export function WorkerRateDialog({ partyId, monthlySalary, dailyDeduction, trigg
                             <p className="text-xs text-destructive">{errors.monthlySalary.message}</p>
                         )}
                     </div>
-                    <div className="space-y-1.5">
-                        <Label htmlFor="worker-deduction">Absence Deduction</Label>
-                        <Input
-                            id="worker-deduction"
-                            type="number"
-                            inputMode="decimal"
-                            {...register("dailyDeduction", { valueAsNumber: true })}
-                        />
-                        {errors.dailyDeduction && (
-                            <p className="text-xs text-destructive">{errors.dailyDeduction.message}</p>
-                        )}
-                    </div>
                     <p className="text-xs text-muted-foreground">
-                        Changes apply from this month onward. Past months keep their original rate.
+                        Per-day rate (currently ₹{dailyDeduction.toLocaleString("en-IN", { maximumFractionDigits: 2 })}/day)
+                        is calculated automatically — salary ÷ days in that month. Changes apply from this month
+                        onward; past months keep their original rate.
                     </p>
                     <Button
                         type="submit"

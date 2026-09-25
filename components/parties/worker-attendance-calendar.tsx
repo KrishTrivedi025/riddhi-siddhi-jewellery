@@ -1,12 +1,13 @@
 "use client"
 
-import { eachDayOfInterval, endOfMonth, format, getDay, isAfter, isSameDay, startOfDay, startOfMonth } from "date-fns"
-import { Check, Loader2, X } from "lucide-react"
+import { addMonths, eachDayOfInterval, endOfMonth, format, getDay, isAfter, isSameDay, isSameMonth, startOfDay, startOfMonth, subMonths } from "date-fns"
+import { Check, ChevronLeft, ChevronRight, Loader2, X } from "lucide-react"
 import { cn } from "@/lib/utils"
 import type { WorkerDayStatus } from "@/lib/actions/workers"
 
 interface WorkerAttendanceCalendarProps {
     month: Date
+    onMonthChange: (month: Date) => void
     dayStatus: Record<string, WorkerDayStatus>
     selectedDate: string | null
     onSelectDate: (dateStr: string) => void
@@ -18,6 +19,7 @@ const WEEKDAY_LABELS = ["S", "M", "T", "W", "T", "F", "S"]
 
 export function WorkerAttendanceCalendar({
     month,
+    onMonthChange,
     dayStatus,
     selectedDate,
     onSelectDate,
@@ -29,10 +31,30 @@ export function WorkerAttendanceCalendar({
     const today = startOfDay(new Date())
     const leadingBlanks = getDay(monthStart)
     const selectedStatus = selectedDate ? dayStatus[selectedDate] : undefined
+    const isCurrentMonth = isSameMonth(month, today)
 
     return (
         <div className="rounded-xl border border-border bg-card p-4 space-y-3">
-            <p className="text-sm font-semibold text-foreground">{format(month, "MMMM yyyy")}</p>
+            <div className="flex items-center justify-between">
+                <button
+                    type="button"
+                    onClick={() => onMonthChange(subMonths(monthStart, 1))}
+                    className="p-1.5 -ml-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                    aria-label="Previous month"
+                >
+                    <ChevronLeft size={16} />
+                </button>
+                <p className="text-sm font-semibold text-foreground">{format(month, "MMMM yyyy")}</p>
+                <button
+                    type="button"
+                    onClick={() => onMonthChange(addMonths(monthStart, 1))}
+                    disabled={isCurrentMonth}
+                    className="p-1.5 -mr-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                    aria-label="Next month"
+                >
+                    <ChevronRight size={16} />
+                </button>
+            </div>
 
             <div className="grid grid-cols-7 gap-1 text-center text-[10px] font-semibold text-muted-foreground uppercase">
                 {WEEKDAY_LABELS.map((label, i) => (

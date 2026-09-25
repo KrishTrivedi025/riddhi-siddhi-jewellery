@@ -13,9 +13,10 @@ import { AttachmentLightbox } from "./attachment-lightbox"
 interface SupplierTransactionCardProps {
     transaction: SupplierTransactionWithBalance
     onEdit: (transaction: SupplierTransactionWithBalance) => void
+    onDeleted?: () => void
 }
 
-export function SupplierTransactionCard({ transaction, onEdit }: SupplierTransactionCardProps) {
+export function SupplierTransactionCard({ transaction, onEdit, onDeleted }: SupplierTransactionCardProps) {
     const [loading, setLoading] = useState(false)
     const [previewIndex, setPreviewIndex] = useState<number | null>(null)
     const router = useRouter()
@@ -43,6 +44,7 @@ export function SupplierTransactionCard({ transaction, onEdit }: SupplierTransac
             if (result.success) {
                 toast.success("Entry deleted")
                 router.refresh()
+                onDeleted?.()
             } else {
                 toast.error(result.error)
             }

@@ -1,8 +1,8 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
-import { startOfMonth } from "date-fns"
+import { isSameMonth, startOfMonth, format } from "date-fns"
 import { toast } from "sonner"
 import { FileText } from "lucide-react"
 import { Fab } from "@/components/shared/fab"
@@ -12,14 +12,14 @@ import { SupplierTransactionList } from "./supplier-transaction-list"
 import { SupplierTransactionForm } from "./supplier-transaction-form"
 import { SupplierTransactionSuccess } from "./supplier-transaction-success"
 import { WorkerReportSheet } from "./worker-report-sheet"
-import { setWorkerAttendance, type WorkerDayStatus, type WorkerLedgerSummary } from "@/lib/actions/workers"
+import { getWorkerLedger, setWorkerAttendance, type WorkerDayStatus, type WorkerLedgerResult } from "@/lib/actions/workers"
 import type { SupplierTransactionType, SupplierTransactionWithBalance } from "@/lib/actions/supplier-transactions"
 import { cn } from "@/lib/utils"
 
 interface WorkerKhataDetailProps {
     party: { id: string; name: string; phone: string | null }
     transactions: SupplierTransactionWithBalance[]
-    summary: WorkerLedgerSummary
+    summary: WorkerLedgerResult["summary"]
 }
 
 export function WorkerKhataDetail({ party, transactions, summary }: WorkerKhataDetailProps) {
@@ -28,17 +28,45 @@ export function WorkerKhataDetail({ party, transactions, summary }: WorkerKhataD
     const [formType, setFormType] = useState<SupplierTransactionType>("GAVE")
     const [editing, setEditing] = useState<SupplierTransactionWithBalance | null>(null)
     const [success, setSuccess] = useState<{ amount: number } | null>(null)
-    const [dayStatus, setDayStatus] = useState<Record<string, WorkerDayStatus>>(summary.dayStatus)
     const [selectedDate, setSelectedDate] = useState<string | null>(null)
     const [savingDate, setSavingDate] = useState<string | null>(null)
 
-    const month = useMemo(() => startOfMonth(new Date()), [])
+    // The calendar/ledger is now navigable to any past month, so the current month's
+    // data (given as props from the server page, which only ever renders the current
+    // month) is just this component's *initial* state — everything after that, including
+    // re-syncing the current month after a save, is fetched here client-side, the same
+    // way WorkerReportSheet already fetches whichever month it's showing.
+    const [month, setMonth] = useState<Date>(() => startOfMonth(new Date()))
+    const [ledger, setLedger] = useState<WorkerLedgerResult>({ transactions, summary })
+    const [dayStatus, setDayStatus] = useState<Record<string, WorkerDayStatus>>(summary.dayStatus)
+    const [loadingMonth, setLoadingMonth] = useState(false)
+    const isFirstRender = useRef(true)
 
-    // The server is the source of truth; re-sync after router.refresh() brings a fresh
-    // summary (e.g. right after a save commits, or data changed elsewhere).
+    const refetch = async (targetMonth: Date) => {
+        setLoadingMonth(true)
+        try {
+            const result = await getWorkerLedger(party.id, targetMonth)
+            setLedger(result)
+            setDayStatus(result.summary.dayStatus)
+        } catch {
+            toast.error("Failed to load that month")
+        } finally {
+            setLoadingMonth(false)
+        }
+    }
+
+    // Skip the fetch on mount — the server page already gave us the current month.
     useEffect(() => {
-        setDayStatus(summary.dayStatus)
-    }, [summary.dayStatus])
+        if (isFirstRender.current) {
+            isFirstRender.current = false
+            return
+        }
+        setSelectedDate(null)
+        refetch(month)
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [month])
+
+    const handleMonthChange = (next: Date) => setMonth(startOfMonth(next))
 
     const handleSelectDate = (dateStr: string) => {
         setSelectedDate((prev) => (prev === dateStr ? null : dateStr))
@@ -52,11 +80,12 @@ export function WorkerKhataDetail({ party, transactions, summary }: WorkerKhataD
         setDayStatus(next)
         setSavingDate(dateStr)
         try {
-            const result = await setWorkerAttendance(party.id, next)
+            const result = await setWorkerAttendance(party.id, month, next)
             if (result.success) {
                 toast.success(
                     status === "PRESENT" ? "Marked present" : status === "HALF_DAY" ? "Marked half day" : "Marked absent"
                 )
+                await refetch(month)
                 router.refresh()
             } else {
                 setDayStatus(previous)
@@ -76,9 +105,10 @@ export function WorkerKhataDetail({ party, transactions, summary }: WorkerKhataD
         setFormOpen(true)
     }
 
-    const handleSaved = ({ amount, isEdit }: { type: SupplierTransactionType; amount: number; isEdit: boolean }) => {
+    const handleSaved = async ({ amount, isEdit }: { type: SupplierTransactionType; amount: number; isEdit: boolean }) => {
         setFormOpen(false)
         setEditing(null)
+        await refetch(month)
         router.refresh()
         if (isEdit) {
             toast.success("Entry updated")
@@ -92,7 +122,9 @@ export function WorkerKhataDetail({ party, transactions, summary }: WorkerKhataD
         openForm(type)
     }
 
-    const isGet = summary.netBalance > 0
+    const { transactions: viewTransactions, summary: viewSummary } = ledger
+    const isGet = viewSummary.netBalance > 0
+    const isCurrentMonth = isSameMonth(month, new Date())
 
     return (
         <div className="space-y-4 pb-40 md:pb-8">
@@ -105,21 +137,26 @@ export function WorkerKhataDetail({ party, transactions, summary }: WorkerKhataD
                                 Worker
                             </span>
                         </div>
-                        <p className="text-xs text-muted-foreground mt-0.5">This month&apos;s balance</p>
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                            {isCurrentMonth ? "This month's balance" : `${format(month, "MMMM yyyy")} balance`}
+                        </p>
                     </div>
                     <p className={cn("text-lg font-bold shrink-0", isGet ? "text-emerald-500" : "text-rose-500")}>
-                        ₹{Math.abs(summary.netBalance).toLocaleString("en-IN")}
+                        ₹{Math.abs(viewSummary.netBalance).toLocaleString("en-IN")}
                     </p>
                 </div>
                 <div className="flex items-center justify-between border-t border-border pt-3">
                     <p className="text-xs text-muted-foreground">
-                        Salary ₹{summary.monthlySalary.toLocaleString("en-IN")} • Deduction ₹
-                        {summary.dailyDeduction.toLocaleString("en-IN")}/day
+                        Salary ₹{viewSummary.monthlySalary.toLocaleString("en-IN")} • Deduction ₹
+                        {viewSummary.dailyDeduction.toLocaleString("en-IN", { maximumFractionDigits: 2 })}/day
+                        {viewSummary.openingBalance !== 0 && (
+                            <> • Opening ₹{Math.abs(viewSummary.openingBalance).toLocaleString("en-IN")}</>
+                        )}
                     </p>
                     <WorkerRateDialog
                         partyId={party.id}
-                        monthlySalary={summary.monthlySalary}
-                        dailyDeduction={summary.dailyDeduction}
+                        monthlySalary={viewSummary.monthlySalary}
+                        dailyDeduction={viewSummary.dailyDeduction}
                         trigger={
                             <button type="button" className="text-xs font-semibold text-primary shrink-0">
                                 Edit
@@ -131,6 +168,7 @@ export function WorkerKhataDetail({ party, transactions, summary }: WorkerKhataD
 
             <WorkerAttendanceCalendar
                 month={month}
+                onMonthChange={handleMonthChange}
                 dayStatus={dayStatus}
                 selectedDate={selectedDate}
                 onSelectDate={handleSelectDate}
@@ -139,9 +177,10 @@ export function WorkerKhataDetail({ party, transactions, summary }: WorkerKhataD
             />
 
             <SupplierTransactionList
-                transactions={transactions}
+                transactions={loadingMonth ? [] : viewTransactions}
                 onEdit={(t) => openForm(t.type as SupplierTransactionType, t)}
                 onAddFirst={() => openForm("GAVE")}
+                onDeleted={() => refetch(month)}
             />
 
             {/* Report FAB and the bottom bar share one fixed anchor, same pattern as the

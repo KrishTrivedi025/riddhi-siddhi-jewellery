@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache"
 import { requireUserId } from "./auth-helper"
 import type { QuickSupplierFormValues, SupplierTransactionFormValues } from "../schemas/supplier-transaction-schema"
 import { currentMonthStart, monthEndUTC, todayIST } from "../date-utils"
+import { dailyRateForMonth, getWorkerCarriedBalance } from "./workers"
 
 export type SupplierTransactionType = "GAVE" | "GOT"
 export type SupplierLedgerEntryType = SupplierTransactionType | "ABSENT" | "HALF_DAY"
@@ -78,9 +79,9 @@ export async function getSupplierKhataSummary(): Promise<SupplierKhataSummary> {
                 where: { partyId: { in: workerIds }, effectiveFrom: { lte: monthStart } },
                 orderBy: { effectiveFrom: "desc" },
             })
-            const dailyMap = new Map<string, number>()
+            const salaryMap = new Map<string, number>()
             for (const r of rates) {
-                if (!dailyMap.has(r.partyId)) dailyMap.set(r.partyId, r.dailyDeduction)
+                if (!salaryMap.has(r.partyId)) salaryMap.set(r.partyId, r.monthlySalary)
             }
 
             const monthSums = await prisma.supplierTransaction.groupBy({
@@ -104,16 +105,22 @@ export async function getSupplierKhataSummary(): Promise<SupplierKhataSummary> {
                 monthMap.set(s.partyId, entry)
             }
 
+            // Carry-forward is per worker (each has its own hire month/rate history), so
+            // this is one call per worker rather than a single batched query — acceptable
+            // at this app's scale (a handful of workers), and it reuses the exact same fold
+            // getWorkerLedger uses, so the list total never drifts from the detail page.
             for (const workerId of workerIds) {
-                const dailyDeduction = dailyMap.get(workerId) || 0
+                const monthlySalary = salaryMap.get(workerId) || 0
+                const dailyDeduction = dailyRateForMonth(monthlySalary, monthStart)
                 const { gave, got, absentDays, halfDays } = monthMap.get(workerId) || { gave: 0, got: 0, absentDays: 0, halfDays: 0 }
                 const presentDays = Math.max(0, elapsedDays - absentDays - halfDays)
                 const accruedSalary = presentDays * dailyDeduction + halfDays * (dailyDeduction / 2)
-                // Balance starts at 0 each month and grows by a day's pay for every elapsed
-                // day that isn't absent (full pay) or half-day (half pay); GAVE/GOT then
-                // adjust it the same way as a plain supplier — see getWorkerLedger for the
-                // per-entry version of this same formula.
-                workerBalanceMap.set(workerId, -accruedSalary + gave - got)
+                const openingBalance = await getWorkerCarriedBalance(userId, workerId, monthStart)
+                // Opening balance carries whatever was still owed from earlier months; this
+                // month then grows by a day's pay for every elapsed day that isn't absent
+                // (full pay) or half-day (half pay); GAVE/GOT adjust it the same way as a
+                // plain supplier — see getWorkerLedger for the per-entry version of this.
+                workerBalanceMap.set(workerId, openingBalance - accruedSalary + gave - got)
             }
         }
 
@@ -395,13 +402,16 @@ export async function createQuickSupplier(data: QuickSupplierFormValues) {
                           isWorker: true,
                       },
                   })
+                  const effectiveFrom = currentMonthStart()
                   await tx.workerRate.create({
                       data: {
                           userId,
                           partyId: created.id,
                           monthlySalary: data.monthlySalary!,
-                          dailyDeduction: data.dailyDeduction!,
-                          effectiveFrom: currentMonthStart(),
+                          // Written only to satisfy the column — getWorkerRate always
+                          // recomputes this per month instead of trusting it.
+                          dailyDeduction: dailyRateForMonth(data.monthlySalary!, effectiveFrom),
+                          effectiveFrom,
                       },
                   })
                   return created

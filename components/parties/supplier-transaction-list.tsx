@@ -12,6 +12,10 @@ interface SupplierTransactionListProps {
     transactions: SupplierTransactionWithBalance[]
     onEdit: (transaction: SupplierTransactionWithBalance) => void
     onAddFirst: () => void
+    // Worker view only — router.refresh() alone doesn't refresh a past month's client-
+    // fetched ledger, so a delete there needs an explicit refetch. Unused (and harmless)
+    // for the plain-supplier khata, which doesn't pass it.
+    onDeleted?: () => void
 }
 
 interface DateGroup {
@@ -38,7 +42,7 @@ function groupByDate(transactions: SupplierTransactionWithBalance[]): DateGroup[
     return groups
 }
 
-export function SupplierTransactionList({ transactions, onEdit, onAddFirst }: SupplierTransactionListProps) {
+export function SupplierTransactionList({ transactions, onEdit, onAddFirst, onDeleted }: SupplierTransactionListProps) {
     if (transactions.length === 0) {
         return (
             <div className="border border-border rounded-xl p-10 text-center space-y-3">
@@ -74,7 +78,7 @@ export function SupplierTransactionList({ transactions, onEdit, onAddFirst }: Su
                     >
                         {group.entries.map((t) => (
                             <motion.div key={t.id} variants={itemVariants}>
-                                <SupplierTransactionCard transaction={t} onEdit={onEdit} />
+                                <SupplierTransactionCard transaction={t} onEdit={onEdit} onDeleted={onDeleted} />
                             </motion.div>
                         ))}
                     </motion.div>

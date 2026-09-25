@@ -94,7 +94,7 @@ function ReportBody({
                     businessName="Riddhi Siddhi Jewellery"
                     partyName={party.name}
                     transactions={transactions}
-                    openingBalance={0}
+                    openingBalance={summary.openingBalance}
                     netBalance={summary.netBalance}
                     fromDate={month}
                     toDate={endOfMonth(month)}
