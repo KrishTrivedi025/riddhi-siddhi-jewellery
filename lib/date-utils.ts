@@ -24,3 +24,11 @@ export function monthStartUTC(date: Date): Date {
 export function monthEndUTC(monthStart: Date): Date {
     return new Date(Date.UTC(monthStart.getUTCFullYear(), monthStart.getUTCMonth() + 1, 0, 23, 59, 59, 999))
 }
+
+// Same IST-anchored resolution as currentMonthStart(), but for "today" (UTC midnight
+// of today's IST calendar date) — used to know which days in a month have "elapsed"
+// for daily salary accrual.
+export function todayIST(): Date {
+    const istNow = new Date(Date.now() + IST_OFFSET_MS)
+    return new Date(Date.UTC(istNow.getUTCFullYear(), istNow.getUTCMonth(), istNow.getUTCDate()))
+}

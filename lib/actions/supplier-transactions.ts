@@ -4,10 +4,10 @@ import { prisma } from "@/lib/db"
 import { revalidatePath } from "next/cache"
 import { requireUserId } from "./auth-helper"
 import type { QuickSupplierFormValues, SupplierTransactionFormValues } from "../schemas/supplier-transaction-schema"
-import { currentMonthStart, monthEndUTC } from "../date-utils"
+import { currentMonthStart, monthEndUTC, todayIST } from "../date-utils"
 
 export type SupplierTransactionType = "GAVE" | "GOT"
-export type SupplierLedgerEntryType = SupplierTransactionType | "ABSENT"
+export type SupplierLedgerEntryType = SupplierTransactionType | "ABSENT" | "HALF_DAY"
 export type SupplierPaymentMode = "CASH" | "ONLINE"
 
 export interface SupplierKhataSummaryItem {
@@ -72,14 +72,15 @@ export async function getSupplierKhataSummary(): Promise<SupplierKhataSummary> {
         if (workerIds.length > 0) {
             const monthStart = currentMonthStart()
             const monthEnd = monthEndUTC(monthStart)
+            const elapsedDays = todayIST().getUTCDate() // day-of-month, e.g. 25 on Sep 25
 
             const rates = await prisma.workerRate.findMany({
                 where: { partyId: { in: workerIds }, effectiveFrom: { lte: monthStart } },
                 orderBy: { effectiveFrom: "desc" },
             })
-            const salaryMap = new Map<string, number>()
+            const dailyMap = new Map<string, number>()
             for (const r of rates) {
-                if (!salaryMap.has(r.partyId)) salaryMap.set(r.partyId, r.monthlySalary)
+                if (!dailyMap.has(r.partyId)) dailyMap.set(r.partyId, r.dailyDeduction)
             }
 
             const monthSums = await prisma.supplierTransaction.groupBy({
@@ -91,23 +92,28 @@ export async function getSupplierKhataSummary(): Promise<SupplierKhataSummary> {
                     date: { gte: monthStart, lte: monthEnd },
                 },
                 _sum: { amount: true },
+                _count: { _all: true },
             })
-            const monthMap = new Map<string, { gave: number; got: number; absent: number }>()
+            const monthMap = new Map<string, { gave: number; got: number; absentDays: number; halfDays: number }>()
             for (const s of monthSums) {
-                const entry = monthMap.get(s.partyId) || { gave: 0, got: 0, absent: 0 }
+                const entry = monthMap.get(s.partyId) || { gave: 0, got: 0, absentDays: 0, halfDays: 0 }
                 if (s.type === "GAVE") entry.gave = s._sum.amount || 0
                 else if (s.type === "GOT") entry.got = s._sum.amount || 0
-                else if (s.type === "ABSENT") entry.absent = s._sum.amount || 0
+                else if (s.type === "ABSENT") entry.absentDays = s._count._all
+                else if (s.type === "HALF_DAY") entry.halfDays = s._count._all
                 monthMap.set(s.partyId, entry)
             }
 
             for (const workerId of workerIds) {
-                const salary = salaryMap.get(workerId) || 0
-                const { gave, got, absent } = monthMap.get(workerId) || { gave: 0, got: 0, absent: 0 }
-                // Opening balance is -salary (you owe the full salary); GAVE and ABSENT
-                // both reduce that debt, GOT increases it — see getWorkerLedger for the
+                const dailyDeduction = dailyMap.get(workerId) || 0
+                const { gave, got, absentDays, halfDays } = monthMap.get(workerId) || { gave: 0, got: 0, absentDays: 0, halfDays: 0 }
+                const presentDays = Math.max(0, elapsedDays - absentDays - halfDays)
+                const accruedSalary = presentDays * dailyDeduction + halfDays * (dailyDeduction / 2)
+                // Balance starts at 0 each month and grows by a day's pay for every elapsed
+                // day that isn't absent (full pay) or half-day (half pay); GAVE/GOT then
+                // adjust it the same way as a plain supplier — see getWorkerLedger for the
                 // per-entry version of this same formula.
-                workerBalanceMap.set(workerId, -salary + gave + absent - got)
+                workerBalanceMap.set(workerId, -accruedSalary + gave - got)
             }
         }
 

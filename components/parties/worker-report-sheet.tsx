@@ -94,7 +94,8 @@ function ReportBody({
                     businessName="Riddhi Siddhi Jewellery"
                     partyName={party.name}
                     transactions={transactions}
-                    openingBalance={-summary.monthlySalary}
+                    openingBalance={0}
+                    netBalance={summary.netBalance}
                     fromDate={month}
                     toDate={endOfMonth(month)}
                     generatedAt={new Date()}
@@ -182,6 +183,9 @@ function ReportBody({
                                     <p className="text-sm font-semibold text-foreground mt-0.5">
                                         {summary.absentDays} (−₹{summary.totalAbsentDeduction.toLocaleString("en-IN")})
                                     </p>
+                                    {summary.halfDays > 0 && (
+                                        <p className="text-xs text-amber-500 mt-0.5">{summary.halfDays} half day{summary.halfDays > 1 ? "s" : ""}</p>
+                                    )}
                                 </div>
                             </div>
 
@@ -222,6 +226,7 @@ function ReportBody({
                                                 ? "text-emerald-500"
                                                 : "text-rose-500"
                                         const isAbsent = t.type === "ABSENT"
+                                        const isHalfDay = t.type === "HALF_DAY"
                                         return (
                                             <div
                                                 key={t.id}
@@ -246,21 +251,21 @@ function ReportBody({
                                                             </span>
                                                         )}
                                                     </div>
-                                                    <p className="text-sm text-foreground">
-                                                        {isAbsent ? "Absent" : t.details || ""}
-                                                    </p>
+                                                    <p className="text-sm text-foreground">{t.details || ""}</p>
                                                 </div>
                                                 <span
                                                     className={cn(
                                                         "text-base font-bold shrink-0",
                                                         isAbsent
                                                             ? "text-muted-foreground"
+                                                            : isHalfDay
+                                                            ? "text-amber-500"
                                                             : t.type === "GAVE"
                                                             ? "text-rose-500"
                                                             : "text-emerald-500"
                                                     )}
                                                 >
-                                                    {isAbsent ? "−" : ""}₹{t.amount.toLocaleString("en-IN")}
+                                                    {isAbsent || isHalfDay ? "−" : ""}₹{t.amount.toLocaleString("en-IN")}
                                                 </span>
                                             </div>
                                         )

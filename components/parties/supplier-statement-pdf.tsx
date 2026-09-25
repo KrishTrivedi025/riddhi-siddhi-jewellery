@@ -88,6 +88,11 @@ interface SupplierStatementDocumentProps {
     partyName: string
     transactions: SupplierTransactionWithBalance[] // chronological (oldest first)
     openingBalance: number
+    // Pre-computed final balance, used instead of deriving one from the last
+    // transaction's runningBalance. Needed for a worker's ledger: trailing days with no
+    // explicit row (a present day leaves no row at all) still accrue salary, so the last
+    // *row's* balance can be stale by however many unmarked days followed it.
+    netBalance?: number
     fromDate?: Date
     toDate?: Date
     generatedAt: Date
@@ -98,13 +103,15 @@ export function SupplierStatementDocument({
     partyName,
     transactions,
     openingBalance,
+    netBalance: netBalanceOverride,
     fromDate,
     toDate,
     generatedAt,
 }: SupplierStatementDocumentProps) {
     const totalDebit = transactions.reduce((s, t) => s + (t.type === "GAVE" ? t.amount : 0), 0)
     const totalCredit = transactions.reduce((s, t) => s + (t.type === "GOT" ? t.amount : 0), 0)
-    const netBalance = transactions.length > 0 ? transactions[transactions.length - 1].runningBalance : openingBalance
+    const netBalance =
+        netBalanceOverride ?? (transactions.length > 0 ? transactions[transactions.length - 1].runningBalance : openingBalance)
     const isGet = netBalance > 0
 
     const dateRangeText =

@@ -2,15 +2,17 @@
 
 import { prisma } from "@/lib/db"
 import { revalidatePath } from "next/cache"
-import { format } from "date-fns"
+import { format, eachDayOfInterval } from "date-fns"
 import { requireUserId } from "./auth-helper"
-import { currentMonthStart, monthStartUTC, monthEndUTC } from "../date-utils"
+import { currentMonthStart, monthStartUTC, monthEndUTC, todayIST } from "../date-utils"
 import type { WorkerRateFormValues } from "../schemas/worker-schema"
 import type {
     SupplierPaymentMode,
     SupplierLedgerEntryType,
     SupplierTransactionWithBalance,
 } from "./supplier-transactions"
+
+export type WorkerDayStatus = "ABSENT" | "HALF_DAY"
 
 export interface WorkerRateInfo {
     monthlySalary: number
@@ -81,9 +83,10 @@ export interface WorkerLedgerSummary {
     totalGot: number
     totalAbsentDeduction: number
     absentDays: number
+    halfDays: number
     netBalance: number
     month: string // "yyyy-MM"
-    absentDates: string[] // "yyyy-MM-dd"
+    dayStatus: Record<string, WorkerDayStatus> // "yyyy-MM-dd" -> status; absent from here = present
 }
 
 export interface WorkerLedgerResult {
@@ -96,6 +99,10 @@ export async function getWorkerLedger(partyId: string, month?: Date): Promise<Wo
         const userId = await requireUserId()
         const monthStart = month ? monthStartUTC(month) : currentMonthStart()
         const monthEnd = monthEndUTC(monthStart)
+        // Last day of the month, at UTC midnight — eachDayOfInterval below walks whole
+        // calendar days, not the 23:59:59.999 end-of-day monthEnd used for DB range queries.
+        const monthEndMidnight = new Date(Date.UTC(monthStart.getUTCFullYear(), monthStart.getUTCMonth() + 1, 0))
+        const lastElapsedDay = new Date(Math.min(todayIST().getTime(), monthEndMidnight.getTime()))
 
         const rate = await getWorkerRate(partyId, monthStart)
         const monthlySalary = rate?.monthlySalary ?? 0
@@ -107,14 +114,44 @@ export async function getWorkerLedger(partyId: string, month?: Date): Promise<Wo
             include: { attachments: true },
         })
 
-        // Opening balance is -monthlySalary (you owe the worker their full salary for
-        // the month). GAVE (an ad-hoc payment) and ABSENT (a deduction) both reduce that
-        // debt the same way; GOT increases it — mirrors the plain GAVE/GOT convention
-        // but starting from -salary instead of 0, since the ledger resets every month.
-        let runningBalance = -monthlySalary
+        // Attendance status per date, from ABSENT/HALF_DAY rows. A date with no entry
+        // here is present (the default) — see setWorkerAttendance.
+        const dayStatusMap = new Map<string, WorkerDayStatus>()
+        const rowsByDate = new Map<string, typeof rows>()
+        for (const t of rows) {
+            const key = format(t.date, "yyyy-MM-dd")
+            if (t.type === "ABSENT" || t.type === "HALF_DAY") dayStatusMap.set(key, t.type)
+            const list = rowsByDate.get(key)
+            if (list) list.push(t)
+            else rowsByDate.set(key, [t])
+        }
+
+        // Walk the month day by day: the balance starts at 0 and, for each day that has
+        // already elapsed, grows by a full day's pay (present, the default), half a day's
+        // pay (HALF_DAY), or nothing (ABSENT). That day's own GAVE/GOT/ABSENT/HALF_DAY rows
+        // are then applied in the same pass, so every row's running balance already
+        // includes every earlier day's accrual — not just the earlier rows' amounts.
+        let runningBalance = 0
+        const balanceByRowId = new Map<string, number>()
+        const allDays = eachDayOfInterval({ start: monthStart, end: monthEndMidnight })
+        for (const day of allDays) {
+            const dateStr = format(day, "yyyy-MM-dd")
+            if (day.getTime() <= lastElapsedDay.getTime()) {
+                const status = dayStatusMap.get(dateStr)
+                const dayPay = status === "ABSENT" ? 0 : status === "HALF_DAY" ? dailyDeduction / 2 : dailyDeduction
+                runningBalance -= dayPay
+            }
+            const dayRows = (rowsByDate.get(dateStr) ?? []).slice().sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime())
+            for (const t of dayRows) {
+                if (t.type === "GAVE") runningBalance += t.amount
+                else if (t.type === "GOT") runningBalance -= t.amount
+                // ABSENT/HALF_DAY's own effect is the dayPay accrual above — don't double-apply.
+                balanceByRowId.set(t.id, runningBalance)
+            }
+        }
+
         const transactions: SupplierTransactionWithBalance[] = rows.map((t) => {
             const type = t.type as SupplierLedgerEntryType
-            runningBalance += type === "GOT" ? -t.amount : t.amount
             return {
                 id: t.id,
                 type,
@@ -123,7 +160,7 @@ export async function getWorkerLedger(partyId: string, month?: Date): Promise<Wo
                 date: t.date,
                 createdAt: t.createdAt,
                 paymentMode: t.paymentMode as SupplierPaymentMode | null,
-                runningBalance,
+                runningBalance: balanceByRowId.get(t.id) ?? runningBalance,
                 attachments: t.attachments.map((a) => ({
                     id: a.id,
                     url: a.url,
@@ -136,8 +173,11 @@ export async function getWorkerLedger(partyId: string, month?: Date): Promise<Wo
         const totalGave = transactions.reduce((s, t) => s + (t.type === "GAVE" ? t.amount : 0), 0)
         const totalGot = transactions.reduce((s, t) => s + (t.type === "GOT" ? t.amount : 0), 0)
         const absentEntries = transactions.filter((t) => t.type === "ABSENT")
+        const halfDayEntries = transactions.filter((t) => t.type === "HALF_DAY")
         const totalAbsentDeduction = absentEntries.reduce((s, t) => s + t.amount, 0)
-        const netBalance = -monthlySalary + totalGave + totalAbsentDeduction - totalGot
+
+        const dayStatus: Record<string, WorkerDayStatus> = {}
+        for (const [date, status] of dayStatusMap) dayStatus[date] = status
 
         return {
             transactions: [...transactions].reverse(), // newest first, matching getSupplierTransactions
@@ -148,9 +188,10 @@ export async function getWorkerLedger(partyId: string, month?: Date): Promise<Wo
                 totalGot,
                 totalAbsentDeduction,
                 absentDays: absentEntries.length,
-                netBalance,
+                halfDays: halfDayEntries.length,
+                netBalance: runningBalance,
                 month: format(monthStart, "yyyy-MM"),
-                absentDates: absentEntries.map((t) => format(t.date, "yyyy-MM-dd")),
+                dayStatus,
             },
         }
     } catch (error) {
@@ -163,7 +204,12 @@ export async function getWorkerLedger(partyId: string, month?: Date): Promise<Wo
 // edits the current month, so "the month" is resolved here server-side rather than
 // trusted from the caller (a client-computed Date would carry the same IST/UTC
 // mismatch described in lib/date-utils.ts).
-export async function setWorkerAttendance(partyId: string, absentDates: string[]) {
+//
+// dayStatus is the full desired ABSENT/HALF_DAY map for the month (a date missing from
+// it is present) — called with the whole map on every single-day tap, same diff-against-
+// existing-rows approach as before, just generalized from a plain absent/present toggle
+// to the three-state ABSENT/HALF_DAY/present one.
+export async function setWorkerAttendance(partyId: string, dayStatus: Record<string, WorkerDayStatus>) {
     try {
         const userId = await requireUserId()
         const monthStart = currentMonthStart()
@@ -173,29 +219,45 @@ export async function setWorkerAttendance(partyId: string, absentDates: string[]
         if (!rate) return { success: false, error: "No salary rate set for this worker" }
 
         const existing = await prisma.supplierTransaction.findMany({
-            where: { userId, partyId, type: "ABSENT", deletedAt: null, date: { gte: monthStart, lte: monthEnd } },
+            where: {
+                userId,
+                partyId,
+                type: { in: ["ABSENT", "HALF_DAY"] },
+                deletedAt: null,
+                date: { gte: monthStart, lte: monthEnd },
+            },
         })
         const existingByDate = new Map(existing.map((t) => [format(t.date, "yyyy-MM-dd"), t]))
+        const desired = new Map(Object.entries(dayStatus))
 
-        const desired = new Set(absentDates)
-        const toCreate = absentDates.filter((d) => !existingByDate.has(d))
+        const toCreate = [...desired].filter(([d]) => !existingByDate.has(d))
+        const toUpdate = [...desired].filter(([d, status]) => existingByDate.get(d)?.type !== undefined && existingByDate.get(d)!.type !== status)
         const toDelete = existing.filter((t) => !desired.has(format(t.date, "yyyy-MM-dd")))
 
-        if (toCreate.length === 0 && toDelete.length === 0) {
+        if (toCreate.length === 0 && toUpdate.length === 0 && toDelete.length === 0) {
             return { success: true }
         }
 
+        const amountFor = (status: WorkerDayStatus) => (status === "HALF_DAY" ? rate.dailyDeduction / 2 : rate.dailyDeduction)
+        const detailsFor = (status: WorkerDayStatus) => (status === "HALF_DAY" ? "Half Day" : "Absent")
+
         await prisma.$transaction([
-            ...toCreate.map((d) =>
+            ...toCreate.map(([d, status]) =>
                 prisma.supplierTransaction.create({
                     data: {
                         userId,
                         partyId,
-                        type: "ABSENT",
-                        amount: rate.dailyDeduction,
-                        details: "Absent",
+                        type: status,
+                        amount: amountFor(status),
+                        details: detailsFor(status),
                         date: new Date(d),
                     },
+                })
+            ),
+            ...toUpdate.map(([d, status]) =>
+                prisma.supplierTransaction.update({
+                    where: { id: existingByDate.get(d)!.id },
+                    data: { type: status, amount: amountFor(status), details: detailsFor(status) },
                 })
             ),
             ...toDelete.map((t) =>

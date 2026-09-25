@@ -94,8 +94,12 @@ export function SupplierTransactionCard({ transaction, onEdit }: SupplierTransac
             </div>
 
             <div className="flex flex-col items-end gap-1.5 shrink-0">
-                {transaction.type === "ABSENT" ? (
-                    <span className="text-sm font-semibold text-muted-foreground">
+                {transaction.type === "ABSENT" || transaction.type === "HALF_DAY" ? (
+                    <span
+                        className={`text-sm font-semibold ${
+                            transaction.type === "HALF_DAY" ? "text-amber-500" : "text-muted-foreground"
+                        }`}
+                    >
                         −₹{transaction.amount.toLocaleString("en-IN")}
                     </span>
                 ) : (
@@ -111,10 +115,10 @@ export function SupplierTransactionCard({ transaction, onEdit }: SupplierTransac
                 {/* Direct, always-visible actions — a Radix dropdown here was unreliable on
                     mobile (a tap could register as opening the menu and selecting its first
                     item in the same gesture); two plain buttons have no such failure mode.
-                    An ABSENT row has no Edit — un-marking the day (calendar or Delete here)
-                    is the only way to change it. */}
+                    An ABSENT/HALF_DAY row has no Edit — un-marking the day (calendar or
+                    Delete here) is the only way to change it. */}
                 <div className="flex items-center gap-1">
-                    {transaction.type !== "ABSENT" && (
+                    {transaction.type !== "ABSENT" && transaction.type !== "HALF_DAY" && (
                         <button
                             type="button"
                             onClick={() => onEdit(transaction)}

@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
 import { startOfMonth } from "date-fns"
 import { toast } from "sonner"
@@ -12,7 +12,7 @@ import { SupplierTransactionList } from "./supplier-transaction-list"
 import { SupplierTransactionForm } from "./supplier-transaction-form"
 import { SupplierTransactionSuccess } from "./supplier-transaction-success"
 import { WorkerReportSheet } from "./worker-report-sheet"
-import { setWorkerAttendance, type WorkerLedgerSummary } from "@/lib/actions/workers"
+import { setWorkerAttendance, type WorkerDayStatus, type WorkerLedgerSummary } from "@/lib/actions/workers"
 import type { SupplierTransactionType, SupplierTransactionWithBalance } from "@/lib/actions/supplier-transactions"
 import { cn } from "@/lib/utils"
 
@@ -28,40 +28,45 @@ export function WorkerKhataDetail({ party, transactions, summary }: WorkerKhataD
     const [formType, setFormType] = useState<SupplierTransactionType>("GAVE")
     const [editing, setEditing] = useState<SupplierTransactionWithBalance | null>(null)
     const [success, setSuccess] = useState<{ amount: number } | null>(null)
-    const [stagedAbsent, setStagedAbsent] = useState<Set<string>>(() => new Set(summary.absentDates))
-    const [saving, setSaving] = useState(false)
+    const [dayStatus, setDayStatus] = useState<Record<string, WorkerDayStatus>>(summary.dayStatus)
+    const [selectedDate, setSelectedDate] = useState<string | null>(null)
+    const [savingDate, setSavingDate] = useState<string | null>(null)
 
     const month = useMemo(() => startOfMonth(new Date()), [])
 
-    const isAttendanceDirty = useMemo(() => {
-        const committed = summary.absentDates
-        if (committed.length !== stagedAbsent.size) return true
-        return committed.some((d) => !stagedAbsent.has(d))
-    }, [summary.absentDates, stagedAbsent])
+    // The server is the source of truth; re-sync after router.refresh() brings a fresh
+    // summary (e.g. right after a save commits, or data changed elsewhere).
+    useEffect(() => {
+        setDayStatus(summary.dayStatus)
+    }, [summary.dayStatus])
 
-    const toggleDate = (dateStr: string) => {
-        setStagedAbsent((prev) => {
-            const next = new Set(prev)
-            if (next.has(dateStr)) next.delete(dateStr)
-            else next.add(dateStr)
-            return next
-        })
+    const handleSelectDate = (dateStr: string) => {
+        setSelectedDate((prev) => (prev === dateStr ? null : dateStr))
     }
 
-    const handleSaveAttendance = async () => {
-        setSaving(true)
+    const handleSetDayStatus = async (dateStr: string, status: WorkerDayStatus | "PRESENT") => {
+        const previous = dayStatus
+        const next: Record<string, WorkerDayStatus> = { ...dayStatus }
+        if (status === "PRESENT") delete next[dateStr]
+        else next[dateStr] = status
+        setDayStatus(next)
+        setSavingDate(dateStr)
         try {
-            const result = await setWorkerAttendance(party.id, Array.from(stagedAbsent))
+            const result = await setWorkerAttendance(party.id, next)
             if (result.success) {
-                toast.success("Attendance updated")
+                toast.success(
+                    status === "PRESENT" ? "Marked present" : status === "HALF_DAY" ? "Marked half day" : "Marked absent"
+                )
                 router.refresh()
             } else {
+                setDayStatus(previous)
                 toast.error(result.error)
             }
         } catch {
-            toast.error("Failed to save attendance")
+            setDayStatus(previous)
+            toast.error("Failed to update attendance")
         } finally {
-            setSaving(false)
+            setSavingDate(null)
         }
     }
 
@@ -126,11 +131,11 @@ export function WorkerKhataDetail({ party, transactions, summary }: WorkerKhataD
 
             <WorkerAttendanceCalendar
                 month={month}
-                stagedAbsentDates={stagedAbsent}
-                onToggleDate={toggleDate}
-                isDirty={isAttendanceDirty}
-                saving={saving}
-                onSave={handleSaveAttendance}
+                dayStatus={dayStatus}
+                selectedDate={selectedDate}
+                onSelectDate={handleSelectDate}
+                savingDate={savingDate}
+                onSetStatus={handleSetDayStatus}
             />
 
             <SupplierTransactionList
@@ -140,9 +145,9 @@ export function WorkerKhataDetail({ party, transactions, summary }: WorkerKhataD
             />
 
             {/* Report FAB and the bottom bar share one fixed anchor, same pattern as the
-                plain-supplier detail page. The attendance Save button lives on the
-                calendar card itself (bottom-right of that card) instead of here, since
-                it edits the calendar directly above it — not this bar. */}
+                plain-supplier detail page. Attendance is edited directly on the calendar
+                card above (tap a day, then tap the action that appears) and saves
+                immediately — there's no separate Save control down here. */}
             <div className="fixed bottom-[calc(58px+env(safe-area-inset-bottom,0px))] md:bottom-0 left-0 md:left-60 right-0 z-30">
                 <div className="absolute bottom-full right-4 mb-3 flex items-center gap-2">
                     <WorkerReportSheet
