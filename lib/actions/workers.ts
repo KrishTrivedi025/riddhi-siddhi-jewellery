@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache"
 import { format, eachDayOfInterval, getDaysInMonth } from "date-fns"
 import { requireUserId } from "./auth-helper"
 import { currentMonthStart, monthStartUTC, monthEndUTC, todayIST } from "../date-utils"
+import { dailyRateForMonth } from "../worker-utils"
 import type { WorkerRateFormValues } from "../schemas/worker-schema"
 import type {
     SupplierPaymentMode,
@@ -13,13 +14,6 @@ import type {
 } from "./supplier-transactions"
 
 export type WorkerDayStatus = "ABSENT" | "HALF_DAY"
-
-// The per-day rate is never stored — it's always today's monthly salary spread across
-// however many days the given month actually has (30 in September, 31 in October, ...),
-// recomputed wherever it's needed instead of trusted from a saved column.
-export function dailyRateForMonth(monthlySalary: number, monthStart: Date): number {
-    return monthlySalary / getDaysInMonth(monthStart)
-}
 
 export interface WorkerRateInfo {
     monthlySalary: number
