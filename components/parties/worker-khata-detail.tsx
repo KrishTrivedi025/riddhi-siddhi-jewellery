@@ -41,17 +41,24 @@ export function WorkerKhataDetail({ party, transactions, summary }: WorkerKhataD
     const [dayStatus, setDayStatus] = useState<Record<string, WorkerDayStatus>>(summary.dayStatus)
     const [loadingMonth, setLoadingMonth] = useState(false)
     const isFirstRender = useRef(true)
+    // Bumped on every refetch — if a slower, earlier request (e.g. August, navigated away
+    // from quickly) resolves *after* a faster, later one (September), its result must be
+    // dropped instead of overwriting the screen with the wrong month's data underneath the
+    // right month's header.
+    const requestIdRef = useRef(0)
 
     const refetch = async (targetMonth: Date) => {
+        const requestId = ++requestIdRef.current
         setLoadingMonth(true)
         try {
             const result = await getWorkerLedger(party.id, targetMonth)
+            if (requestId !== requestIdRef.current) return // superseded by a newer request
             setLedger(result)
             setDayStatus(result.summary.dayStatus)
         } catch {
-            toast.error("Failed to load that month")
+            if (requestId === requestIdRef.current) toast.error("Failed to load that month")
         } finally {
-            setLoadingMonth(false)
+            if (requestId === requestIdRef.current) setLoadingMonth(false)
         }
     }
 

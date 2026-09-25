@@ -109,12 +109,23 @@ export interface WorkerLedgerResult {
 // the whole span, then the fold happens in memory (each month needs its own day count
 // and its own effective rate, so it can't be reduced to a single groupBy).
 export async function getWorkerCarriedBalance(userId: string, partyId: string, targetMonthStart: Date): Promise<number> {
-    const earliestRate = await prisma.workerRate.findFirst({
-        where: { userId, partyId },
-        orderBy: { effectiveFrom: "asc" },
-    })
-    if (!earliestRate) return 0
-    const startMonth = monthStartUTC(earliestRate.effectiveFrom)
+    // The fold has to start at whichever came first — the worker's first rate, or their
+    // first transaction. A worker can have manually-recorded GAVE/GOT entries (e.g. an
+    // owed-salary balance entered by hand) dated *before* any WorkerRate ever existed for
+    // them; starting only from the rate's month would silently skip those real entries.
+    const [earliestRate, earliestTxn] = await Promise.all([
+        prisma.workerRate.findFirst({ where: { userId, partyId }, orderBy: { effectiveFrom: "asc" } }),
+        prisma.supplierTransaction.findFirst({
+            where: { userId, partyId, deletedAt: null, date: { lt: targetMonthStart } },
+            orderBy: { date: "asc" },
+        }),
+    ])
+    if (!earliestRate && !earliestTxn) return 0
+    const candidates = [
+        earliestRate ? monthStartUTC(earliestRate.effectiveFrom).getTime() : null,
+        earliestTxn ? monthStartUTC(earliestTxn.date).getTime() : null,
+    ].filter((t): t is number => t !== null)
+    const startMonth = new Date(Math.min(...candidates))
     if (startMonth.getTime() >= targetMonthStart.getTime()) return 0
 
     const rates = await prisma.workerRate.findMany({
