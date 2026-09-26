@@ -236,27 +236,34 @@ export async function buildInvoicePdfBlob(invoice: any, businessProfile: any): P
                 <View style={S.tableWrap}>
                     <View style={S.tableHead}>
                         <Text style={[S.thCell, col("5%")]}>Sr.{"\n"}No.</Text>
-                        <Text style={[S.thCell, col("28%")]}>Description Of Goods</Text>
+                        <Text style={[S.thCell, col("20%")]}>Description Of Goods</Text>
                         <Text style={[S.thCell, col("10%")]}>HSN/SAC</Text>
                         <Text style={[S.thCell, col("7%")]}>Gst %</Text>
                         <Text style={[S.thCell, col("10%")]}>Quantity</Text>
                         <Text style={[S.thCell, col("7%")]}>Per</Text>
                         <Text style={[S.thCell, col("13%")]}>Rate</Text>
+                        <Text style={[S.thCell, col("8%")]}>Discount</Text>
                         <Text style={[S.thCell, col("13%"), { textAlign: "right" }]}>Amount</Text>
                     </View>
 
-                    {items.map((item: any, idx: number) => (
+                    {items.map((item: any, idx: number) => {
+                        const discountLabel = item.discount > 0
+                            ? item.discountType === "amount" ? `₹${item.discount.toFixed(2)}` : `${item.discount}%`
+                            : "—"
+                        return (
                         <View key={item.id} style={idx % 2 === 0 ? S.tableRow : S.tableRowAlt}>
                             <Text style={[S.tdCell, col("5%")]}>{idx + 1}</Text>
-                            <Text style={[S.tdCell, col("28%"), { textAlign: "left" }]}>{formatItemDisplayName(item.itemName, item.item?.category?.name)}{item.purity ? `\n(${item.purity})` : ""}{item.makingCharges > 0 ? `\nMaking: ₹${item.makingCharges.toFixed(2)}` : ""}</Text>
+                            <Text style={[S.tdCell, col("20%"), { textAlign: "left" }]}>{formatItemDisplayName(item.itemName, item.item?.category?.name)}{item.purity ? `\n(${item.purity})` : ""}{item.makingCharges > 0 ? `\nMaking: ₹${item.makingCharges.toFixed(2)}` : ""}</Text>
                             <Text style={[S.tdCell, col("10%")]}>{item.hsnCode || "—"}</Text>
                             <Text style={[S.tdCell, col("7%")]}>{item.gstRate} %</Text>
                             <Text style={[S.tdCell, col("10%")]}>{item.quantity} {item.unit}</Text>
                             <Text style={[S.tdCell, col("7%")]}>{item.unit}</Text>
                             <Text style={[S.tdCell, col("13%")]}>{fmt(item.unitPrice)}</Text>
+                            <Text style={[S.tdCell, col("8%")]}>{discountLabel}</Text>
                             <Text style={[S.tdCell, col("13%"), { textAlign: "right", fontFamily: "Helvetica-Bold" }]}>{fmt(item.amount)}</Text>
                         </View>
-                    ))}
+                        )
+                    })}
 
                     {/* empty rows to fill space */}
                     {Array.from({ length: Math.max(0, 6 - items.length) }).map((_, i) => (
